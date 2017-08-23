@@ -4,7 +4,7 @@
 
 -- Dumped from database version 9.3.5
 -- Dumped by pg_dump version 9.3.1
--- Started on 2015-08-06 15:49:40
+-- Started on 2016-04-05 09:11:05
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -14,7 +14,7 @@ SET check_function_bodies = false;
 SET client_min_messages = warning;
 
 --
--- TOC entry 311 (class 3079 OID 12617)
+-- TOC entry 315 (class 3079 OID 12617)
 -- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -22,8 +22,8 @@ CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- TOC entry 4801 (class 0 OID 0)
--- Dependencies: 311
+-- TOC entry 4829 (class 0 OID 0)
+-- Dependencies: 315
 -- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
 --
 
@@ -31,7 +31,7 @@ COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
 
 
 --
--- TOC entry 312 (class 3079 OID 21624)
+-- TOC entry 316 (class 3079 OID 21624)
 -- Name: postgis; Type: EXTENSION; Schema: -; Owner: 
 --
 
@@ -39,8 +39,8 @@ CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA public;
 
 
 --
--- TOC entry 4802 (class 0 OID 0)
--- Dependencies: 312
+-- TOC entry 4830 (class 0 OID 0)
+-- Dependencies: 316
 -- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: 
 --
 
@@ -50,7 +50,7 @@ COMMENT ON EXTENSION postgis IS 'PostGIS geometry, geography, and raster spatial
 SET search_path = public, pg_catalog;
 
 --
--- TOC entry 1376 (class 1255 OID 23907)
+-- TOC entry 1380 (class 1255 OID 23907)
 -- Name: upd_usinstr(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -109,7 +109,7 @@ CREATE SEQUENCE "Cosmetic_Line_gid_seq"
 ALTER TABLE public."Cosmetic_Line_gid_seq" OWNER TO postgres;
 
 --
--- TOC entry 4803 (class 0 OID 0)
+-- TOC entry 4831 (class 0 OID 0)
 -- Dependencies: 299
 -- Name: Cosmetic_Line_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -153,7 +153,7 @@ CREATE SEQUENCE "Cosmetic_Point_gid_seq"
 ALTER TABLE public."Cosmetic_Point_gid_seq" OWNER TO postgres;
 
 --
--- TOC entry 4804 (class 0 OID 0)
+-- TOC entry 4832 (class 0 OID 0)
 -- Dependencies: 301
 -- Name: Cosmetic_Point_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -196,7 +196,7 @@ CREATE SEQUENCE "Cosmetic_Poly_gid_seq"
 ALTER TABLE public."Cosmetic_Poly_gid_seq" OWNER TO postgres;
 
 --
--- TOC entry 4805 (class 0 OID 0)
+-- TOC entry 4833 (class 0 OID 0)
 -- Dependencies: 303
 -- Name: Cosmetic_Poly_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -235,7 +235,7 @@ CREATE SEQUENCE "Ilalasimba_Harmlets_gid_seq"
 ALTER TABLE public."Ilalasimba_Harmlets_gid_seq" OWNER TO postgres;
 
 --
--- TOC entry 4806 (class 0 OID 0)
+-- TOC entry 4834 (class 0 OID 0)
 -- Dependencies: 295
 -- Name: Ilalasimba_Harmlets_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -274,7 +274,7 @@ CREATE SEQUENCE actions_id_seq
 ALTER TABLE public.actions_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4807 (class 0 OID 0)
+-- TOC entry 4835 (class 0 OID 0)
 -- Dependencies: 184
 -- Name: actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -349,7 +349,7 @@ CREATE SEQUENCE attachment_associationid_seq
 ALTER TABLE public.attachment_associationid_seq OWNER TO postgres;
 
 --
--- TOC entry 4808 (class 0 OID 0)
+-- TOC entry 4836 (class 0 OID 0)
 -- Dependencies: 188
 -- Name: attachment_associationid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -373,7 +373,7 @@ CREATE SEQUENCE attachments_id_seq
 ALTER TABLE public.attachments_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4809 (class 0 OID 0)
+-- TOC entry 4837 (class 0 OID 0)
 -- Dependencies: 189
 -- Name: attachments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -410,7 +410,7 @@ CREATE TABLE attribute_category (
 ALTER TABLE public.attribute_category OWNER TO postgres;
 
 --
--- TOC entry 4810 (class 0 OID 0)
+-- TOC entry 4838 (class 0 OID 0)
 -- Dependencies: 191
 -- Name: TABLE attribute_category; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -446,7 +446,7 @@ CREATE TABLE attribute_master (
 ALTER TABLE public.attribute_master OWNER TO postgres;
 
 --
--- TOC entry 4811 (class 0 OID 0)
+-- TOC entry 4839 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: TABLE attribute_master; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -455,7 +455,7 @@ COMMENT ON TABLE attribute_master IS 'Stores all the attributes for lookup purpo
 
 
 --
--- TOC entry 4812 (class 0 OID 0)
+-- TOC entry 4840 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: COLUMN attribute_master.id; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -464,7 +464,7 @@ COMMENT ON COLUMN attribute_master.id IS 'primary key';
 
 
 --
--- TOC entry 4813 (class 0 OID 0)
+-- TOC entry 4841 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: COLUMN attribute_master.alias; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -473,7 +473,7 @@ COMMENT ON COLUMN attribute_master.alias IS 'Display name';
 
 
 --
--- TOC entry 4814 (class 0 OID 0)
+-- TOC entry 4842 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: COLUMN attribute_master.fieldname; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -482,7 +482,7 @@ COMMENT ON COLUMN attribute_master.fieldname IS 'actual field name';
 
 
 --
--- TOC entry 4815 (class 0 OID 0)
+-- TOC entry 4843 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: COLUMN attribute_master.reftable; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -491,7 +491,7 @@ COMMENT ON COLUMN attribute_master.reftable IS 'Stores the actual table name tha
 
 
 --
--- TOC entry 4816 (class 0 OID 0)
+-- TOC entry 4844 (class 0 OID 0)
 -- Dependencies: 192
 -- Name: COLUMN attribute_master.mandatory; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -610,13 +610,27 @@ CREATE SEQUENCE bookmark_id_seq
 ALTER TABLE public.bookmark_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4817 (class 0 OID 0)
+-- TOC entry 4845 (class 0 OID 0)
 -- Dependencies: 199
 -- Name: bookmark_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE bookmark_id_seq OWNED BY bookmark.id;
 
+
+--
+-- TOC entry 314 (class 1259 OID 24376)
+-- Name: citizenship; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE citizenship (
+    id bigint NOT NULL,
+    citizenname character varying(50),
+    citizenname_sw character varying(50)
+);
+
+
+ALTER TABLE public.citizenship OWNER TO postgres;
 
 --
 -- TOC entry 200 (class 1259 OID 22980)
@@ -719,7 +733,7 @@ CREATE SEQUENCE group_person_gid_seq
 ALTER TABLE public.group_person_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4818 (class 0 OID 0)
+-- TOC entry 4846 (class 0 OID 0)
 -- Dependencies: 206
 -- Name: group_person_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -885,7 +899,7 @@ CREATE SEQUENCE layer_layergroup_id_seq
 ALTER TABLE public.layer_layergroup_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4819 (class 0 OID 0)
+-- TOC entry 4847 (class 0 OID 0)
 -- Dependencies: 212
 -- Name: layer_layergroup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -924,7 +938,7 @@ CREATE SEQUENCE layergroup_id_seq
 ALTER TABLE public.layergroup_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4820 (class 0 OID 0)
+-- TOC entry 4848 (class 0 OID 0)
 -- Dependencies: 214
 -- Name: layergroup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -963,7 +977,7 @@ CREATE SEQUENCE layertype_id_seq
 ALTER TABLE public.layertype_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4821 (class 0 OID 0)
+-- TOC entry 4849 (class 0 OID 0)
 -- Dependencies: 216
 -- Name: layertype_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1062,7 +1076,7 @@ CREATE SEQUENCE module_action_id_seq
 ALTER TABLE public.module_action_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4822 (class 0 OID 0)
+-- TOC entry 4850 (class 0 OID 0)
 -- Dependencies: 222
 -- Name: module_action_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1086,7 +1100,7 @@ CREATE SEQUENCE module_id_seq
 ALTER TABLE public.module_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4823 (class 0 OID 0)
+-- TOC entry 4851 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: module_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1120,7 +1134,7 @@ CREATE TABLE natural_person (
     first_name character varying(100),
     last_name character varying(100),
     middle_name character varying(100),
-    alias character varying NOT NULL,
+    alias character varying,
     gender integer NOT NULL,
     photo bytea,
     mobile character varying(100),
@@ -1138,7 +1152,9 @@ CREATE TABLE natural_person (
     administator character varying(100),
     citizenship character varying(100),
     owner boolean DEFAULT false,
-    resident_of_village boolean DEFAULT false
+    resident_of_village boolean DEFAULT false,
+    personsub_type integer,
+    citizenship_id bigint DEFAULT 0
 );
 
 
@@ -1160,7 +1176,7 @@ CREATE SEQUENCE natural_person_gid_seq
 ALTER TABLE public.natural_person_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4824 (class 0 OID 0)
+-- TOC entry 4852 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: natural_person_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1238,7 +1254,7 @@ CREATE SEQUENCE nonspatial_attachment_associationid_seq
 ALTER TABLE public.nonspatial_attachment_associationid_seq OWNER TO postgres;
 
 --
--- TOC entry 4825 (class 0 OID 0)
+-- TOC entry 4853 (class 0 OID 0)
 -- Dependencies: 230
 -- Name: nonspatial_attachment_associationid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1305,7 +1321,7 @@ CREATE SEQUENCE outputformat_id_seq
 ALTER TABLE public.outputformat_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4826 (class 0 OID 0)
+-- TOC entry 4854 (class 0 OID 0)
 -- Dependencies: 234
 -- Name: outputformat_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1344,7 +1360,7 @@ CREATE SEQUENCE overviewmap_id_seq
 ALTER TABLE public.overviewmap_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4827 (class 0 OID 0)
+-- TOC entry 4855 (class 0 OID 0)
 -- Dependencies: 236
 -- Name: overviewmap_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1426,7 +1442,8 @@ ALTER TABLE public.person_gid_seq OWNER TO postgres;
 
 CREATE TABLE person_type (
     person_type_gid integer NOT NULL,
-    person_type character varying NOT NULL
+    person_type character varying NOT NULL,
+    person_type_sw character varying
 );
 
 
@@ -1479,7 +1496,7 @@ CREATE SEQUENCE printtemplate_id_seq
 ALTER TABLE public.printtemplate_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4828 (class 0 OID 0)
+-- TOC entry 4856 (class 0 OID 0)
 -- Dependencies: 242
 -- Name: printtemplate_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1583,7 +1600,6 @@ CREATE TABLE project_area (
     region character varying(25) NOT NULL,
     wards character varying(30),
     village character varying(30),
-    hamlet character varying(30),
     area_id integer NOT NULL,
     district_officer character varying(200),
     village_code character varying(10),
@@ -1594,7 +1610,7 @@ CREATE TABLE project_area (
 ALTER TABLE public.project_area OWNER TO postgres;
 
 --
--- TOC entry 4829 (class 0 OID 0)
+-- TOC entry 4857 (class 0 OID 0)
 -- Dependencies: 244
 -- Name: COLUMN project_area.bounding_box; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -1618,7 +1634,7 @@ CREATE SEQUENCE project_area_gid_seq
 ALTER TABLE public.project_area_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4830 (class 0 OID 0)
+-- TOC entry 4858 (class 0 OID 0)
 -- Dependencies: 245
 -- Name: project_area_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1705,7 +1721,7 @@ CREATE SEQUENCE project_id_seq
 ALTER TABLE public.project_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4831 (class 0 OID 0)
+-- TOC entry 4859 (class 0 OID 0)
 -- Dependencies: 248
 -- Name: project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1745,7 +1761,7 @@ CREATE SEQUENCE project_layergroup_id_seq
 ALTER TABLE public.project_layergroup_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4832 (class 0 OID 0)
+-- TOC entry 4860 (class 0 OID 0)
 -- Dependencies: 250
 -- Name: project_layergroup_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1791,7 +1807,7 @@ CREATE SEQUENCE project_region_gid_seq
 ALTER TABLE public.project_region_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4833 (class 0 OID 0)
+-- TOC entry 4861 (class 0 OID 0)
 -- Dependencies: 252
 -- Name: project_region_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1818,7 +1834,7 @@ CREATE TABLE project_spatial_data (
 ALTER TABLE public.project_spatial_data OWNER TO postgres;
 
 --
--- TOC entry 4834 (class 0 OID 0)
+-- TOC entry 4862 (class 0 OID 0)
 -- Dependencies: 253
 -- Name: TABLE project_spatial_data; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -1872,7 +1888,7 @@ CREATE SEQUENCE projection_id_seq
 ALTER TABLE public.projection_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4835 (class 0 OID 0)
+-- TOC entry 4863 (class 0 OID 0)
 -- Dependencies: 256
 -- Name: projection_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1911,7 +1927,7 @@ CREATE SEQUENCE role_module_id_seq
 ALTER TABLE public.role_module_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4836 (class 0 OID 0)
+-- TOC entry 4864 (class 0 OID 0)
 -- Dependencies: 258
 -- Name: role_module_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1935,7 +1951,7 @@ CREATE SEQUENCE roles_id_seq
 ALTER TABLE public.roles_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4837 (class 0 OID 0)
+-- TOC entry 4865 (class 0 OID 0)
 -- Dependencies: 259
 -- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -1967,7 +1983,8 @@ ALTER TABLE public.savedquery OWNER TO postgres;
 
 CREATE TABLE share_type (
     gid integer NOT NULL,
-    share_type character varying NOT NULL
+    share_type character varying NOT NULL,
+    share_type_sw character varying
 );
 
 
@@ -2003,7 +2020,9 @@ CREATE TABLE social_tenure_relationship (
     social_tenure_enddate date,
     tenure_duration real,
     isactive boolean DEFAULT true,
-    ccro_issue_date date
+    ccro_issue_date date,
+    sharepercentage character varying(20) DEFAULT 0,
+    resident boolean DEFAULT true
 );
 
 
@@ -2025,7 +2044,7 @@ CREATE SEQUENCE social_tenure_relationship_gid_seq
 ALTER TABLE public.social_tenure_relationship_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4838 (class 0 OID 0)
+-- TOC entry 4866 (class 0 OID 0)
 -- Dependencies: 263
 -- Name: social_tenure_relationship_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2161,13 +2180,43 @@ CREATE TABLE spatial_unit (
 ALTER TABLE public.spatial_unit OWNER TO postgres;
 
 --
--- TOC entry 4839 (class 0 OID 0)
+-- TOC entry 4867 (class 0 OID 0)
 -- Dependencies: 267
 -- Name: COLUMN spatial_unit.the_geom; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON COLUMN spatial_unit.the_geom IS 'Store the common geometry for a row';
 
+
+--
+-- TOC entry 312 (class 1259 OID 24348)
+-- Name: spatial_unit_deceased_person_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE spatial_unit_deceased_person_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.spatial_unit_deceased_person_id_seq OWNER TO postgres;
+
+--
+-- TOC entry 310 (class 1259 OID 24325)
+-- Name: spatial_unit_person_with_interest_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE spatial_unit_person_with_interest_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.spatial_unit_person_with_interest_seq OWNER TO postgres;
 
 --
 -- TOC entry 294 (class 1259 OID 24007)
@@ -2223,7 +2272,7 @@ CREATE TABLE spatial_unit_tmp (
 ALTER TABLE public.spatial_unit_tmp OWNER TO postgres;
 
 --
--- TOC entry 4840 (class 0 OID 0)
+-- TOC entry 4868 (class 0 OID 0)
 -- Dependencies: 294
 -- Name: COLUMN spatial_unit_tmp.the_geom; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -2247,13 +2296,29 @@ CREATE SEQUENCE spatial_unit_usin_seq
 ALTER TABLE public.spatial_unit_usin_seq OWNER TO postgres;
 
 --
--- TOC entry 4841 (class 0 OID 0)
+-- TOC entry 4869 (class 0 OID 0)
 -- Dependencies: 268
 -- Name: spatial_unit_usin_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE spatial_unit_usin_seq OWNED BY spatial_unit.usin;
 
+
+--
+-- TOC entry 311 (class 1259 OID 24335)
+-- Name: spatialunit_deceased_person; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE spatialunit_deceased_person (
+    id bigint NOT NULL,
+    firstname character varying,
+    middlename character varying,
+    lastname character varying,
+    usin bigint
+);
+
+
+ALTER TABLE public.spatialunit_deceased_person OWNER TO postgres;
 
 --
 -- TOC entry 309 (class 1259 OID 24312)
@@ -2268,21 +2333,6 @@ CREATE TABLE spatialunit_personwithinterest (
 
 
 ALTER TABLE public.spatialunit_personwithinterest OWNER TO postgres;
-
---
--- TOC entry 310 (class 1259 OID 24325)
--- Name: spatialunit_personwithinterest_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE spatialunit_personwithinterest_id_seq
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER TABLE public.spatialunit_personwithinterest_id_seq OWNER TO postgres;
 
 --
 -- TOC entry 288 (class 1259 OID 23856)
@@ -2336,7 +2386,7 @@ CREATE SEQUENCE structure_facility_gid_seq
 ALTER TABLE public.structure_facility_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4842 (class 0 OID 0)
+-- TOC entry 4870 (class 0 OID 0)
 -- Dependencies: 270
 -- Name: structure_facility_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2375,7 +2425,7 @@ CREATE SEQUENCE styles_id_seq
 ALTER TABLE public.styles_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4843 (class 0 OID 0)
+-- TOC entry 4871 (class 0 OID 0)
 -- Dependencies: 272
 -- Name: styles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2397,7 +2447,7 @@ CREATE TABLE sunit_status (
 ALTER TABLE public.sunit_status OWNER TO postgres;
 
 --
--- TOC entry 4844 (class 0 OID 0)
+-- TOC entry 4872 (class 0 OID 0)
 -- Dependencies: 273
 -- Name: TABLE sunit_status; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -2458,7 +2508,7 @@ CREATE TABLE surveyprojectattributes (
 ALTER TABLE public.surveyprojectattributes OWNER TO postgres;
 
 --
--- TOC entry 4846 (class 0 OID 0)
+-- TOC entry 4874 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: TABLE surveyprojectattributes; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -2467,7 +2517,7 @@ COMMENT ON TABLE surveyprojectattributes IS 'stores the attribute and survey pro
 
 
 --
--- TOC entry 4847 (class 0 OID 0)
+-- TOC entry 4875 (class 0 OID 0)
 -- Dependencies: 275
 -- Name: COLUMN surveyprojectattributes.id; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -2527,7 +2577,8 @@ ALTER TABLE public.task_scheduler OWNER TO postgres;
 
 CREATE TABLE tenure_class (
     tenureclass_id integer NOT NULL,
-    tenure_class character varying NOT NULL
+    tenure_class character varying NOT NULL,
+    active boolean DEFAULT false
 );
 
 
@@ -2564,7 +2615,7 @@ CREATE SEQUENCE unit_id_seq
 ALTER TABLE public.unit_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4848 (class 0 OID 0)
+-- TOC entry 4876 (class 0 OID 0)
 -- Dependencies: 281
 -- Name: unit_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2603,7 +2654,7 @@ CREATE SEQUENCE user_project_id_seq
 ALTER TABLE public.user_project_id_seq OWNER TO postgres;
 
 --
--- TOC entry 4849 (class 0 OID 0)
+-- TOC entry 4877 (class 0 OID 0)
 -- Dependencies: 283
 -- Name: user_project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2648,7 +2699,6 @@ ALTER TABLE public.user_role OWNER TO postgres;
 
 CREATE TABLE users (
     username character varying(75) NOT NULL,
-	name character varying(200),
     defaultproject character varying(25),
     email character varying(75) NOT NULL,
     passwordexpires date,
@@ -2659,7 +2709,8 @@ CREATE TABLE users (
     authkey character varying(255),
     id integer NOT NULL,
     phone character varying(12),
-    manager_name character varying(25)
+    manager_name character varying(25),
+    name character varying(100)
 );
 
 
@@ -2681,7 +2732,7 @@ CREATE SEQUENCE users_gid_seq
 ALTER TABLE public.users_gid_seq OWNER TO postgres;
 
 --
--- TOC entry 4850 (class 0 OID 0)
+-- TOC entry 4878 (class 0 OID 0)
 -- Dependencies: 287
 -- Name: users_gid_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -2690,7 +2741,20 @@ ALTER SEQUENCE users_gid_seq OWNED BY users.id;
 
 
 --
--- TOC entry 4432 (class 2604 OID 24243)
+-- TOC entry 313 (class 1259 OID 24363)
+-- Name: vertexlabel; Type: TABLE; Schema: public; Owner: postgres; Tablespace: 
+--
+
+CREATE TABLE vertexlabel (
+    gid integer NOT NULL,
+    the_geom geometry(Geometry,4326) NOT NULL
+);
+
+
+ALTER TABLE public.vertexlabel OWNER TO postgres;
+
+--
+-- TOC entry 4452 (class 2604 OID 24243)
 -- Name: gid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2698,7 +2762,7 @@ ALTER TABLE ONLY "Cosmetic_Line" ALTER COLUMN gid SET DEFAULT nextval('"Cosmetic
 
 
 --
--- TOC entry 4436 (class 2604 OID 24258)
+-- TOC entry 4456 (class 2604 OID 24258)
 -- Name: gid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2706,7 +2770,7 @@ ALTER TABLE ONLY "Cosmetic_Point" ALTER COLUMN gid SET DEFAULT nextval('"Cosmeti
 
 
 --
--- TOC entry 4440 (class 2604 OID 24273)
+-- TOC entry 4460 (class 2604 OID 24273)
 -- Name: gid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2714,7 +2778,7 @@ ALTER TABLE ONLY "Cosmetic_Poly" ALTER COLUMN gid SET DEFAULT nextval('"Cosmetic
 
 
 --
--- TOC entry 4371 (class 2604 OID 23329)
+-- TOC entry 4387 (class 2604 OID 23329)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2722,7 +2786,7 @@ ALTER TABLE ONLY action ALTER COLUMN id SET DEFAULT nextval('actions_id_seq'::re
 
 
 --
--- TOC entry 4372 (class 2604 OID 23330)
+-- TOC entry 4388 (class 2604 OID 23330)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2730,7 +2794,7 @@ ALTER TABLE ONLY attachment ALTER COLUMN id SET DEFAULT nextval('attachments_id_
 
 
 --
--- TOC entry 4373 (class 2604 OID 23331)
+-- TOC entry 4389 (class 2604 OID 23331)
 -- Name: associationid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2738,7 +2802,7 @@ ALTER TABLE ONLY attachment ALTER COLUMN associationid SET DEFAULT nextval('atta
 
 
 --
--- TOC entry 4376 (class 2604 OID 23332)
+-- TOC entry 4392 (class 2604 OID 23332)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2746,7 +2810,7 @@ ALTER TABLE ONLY bookmark ALTER COLUMN id SET DEFAULT nextval('bookmark_id_seq':
 
 
 --
--- TOC entry 4428 (class 2604 OID 24118)
+-- TOC entry 4448 (class 2604 OID 24118)
 -- Name: gid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2754,7 +2818,7 @@ ALTER TABLE ONLY ilalasimba_harmlets ALTER COLUMN gid SET DEFAULT nextval('"Ilal
 
 
 --
--- TOC entry 4390 (class 2604 OID 23333)
+-- TOC entry 4406 (class 2604 OID 23333)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2762,7 +2826,7 @@ ALTER TABLE ONLY layer_layergroup ALTER COLUMN id SET DEFAULT nextval('layer_lay
 
 
 --
--- TOC entry 4391 (class 2604 OID 23334)
+-- TOC entry 4407 (class 2604 OID 23334)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2770,7 +2834,7 @@ ALTER TABLE ONLY layergroup ALTER COLUMN id SET DEFAULT nextval('layergroup_id_s
 
 
 --
--- TOC entry 4392 (class 2604 OID 23335)
+-- TOC entry 4408 (class 2604 OID 23335)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2778,7 +2842,7 @@ ALTER TABLE ONLY layertype ALTER COLUMN id SET DEFAULT nextval('layertype_id_seq
 
 
 --
--- TOC entry 4393 (class 2604 OID 23336)
+-- TOC entry 4409 (class 2604 OID 23336)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2786,7 +2850,7 @@ ALTER TABLE ONLY module ALTER COLUMN id SET DEFAULT nextval('module_id_seq'::reg
 
 
 --
--- TOC entry 4394 (class 2604 OID 23337)
+-- TOC entry 4410 (class 2604 OID 23337)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2794,7 +2858,7 @@ ALTER TABLE ONLY module_action ALTER COLUMN id SET DEFAULT nextval('module_actio
 
 
 --
--- TOC entry 4395 (class 2604 OID 23338)
+-- TOC entry 4411 (class 2604 OID 23338)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2802,7 +2866,7 @@ ALTER TABLE ONLY module_role ALTER COLUMN id SET DEFAULT nextval('role_module_id
 
 
 --
--- TOC entry 4403 (class 2604 OID 23339)
+-- TOC entry 4420 (class 2604 OID 23339)
 -- Name: associationid; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2810,7 +2874,7 @@ ALTER TABLE ONLY nonspatial_attachment ALTER COLUMN associationid SET DEFAULT ne
 
 
 --
--- TOC entry 4404 (class 2604 OID 23340)
+-- TOC entry 4421 (class 2604 OID 23340)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2818,7 +2882,7 @@ ALTER TABLE ONLY outputformat ALTER COLUMN id SET DEFAULT nextval('outputformat_
 
 
 --
--- TOC entry 4405 (class 2604 OID 23341)
+-- TOC entry 4422 (class 2604 OID 23341)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2826,7 +2890,7 @@ ALTER TABLE ONLY overviewmap ALTER COLUMN id SET DEFAULT nextval('overviewmap_id
 
 
 --
--- TOC entry 4406 (class 2604 OID 23342)
+-- TOC entry 4423 (class 2604 OID 23342)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2834,7 +2898,7 @@ ALTER TABLE ONLY printtemplate ALTER COLUMN id SET DEFAULT nextval('printtemplat
 
 
 --
--- TOC entry 4408 (class 2604 OID 23343)
+-- TOC entry 4425 (class 2604 OID 23343)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2842,7 +2906,7 @@ ALTER TABLE ONLY project ALTER COLUMN id SET DEFAULT nextval('project_id_seq'::r
 
 
 --
--- TOC entry 4410 (class 2604 OID 23344)
+-- TOC entry 4427 (class 2604 OID 23344)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2850,7 +2914,7 @@ ALTER TABLE ONLY project_layergroup ALTER COLUMN id SET DEFAULT nextval('project
 
 
 --
--- TOC entry 4412 (class 2604 OID 23345)
+-- TOC entry 4429 (class 2604 OID 23345)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2858,7 +2922,7 @@ ALTER TABLE ONLY projection ALTER COLUMN id SET DEFAULT nextval('projection_id_s
 
 
 --
--- TOC entry 4413 (class 2604 OID 23346)
+-- TOC entry 4430 (class 2604 OID 23346)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2866,7 +2930,7 @@ ALTER TABLE ONLY role ALTER COLUMN id SET DEFAULT nextval('roles_id_seq'::regcla
 
 
 --
--- TOC entry 4419 (class 2604 OID 23347)
+-- TOC entry 4438 (class 2604 OID 23347)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2874,7 +2938,7 @@ ALTER TABLE ONLY style ALTER COLUMN id SET DEFAULT nextval('styles_id_seq'::regc
 
 
 --
--- TOC entry 4422 (class 2604 OID 23348)
+-- TOC entry 4442 (class 2604 OID 23348)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2882,7 +2946,7 @@ ALTER TABLE ONLY unit ALTER COLUMN id SET DEFAULT nextval('unit_id_seq'::regclas
 
 
 --
--- TOC entry 4423 (class 2604 OID 23349)
+-- TOC entry 4443 (class 2604 OID 23349)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2890,7 +2954,7 @@ ALTER TABLE ONLY user_project ALTER COLUMN id SET DEFAULT nextval('user_project_
 
 
 --
--- TOC entry 4425 (class 2604 OID 23350)
+-- TOC entry 4445 (class 2604 OID 23350)
 -- Name: id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -2898,7 +2962,7 @@ ALTER TABLE ONLY users ALTER COLUMN id SET DEFAULT nextval('users_gid_seq'::regc
 
 
 --
--- TOC entry 4598 (class 2606 OID 24251)
+-- TOC entry 4618 (class 2606 OID 24251)
 -- Name: Cosmetic_Line_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2907,7 +2971,7 @@ ALTER TABLE ONLY "Cosmetic_Line"
 
 
 --
--- TOC entry 4601 (class 2606 OID 24266)
+-- TOC entry 4621 (class 2606 OID 24266)
 -- Name: Cosmetic_Point_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2916,7 +2980,7 @@ ALTER TABLE ONLY "Cosmetic_Point"
 
 
 --
--- TOC entry 4604 (class 2606 OID 24281)
+-- TOC entry 4624 (class 2606 OID 24281)
 -- Name: Cosmetic_Poly_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2925,7 +2989,7 @@ ALTER TABLE ONLY "Cosmetic_Poly"
 
 
 --
--- TOC entry 4594 (class 2606 OID 24120)
+-- TOC entry 4614 (class 2606 OID 24120)
 -- Name: Ilalasimba_Harmlets_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2934,7 +2998,7 @@ ALTER TABLE ONLY ilalasimba_harmlets
 
 
 --
--- TOC entry 4452 (class 2606 OID 23362)
+-- TOC entry 4472 (class 2606 OID 23362)
 -- Name: PK_ATTACHMENT_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2943,7 +3007,7 @@ ALTER TABLE ONLY attachment
 
 
 --
--- TOC entry 4450 (class 2606 OID 23364)
+-- TOC entry 4470 (class 2606 OID 23364)
 -- Name: PK_HOLIDAY_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2952,7 +3016,7 @@ ALTER TABLE ONLY annual_holiday_calendar
 
 
 --
--- TOC entry 4480 (class 2606 OID 23366)
+-- TOC entry 4500 (class 2606 OID 23366)
 -- Name: PK_LAYER_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2961,7 +3025,7 @@ ALTER TABLE ONLY layer_field
 
 
 --
--- TOC entry 4482 (class 2606 OID 23368)
+-- TOC entry 4502 (class 2606 OID 23368)
 -- Name: PK_LAYER_LAYERGROUP_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2970,7 +3034,7 @@ ALTER TABLE ONLY layer_layergroup
 
 
 --
--- TOC entry 4490 (class 2606 OID 23370)
+-- TOC entry 4510 (class 2606 OID 23370)
 -- Name: PK_MAP_TIP; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2979,7 +3043,7 @@ ALTER TABLE ONLY maptip
 
 
 --
--- TOC entry 4499 (class 2606 OID 23372)
+-- TOC entry 4519 (class 2606 OID 23372)
 -- Name: PK_MODULE_ACTION_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2988,7 +3052,7 @@ ALTER TABLE ONLY module_action
 
 
 --
--- TOC entry 4507 (class 2606 OID 23374)
+-- TOC entry 4527 (class 2606 OID 23374)
 -- Name: PK_NONSPATIALATTACHMENT_ID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -2997,7 +3061,7 @@ ALTER TABLE ONLY nonspatial_attachment
 
 
 --
--- TOC entry 4514 (class 2606 OID 23376)
+-- TOC entry 4534 (class 2606 OID 23376)
 -- Name: PK_OVERVIEWMAP; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3006,7 +3070,7 @@ ALTER TABLE ONLY overviewmap
 
 
 --
--- TOC entry 4528 (class 2606 OID 23378)
+-- TOC entry 4548 (class 2606 OID 23378)
 -- Name: PK_PROECT_BASELAYER; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3015,7 +3079,7 @@ ALTER TABLE ONLY project_baselayer
 
 
 --
--- TOC entry 4532 (class 2606 OID 23380)
+-- TOC entry 4552 (class 2606 OID 23380)
 -- Name: PK_PROJECT_LAYERGROUP; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3024,7 +3088,7 @@ ALTER TABLE ONLY project_layergroup
 
 
 --
--- TOC entry 4501 (class 2606 OID 23382)
+-- TOC entry 4521 (class 2606 OID 23382)
 -- Name: PK_ROLE_MODULE; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3033,7 +3097,7 @@ ALTER TABLE ONLY module_role
 
 
 --
--- TOC entry 4544 (class 2606 OID 23384)
+-- TOC entry 4564 (class 2606 OID 23384)
 -- Name: PK_SAVEDQUERY; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3042,7 +3106,7 @@ ALTER TABLE ONLY savedquery
 
 
 --
--- TOC entry 4567 (class 2606 OID 23386)
+-- TOC entry 4587 (class 2606 OID 23386)
 -- Name: PK_TASK; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3051,7 +3115,7 @@ ALTER TABLE ONLY task
 
 
 --
--- TOC entry 4569 (class 2606 OID 23388)
+-- TOC entry 4589 (class 2606 OID 23388)
 -- Name: PK_TASK_SCHEDULER; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3060,7 +3124,7 @@ ALTER TABLE ONLY task_scheduler
 
 
 --
--- TOC entry 4576 (class 2606 OID 23390)
+-- TOC entry 4596 (class 2606 OID 23390)
 -- Name: PK_USER_PROECT; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3069,7 +3133,7 @@ ALTER TABLE ONLY user_project
 
 
 --
--- TOC entry 4578 (class 2606 OID 23392)
+-- TOC entry 4598 (class 2606 OID 23392)
 -- Name: PK_USER_ROLE; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3078,7 +3142,7 @@ ALTER TABLE ONLY user_role
 
 
 --
--- TOC entry 4475 (class 2606 OID 23394)
+-- TOC entry 4495 (class 2606 OID 23394)
 -- Name: Primary Key; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3087,7 +3151,7 @@ ALTER TABLE ONLY land_use_type
 
 
 --
--- TOC entry 4580 (class 2606 OID 23396)
+-- TOC entry 4600 (class 2606 OID 23396)
 -- Name: UK_USERID; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3096,7 +3160,7 @@ ALTER TABLE ONLY users
 
 
 --
--- TOC entry 4492 (class 2606 OID 23398)
+-- TOC entry 4512 (class 2606 OID 23398)
 -- Name: UQ_MAP_TIP_NAME; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3105,7 +3169,7 @@ ALTER TABLE ONLY maptip
 
 
 --
--- TOC entry 4465 (class 2606 OID 23400)
+-- TOC entry 4485 (class 2606 OID 23400)
 -- Name: aaaaabookmark_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3114,7 +3178,7 @@ ALTER TABLE ONLY bookmark
 
 
 --
--- TOC entry 4485 (class 2606 OID 23402)
+-- TOC entry 4505 (class 2606 OID 23402)
 -- Name: aaaaalayergroup_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3123,7 +3187,7 @@ ALTER TABLE ONLY layergroup
 
 
 --
--- TOC entry 4512 (class 2606 OID 23404)
+-- TOC entry 4532 (class 2606 OID 23404)
 -- Name: aaaaaoutputformat_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3132,7 +3196,7 @@ ALTER TABLE ONLY outputformat
 
 
 --
--- TOC entry 4524 (class 2606 OID 23406)
+-- TOC entry 4544 (class 2606 OID 23406)
 -- Name: aaaaaproject_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3141,7 +3205,7 @@ ALTER TABLE ONLY project
 
 
 --
--- TOC entry 4539 (class 2606 OID 23408)
+-- TOC entry 4559 (class 2606 OID 23408)
 -- Name: aaaaaprojection_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3150,7 +3214,7 @@ ALTER TABLE ONLY projection
 
 
 --
--- TOC entry 4497 (class 2606 OID 23410)
+-- TOC entry 4517 (class 2606 OID 23410)
 -- Name: aaaaatool_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3159,7 +3223,7 @@ ALTER TABLE ONLY module
 
 
 --
--- TOC entry 4446 (class 2606 OID 23412)
+-- TOC entry 4466 (class 2606 OID 23412)
 -- Name: actions_actions_pk_actions; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3168,7 +3232,7 @@ ALTER TABLE ONLY action
 
 
 --
--- TOC entry 4448 (class 2606 OID 23414)
+-- TOC entry 4468 (class 2606 OID 23414)
 -- Name: adjacent_property_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3177,7 +3241,7 @@ ALTER TABLE ONLY adjacent_property
 
 
 --
--- TOC entry 4458 (class 2606 OID 23416)
+-- TOC entry 4478 (class 2606 OID 23416)
 -- Name: attribute_master_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3186,7 +3250,7 @@ ALTER TABLE ONLY attribute_master
 
 
 --
--- TOC entry 4460 (class 2606 OID 23418)
+-- TOC entry 4480 (class 2606 OID 23418)
 -- Name: attribute_option_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3195,7 +3259,7 @@ ALTER TABLE ONLY attribute_options
 
 
 --
--- TOC entry 4454 (class 2606 OID 23420)
+-- TOC entry 4474 (class 2606 OID 23420)
 -- Name: attributevalueid_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3204,7 +3268,7 @@ ALTER TABLE ONLY attribute
 
 
 --
--- TOC entry 4462 (class 2606 OID 23422)
+-- TOC entry 4482 (class 2606 OID 23422)
 -- Name: baselayer_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3213,7 +3277,7 @@ ALTER TABLE ONLY baselayer
 
 
 --
--- TOC entry 4456 (class 2606 OID 23424)
+-- TOC entry 4476 (class 2606 OID 23424)
 -- Name: category_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3222,7 +3286,16 @@ ALTER TABLE ONLY attribute_category
 
 
 --
--- TOC entry 4467 (class 2606 OID 23426)
+-- TOC entry 4637 (class 2606 OID 24380)
+-- Name: citizen_primarykey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY citizenship
+    ADD CONSTRAINT citizen_primarykey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4487 (class 2606 OID 23426)
 -- Name: datatype_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3231,7 +3304,7 @@ ALTER TABLE ONLY datatype_id
 
 
 --
--- TOC entry 4469 (class 2606 OID 23428)
+-- TOC entry 4489 (class 2606 OID 23428)
 -- Name: education_level_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3240,7 +3313,7 @@ ALTER TABLE ONLY education_level
 
 
 --
--- TOC entry 4471 (class 2606 OID 23430)
+-- TOC entry 4491 (class 2606 OID 23430)
 -- Name: gender_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3249,7 +3322,7 @@ ALTER TABLE ONLY gender
 
 
 --
--- TOC entry 4473 (class 2606 OID 23432)
+-- TOC entry 4493 (class 2606 OID 23432)
 -- Name: gid; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3258,7 +3331,7 @@ ALTER TABLE ONLY group_person
 
 
 --
--- TOC entry 4582 (class 2606 OID 23880)
+-- TOC entry 4602 (class 2606 OID 23880)
 -- Name: group_type_group_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3267,7 +3340,16 @@ ALTER TABLE ONLY group_type
 
 
 --
--- TOC entry 4584 (class 2606 OID 23885)
+-- TOC entry 4633 (class 2606 OID 24342)
+-- Name: id; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY spatialunit_deceased_person
+    ADD CONSTRAINT id PRIMARY KEY (id);
+
+
+--
+-- TOC entry 4604 (class 2606 OID 23885)
 -- Name: land_type_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3276,7 +3358,7 @@ ALTER TABLE ONLY land_type
 
 
 --
--- TOC entry 4494 (class 2606 OID 23434)
+-- TOC entry 4514 (class 2606 OID 23434)
 -- Name: marital_status_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3285,7 +3367,7 @@ ALTER TABLE ONLY marital_status
 
 
 --
--- TOC entry 4503 (class 2606 OID 23436)
+-- TOC entry 4523 (class 2606 OID 23436)
 -- Name: natural_person_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3294,7 +3376,7 @@ ALTER TABLE ONLY natural_person
 
 
 --
--- TOC entry 4505 (class 2606 OID 23438)
+-- TOC entry 4525 (class 2606 OID 23438)
 -- Name: non_natural_person_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3303,7 +3385,7 @@ ALTER TABLE ONLY non_natural_person
 
 
 --
--- TOC entry 4509 (class 2606 OID 23440)
+-- TOC entry 4529 (class 2606 OID 23440)
 -- Name: occupancy_type_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3312,7 +3394,7 @@ ALTER TABLE ONLY occupancy_type
 
 
 --
--- TOC entry 4596 (class 2606 OID 24176)
+-- TOC entry 4616 (class 2606 OID 24176)
 -- Name: person_administrator_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3321,7 +3403,7 @@ ALTER TABLE ONLY person_administrator
 
 
 --
--- TOC entry 4516 (class 2606 OID 23442)
+-- TOC entry 4536 (class 2606 OID 23442)
 -- Name: person_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3330,7 +3412,7 @@ ALTER TABLE ONLY person
 
 
 --
--- TOC entry 4518 (class 2606 OID 23444)
+-- TOC entry 4538 (class 2606 OID 23444)
 -- Name: person_type_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3339,7 +3421,7 @@ ALTER TABLE ONLY person_type
 
 
 --
--- TOC entry 4478 (class 2606 OID 23446)
+-- TOC entry 4498 (class 2606 OID 23446)
 -- Name: pk_layer; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3348,7 +3430,7 @@ ALTER TABLE ONLY layer
 
 
 --
--- TOC entry 4488 (class 2606 OID 23448)
+-- TOC entry 4508 (class 2606 OID 23448)
 -- Name: pk_layertype; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3357,7 +3439,7 @@ ALTER TABLE ONLY layertype
 
 
 --
--- TOC entry 4542 (class 2606 OID 23450)
+-- TOC entry 4562 (class 2606 OID 23450)
 -- Name: pk_role; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3366,7 +3448,7 @@ ALTER TABLE ONLY role
 
 
 --
--- TOC entry 4548 (class 2606 OID 23452)
+-- TOC entry 4568 (class 2606 OID 23452)
 -- Name: pk_social_tenure_relationship; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3375,7 +3457,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4550 (class 2606 OID 23454)
+-- TOC entry 4570 (class 2606 OID 23454)
 -- Name: pk_source_document; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3384,7 +3466,7 @@ ALTER TABLE ONLY source_document
 
 
 --
--- TOC entry 4552 (class 2606 OID 23456)
+-- TOC entry 4572 (class 2606 OID 23456)
 -- Name: pk_spatial_unit; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3393,7 +3475,7 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4559 (class 2606 OID 23458)
+-- TOC entry 4579 (class 2606 OID 23458)
 -- Name: pk_styles; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3402,7 +3484,7 @@ ALTER TABLE ONLY style
 
 
 --
--- TOC entry 4574 (class 2606 OID 23460)
+-- TOC entry 4594 (class 2606 OID 23460)
 -- Name: pk_unit; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3411,7 +3493,16 @@ ALTER TABLE ONLY unit
 
 
 --
--- TOC entry 4521 (class 2606 OID 23462)
+-- TOC entry 4635 (class 2606 OID 24370)
+-- Name: primary_key; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
+--
+
+ALTER TABLE ONLY vertexlabel
+    ADD CONSTRAINT primary_key PRIMARY KEY (gid);
+
+
+--
+-- TOC entry 4541 (class 2606 OID 23462)
 -- Name: printtemplate_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3420,7 +3511,7 @@ ALTER TABLE ONLY printtemplate
 
 
 --
--- TOC entry 4526 (class 2606 OID 23464)
+-- TOC entry 4546 (class 2606 OID 23464)
 -- Name: project_area_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3429,7 +3520,7 @@ ALTER TABLE ONLY project_area
 
 
 --
--- TOC entry 4609 (class 2606 OID 24304)
+-- TOC entry 4629 (class 2606 OID 24304)
 -- Name: project_hamlets_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3438,7 +3529,7 @@ ALTER TABLE ONLY project_hamlets
 
 
 --
--- TOC entry 4534 (class 2606 OID 23466)
+-- TOC entry 4554 (class 2606 OID 23466)
 -- Name: project_region_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3447,7 +3538,7 @@ ALTER TABLE ONLY project_region
 
 
 --
--- TOC entry 4536 (class 2606 OID 23468)
+-- TOC entry 4556 (class 2606 OID 23468)
 -- Name: project_spatial_data_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3456,7 +3547,7 @@ ALTER TABLE ONLY project_spatial_data
 
 
 --
--- TOC entry 4586 (class 2606 OID 23890)
+-- TOC entry 4606 (class 2606 OID 23890)
 -- Name: slope_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3465,7 +3556,7 @@ ALTER TABLE ONLY slope_values
 
 
 --
--- TOC entry 4546 (class 2606 OID 23470)
+-- TOC entry 4566 (class 2606 OID 23470)
 -- Name: socialtenure_relationtype_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3474,7 +3565,7 @@ ALTER TABLE ONLY share_type
 
 
 --
--- TOC entry 4588 (class 2606 OID 23895)
+-- TOC entry 4608 (class 2606 OID 23895)
 -- Name: soil_quality_id_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3483,7 +3574,7 @@ ALTER TABLE ONLY soil_quality_values
 
 
 --
--- TOC entry 4607 (class 2606 OID 24292)
+-- TOC entry 4627 (class 2606 OID 24292)
 -- Name: spatial_adjudicator_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3492,7 +3583,7 @@ ALTER TABLE ONLY project_adjudicators
 
 
 --
--- TOC entry 4554 (class 2606 OID 23472)
+-- TOC entry 4574 (class 2606 OID 23472)
 -- Name: spatial_unit_identity_key; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3501,7 +3592,7 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4590 (class 2606 OID 24017)
+-- TOC entry 4610 (class 2606 OID 24017)
 -- Name: spatial_unit_tmp_identity_key; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3510,7 +3601,7 @@ ALTER TABLE ONLY spatial_unit_tmp
 
 
 --
--- TOC entry 4592 (class 2606 OID 24015)
+-- TOC entry 4612 (class 2606 OID 24015)
 -- Name: spatial_unit_tmp_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3519,7 +3610,7 @@ ALTER TABLE ONLY spatial_unit_tmp
 
 
 --
--- TOC entry 4611 (class 2606 OID 24316)
+-- TOC entry 4631 (class 2606 OID 24316)
 -- Name: spatialunit_personwithinterest_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3528,7 +3619,7 @@ ALTER TABLE ONLY spatialunit_personwithinterest
 
 
 --
--- TOC entry 4556 (class 2606 OID 23474)
+-- TOC entry 4576 (class 2606 OID 23474)
 -- Name: structure_facility_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3537,7 +3628,7 @@ ALTER TABLE ONLY structure_facility
 
 
 --
--- TOC entry 4561 (class 2606 OID 23476)
+-- TOC entry 4581 (class 2606 OID 23476)
 -- Name: sunit_status_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3546,7 +3637,7 @@ ALTER TABLE ONLY sunit_status
 
 
 --
--- TOC entry 4563 (class 2606 OID 23478)
+-- TOC entry 4583 (class 2606 OID 23478)
 -- Name: sunit_workflow_status_history_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3555,7 +3646,7 @@ ALTER TABLE ONLY sunit_workflow_status_history
 
 
 --
--- TOC entry 4565 (class 2606 OID 23480)
+-- TOC entry 4585 (class 2606 OID 23480)
 -- Name: surveyprojectattributes_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3564,7 +3655,7 @@ ALTER TABLE ONLY surveyprojectattributes
 
 
 --
--- TOC entry 4571 (class 2606 OID 23482)
+-- TOC entry 4591 (class 2606 OID 23482)
 -- Name: tenure_class_pk; Type: CONSTRAINT; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3573,7 +3664,7 @@ ALTER TABLE ONLY tenure_class
 
 
 --
--- TOC entry 4599 (class 1259 OID 24252)
+-- TOC entry 4619 (class 1259 OID 24252)
 -- Name: Cosmetic_Line_the_geom_gist; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3581,7 +3672,7 @@ CREATE INDEX "Cosmetic_Line_the_geom_gist" ON "Cosmetic_Line" USING gist (the_ge
 
 
 --
--- TOC entry 4602 (class 1259 OID 24267)
+-- TOC entry 4622 (class 1259 OID 24267)
 -- Name: Cosmetic_Point_the_geom_gist; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3589,7 +3680,7 @@ CREATE INDEX "Cosmetic_Point_the_geom_gist" ON "Cosmetic_Point" USING gist (the_
 
 
 --
--- TOC entry 4605 (class 1259 OID 24282)
+-- TOC entry 4625 (class 1259 OID 24282)
 -- Name: Cosmetic_Poly_the_geom_gist; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3597,7 +3688,7 @@ CREATE INDEX "Cosmetic_Poly_the_geom_gist" ON "Cosmetic_Poly" USING gist (the_ge
 
 
 --
--- TOC entry 4444 (class 1259 OID 23483)
+-- TOC entry 4464 (class 1259 OID 23483)
 -- Name: PK_Actions; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3607,7 +3698,7 @@ ALTER TABLE action CLUSTER ON "PK_Actions";
 
 
 --
--- TOC entry 4476 (class 1259 OID 23484)
+-- TOC entry 4496 (class 1259 OID 23484)
 -- Name: PK_Layer; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3617,7 +3708,7 @@ ALTER TABLE layer CLUSTER ON "PK_Layer";
 
 
 --
--- TOC entry 4486 (class 1259 OID 23485)
+-- TOC entry 4506 (class 1259 OID 23485)
 -- Name: PK_LayerType; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3627,7 +3718,7 @@ ALTER TABLE layertype CLUSTER ON "PK_LayerType";
 
 
 --
--- TOC entry 4540 (class 1259 OID 23486)
+-- TOC entry 4560 (class 1259 OID 23486)
 -- Name: PK_Role; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3635,7 +3726,7 @@ CREATE UNIQUE INDEX "PK_Role" ON role USING btree (name);
 
 
 --
--- TOC entry 4557 (class 1259 OID 23487)
+-- TOC entry 4577 (class 1259 OID 23487)
 -- Name: PK_Styles; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3645,7 +3736,7 @@ ALTER TABLE style CLUSTER ON "PK_Styles";
 
 
 --
--- TOC entry 4572 (class 1259 OID 23488)
+-- TOC entry 4592 (class 1259 OID 23488)
 -- Name: PK_Unit; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3653,7 +3744,7 @@ CREATE UNIQUE INDEX "PK_Unit" ON unit USING btree (name);
 
 
 --
--- TOC entry 4463 (class 1259 OID 23489)
+-- TOC entry 4483 (class 1259 OID 23489)
 -- Name: aaaaaBOOKMARK_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3661,7 +3752,7 @@ CREATE UNIQUE INDEX "aaaaaBOOKMARK_PK" ON bookmark USING btree (name);
 
 
 --
--- TOC entry 4483 (class 1259 OID 23490)
+-- TOC entry 4503 (class 1259 OID 23490)
 -- Name: aaaaaLAYERGROUP_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3671,7 +3762,7 @@ ALTER TABLE layergroup CLUSTER ON "aaaaaLAYERGROUP_PK";
 
 
 --
--- TOC entry 4510 (class 1259 OID 23491)
+-- TOC entry 4530 (class 1259 OID 23491)
 -- Name: aaaaaOutputFormat_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3679,7 +3770,7 @@ CREATE UNIQUE INDEX "aaaaaOutputFormat_PK" ON outputformat USING btree (name);
 
 
 --
--- TOC entry 4519 (class 1259 OID 23492)
+-- TOC entry 4539 (class 1259 OID 23492)
 -- Name: aaaaaPRINTTEMPLATE_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3689,7 +3780,7 @@ ALTER TABLE printtemplate CLUSTER ON "aaaaaPRINTTEMPLATE_PK";
 
 
 --
--- TOC entry 4537 (class 1259 OID 23493)
+-- TOC entry 4557 (class 1259 OID 23493)
 -- Name: aaaaaPROJECTION_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3697,7 +3788,7 @@ CREATE UNIQUE INDEX "aaaaaPROJECTION_PK" ON projection USING btree (code);
 
 
 --
--- TOC entry 4522 (class 1259 OID 23494)
+-- TOC entry 4542 (class 1259 OID 23494)
 -- Name: aaaaaPROJECT_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3705,7 +3796,7 @@ CREATE UNIQUE INDEX "aaaaaPROJECT_PK" ON project USING btree (name);
 
 
 --
--- TOC entry 4495 (class 1259 OID 23495)
+-- TOC entry 4515 (class 1259 OID 23495)
 -- Name: aaaaaTOOL_PK; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3713,7 +3804,7 @@ CREATE UNIQUE INDEX "aaaaaTOOL_PK" ON module USING btree (name);
 
 
 --
--- TOC entry 4529 (class 1259 OID 23496)
+-- TOC entry 4549 (class 1259 OID 23496)
 -- Name: fki_projectbaselayer_baselayer; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3721,7 +3812,7 @@ CREATE INDEX fki_projectbaselayer_baselayer ON project_baselayer USING btree (ba
 
 
 --
--- TOC entry 4530 (class 1259 OID 23497)
+-- TOC entry 4550 (class 1259 OID 23497)
 -- Name: fki_projectbaselayer_project; Type: INDEX; Schema: public; Owner: postgres; Tablespace: 
 --
 
@@ -3729,7 +3820,7 @@ CREATE INDEX fki_projectbaselayer_project ON project_baselayer USING btree (proj
 
 
 --
--- TOC entry 4679 (class 2620 OID 23913)
+-- TOC entry 4707 (class 2620 OID 23913)
 -- Name: upd_usinstr; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -3737,7 +3828,7 @@ CREATE TRIGGER upd_usinstr AFTER INSERT OR UPDATE OF usin_str ON spatial_unit FO
 
 
 --
--- TOC entry 4625 (class 2606 OID 23498)
+-- TOC entry 4651 (class 2606 OID 23498)
 -- Name: FK_LAYER_MAPTIP; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3746,7 +3837,7 @@ ALTER TABLE ONLY maptip
 
 
 --
--- TOC entry 4626 (class 2606 OID 23503)
+-- TOC entry 4652 (class 2606 OID 23503)
 -- Name: FK_Project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3755,7 +3846,7 @@ ALTER TABLE ONLY maptip
 
 
 --
--- TOC entry 4670 (class 2606 OID 23508)
+-- TOC entry 4697 (class 2606 OID 23508)
 -- Name: FK_TASK_TYPE; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3764,7 +3855,7 @@ ALTER TABLE ONLY task_scheduler
 
 
 --
--- TOC entry 4671 (class 2606 OID 23513)
+-- TOC entry 4698 (class 2606 OID 23513)
 -- Name: FK_USERPROJECT_USERS; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3773,7 +3864,7 @@ ALTER TABLE ONLY user_project
 
 
 --
--- TOC entry 4674 (class 2606 OID 23518)
+-- TOC entry 4701 (class 2606 OID 23518)
 -- Name: FK_USERROLE_USERS; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3782,7 +3873,7 @@ ALTER TABLE ONLY user_role
 
 
 --
--- TOC entry 4676 (class 2606 OID 24293)
+-- TOC entry 4703 (class 2606 OID 24293)
 -- Name: adjudicator_project_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3791,7 +3882,7 @@ ALTER TABLE ONLY project_adjudicators
 
 
 --
--- TOC entry 4614 (class 2606 OID 23523)
+-- TOC entry 4640 (class 2606 OID 23523)
 -- Name: attribute_category_attribute_master_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3800,7 +3891,7 @@ ALTER TABLE ONLY attribute_master
 
 
 --
--- TOC entry 4668 (class 2606 OID 23528)
+-- TOC entry 4695 (class 2606 OID 23528)
 -- Name: attribute_master_surveyprojectattributes_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3809,7 +3900,7 @@ ALTER TABLE ONLY surveyprojectattributes
 
 
 --
--- TOC entry 4616 (class 2606 OID 23533)
+-- TOC entry 4642 (class 2606 OID 23533)
 -- Name: attribute_option_attributeid_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3818,7 +3909,7 @@ ALTER TABLE ONLY attribute_options
 
 
 --
--- TOC entry 4615 (class 2606 OID 23538)
+-- TOC entry 4641 (class 2606 OID 23538)
 -- Name: datatype_id_attribute_master_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3827,7 +3918,7 @@ ALTER TABLE ONLY attribute_master
 
 
 --
--- TOC entry 4633 (class 2606 OID 23543)
+-- TOC entry 4659 (class 2606 OID 23543)
 -- Name: education_level; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3836,7 +3927,7 @@ ALTER TABLE ONLY natural_person
 
 
 --
--- TOC entry 4661 (class 2606 OID 23548)
+-- TOC entry 4687 (class 2606 OID 23548)
 -- Name: existing_use; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3845,7 +3936,7 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4613 (class 2606 OID 23553)
+-- TOC entry 4639 (class 2606 OID 23553)
 -- Name: fk_attachment_layer; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3854,7 +3945,7 @@ ALTER TABLE ONLY attachment
 
 
 --
--- TOC entry 4617 (class 2606 OID 23558)
+-- TOC entry 4643 (class 2606 OID 23558)
 -- Name: fk_bookmark_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3863,7 +3954,7 @@ ALTER TABLE ONLY bookmark
 
 
 --
--- TOC entry 4623 (class 2606 OID 23563)
+-- TOC entry 4649 (class 2606 OID 23563)
 -- Name: fk_layer_fields_layer; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3872,7 +3963,7 @@ ALTER TABLE ONLY layer_field
 
 
 --
--- TOC entry 4624 (class 2606 OID 23568)
+-- TOC entry 4650 (class 2606 OID 23568)
 -- Name: fk_layer_layergroup_layergroup; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3881,7 +3972,7 @@ ALTER TABLE ONLY layer_layergroup
 
 
 --
--- TOC entry 4619 (class 2606 OID 23573)
+-- TOC entry 4645 (class 2606 OID 23573)
 -- Name: fk_layer_layertype; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3890,7 +3981,7 @@ ALTER TABLE ONLY layer
 
 
 --
--- TOC entry 4620 (class 2606 OID 23578)
+-- TOC entry 4646 (class 2606 OID 23578)
 -- Name: fk_layer_outputformat; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3899,7 +3990,7 @@ ALTER TABLE ONLY layer
 
 
 --
--- TOC entry 4621 (class 2606 OID 23583)
+-- TOC entry 4647 (class 2606 OID 23583)
 -- Name: fk_layer_projection; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3908,7 +3999,7 @@ ALTER TABLE ONLY layer
 
 
 --
--- TOC entry 4622 (class 2606 OID 23588)
+-- TOC entry 4648 (class 2606 OID 23588)
 -- Name: fk_layer_unit; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3917,7 +4008,7 @@ ALTER TABLE ONLY layer
 
 
 --
--- TOC entry 4628 (class 2606 OID 23593)
+-- TOC entry 4654 (class 2606 OID 23593)
 -- Name: fk_moduleaction_actions; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3926,7 +4017,7 @@ ALTER TABLE ONLY module_action
 
 
 --
--- TOC entry 4629 (class 2606 OID 23598)
+-- TOC entry 4655 (class 2606 OID 23598)
 -- Name: fk_moduleaction_modules; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3935,7 +4026,7 @@ ALTER TABLE ONLY module_action
 
 
 --
--- TOC entry 4638 (class 2606 OID 23603)
+-- TOC entry 4664 (class 2606 OID 23603)
 -- Name: fk_overviewmap_layergroup; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3944,7 +4035,7 @@ ALTER TABLE ONLY overviewmap
 
 
 --
--- TOC entry 4639 (class 2606 OID 23608)
+-- TOC entry 4665 (class 2606 OID 23608)
 -- Name: fk_overviewmap_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3953,7 +4044,7 @@ ALTER TABLE ONLY overviewmap
 
 
 --
--- TOC entry 4627 (class 2606 OID 23613)
+-- TOC entry 4653 (class 2606 OID 23613)
 -- Name: fk_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3962,7 +4053,7 @@ ALTER TABLE ONLY maptip
 
 
 --
--- TOC entry 4641 (class 2606 OID 23618)
+-- TOC entry 4667 (class 2606 OID 23618)
 -- Name: fk_project_outputformat; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3971,7 +4062,7 @@ ALTER TABLE ONLY project
 
 
 --
--- TOC entry 4642 (class 2606 OID 23623)
+-- TOC entry 4668 (class 2606 OID 23623)
 -- Name: fk_project_projection; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3980,7 +4071,7 @@ ALTER TABLE ONLY project
 
 
 --
--- TOC entry 4643 (class 2606 OID 23628)
+-- TOC entry 4669 (class 2606 OID 23628)
 -- Name: fk_project_projection1; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3989,7 +4080,7 @@ ALTER TABLE ONLY project
 
 
 --
--- TOC entry 4644 (class 2606 OID 23633)
+-- TOC entry 4670 (class 2606 OID 23633)
 -- Name: fk_project_unit; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -3998,7 +4089,7 @@ ALTER TABLE ONLY project
 
 
 --
--- TOC entry 4646 (class 2606 OID 23638)
+-- TOC entry 4672 (class 2606 OID 23638)
 -- Name: fk_projectbaselayer_baselayer; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4007,7 +4098,7 @@ ALTER TABLE ONLY project_baselayer
 
 
 --
--- TOC entry 4647 (class 2606 OID 23643)
+-- TOC entry 4673 (class 2606 OID 23643)
 -- Name: fk_projectbaselayer_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4016,7 +4107,7 @@ ALTER TABLE ONLY project_baselayer
 
 
 --
--- TOC entry 4648 (class 2606 OID 23648)
+-- TOC entry 4674 (class 2606 OID 23648)
 -- Name: fk_projectlayer_group_layergroup; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4025,7 +4116,7 @@ ALTER TABLE ONLY project_layergroup
 
 
 --
--- TOC entry 4649 (class 2606 OID 23653)
+-- TOC entry 4675 (class 2606 OID 23653)
 -- Name: fk_projectlayergroup_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4034,7 +4125,7 @@ ALTER TABLE ONLY project_layergroup
 
 
 --
--- TOC entry 4630 (class 2606 OID 23658)
+-- TOC entry 4656 (class 2606 OID 23658)
 -- Name: fk_role_module_actions; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4043,7 +4134,7 @@ ALTER TABLE ONLY module_role
 
 
 --
--- TOC entry 4631 (class 2606 OID 23663)
+-- TOC entry 4657 (class 2606 OID 23663)
 -- Name: fk_roletool_roles; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4052,7 +4143,7 @@ ALTER TABLE ONLY module_role
 
 
 --
--- TOC entry 4632 (class 2606 OID 23668)
+-- TOC entry 4658 (class 2606 OID 23668)
 -- Name: fk_roletool_tool; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4061,7 +4152,7 @@ ALTER TABLE ONLY module_role
 
 
 --
--- TOC entry 4651 (class 2606 OID 23673)
+-- TOC entry 4677 (class 2606 OID 23673)
 -- Name: fk_savedquery_layer; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4070,7 +4161,7 @@ ALTER TABLE ONLY savedquery
 
 
 --
--- TOC entry 4652 (class 2606 OID 23678)
+-- TOC entry 4678 (class 2606 OID 23678)
 -- Name: fk_savedquery_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4079,7 +4170,7 @@ ALTER TABLE ONLY savedquery
 
 
 --
--- TOC entry 4665 (class 2606 OID 23683)
+-- TOC entry 4692 (class 2606 OID 23683)
 -- Name: fk_spatial_unit_gid; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4088,7 +4179,7 @@ ALTER TABLE ONLY structure_facility
 
 
 --
--- TOC entry 4653 (class 2606 OID 23688)
+-- TOC entry 4679 (class 2606 OID 23688)
 -- Name: fk_str_spatial_unit; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4097,7 +4188,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4672 (class 2606 OID 23693)
+-- TOC entry 4699 (class 2606 OID 23693)
 -- Name: fk_userproject_project; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4106,7 +4197,7 @@ ALTER TABLE ONLY user_project
 
 
 --
--- TOC entry 4673 (class 2606 OID 23698)
+-- TOC entry 4700 (class 2606 OID 23698)
 -- Name: fk_userproject_users; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4115,7 +4206,7 @@ ALTER TABLE ONLY user_project
 
 
 --
--- TOC entry 4675 (class 2606 OID 23703)
+-- TOC entry 4702 (class 2606 OID 23703)
 -- Name: fk_userrole_roles; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4124,7 +4215,7 @@ ALTER TABLE ONLY user_role
 
 
 --
--- TOC entry 4634 (class 2606 OID 23708)
+-- TOC entry 4660 (class 2606 OID 23708)
 -- Name: gender_natural_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4133,7 +4224,16 @@ ALTER TABLE ONLY natural_person
 
 
 --
--- TOC entry 4635 (class 2606 OID 23713)
+-- TOC entry 4691 (class 2606 OID 24327)
+-- Name: hamlet_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY spatial_unit
+    ADD CONSTRAINT hamlet_id_fk FOREIGN KEY (hamlet_id) REFERENCES project_hamlets(id) ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 4661 (class 2606 OID 23713)
 -- Name: marital_status_natural_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4142,7 +4242,7 @@ ALTER TABLE ONLY natural_person
 
 
 --
--- TOC entry 4636 (class 2606 OID 23718)
+-- TOC entry 4662 (class 2606 OID 23718)
 -- Name: natural_person_non_natural_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4151,7 +4251,7 @@ ALTER TABLE ONLY non_natural_person
 
 
 --
--- TOC entry 4654 (class 2606 OID 23723)
+-- TOC entry 4680 (class 2606 OID 23723)
 -- Name: occupancy_type_social_tenure_relationship_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4160,7 +4260,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4618 (class 2606 OID 23728)
+-- TOC entry 4644 (class 2606 OID 23728)
 -- Name: person_group_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4169,7 +4269,7 @@ ALTER TABLE ONLY group_person
 
 
 --
--- TOC entry 4637 (class 2606 OID 23733)
+-- TOC entry 4663 (class 2606 OID 23733)
 -- Name: person_non_natural_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4178,7 +4278,7 @@ ALTER TABLE ONLY non_natural_person
 
 
 --
--- TOC entry 4655 (class 2606 OID 23738)
+-- TOC entry 4681 (class 2606 OID 23738)
 -- Name: person_social_tenure_relationship_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4187,7 +4287,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4658 (class 2606 OID 23743)
+-- TOC entry 4684 (class 2606 OID 23743)
 -- Name: person_source_document_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4196,7 +4296,7 @@ ALTER TABLE ONLY source_document
 
 
 --
--- TOC entry 4640 (class 2606 OID 23748)
+-- TOC entry 4666 (class 2606 OID 23748)
 -- Name: person_type_person_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4205,7 +4305,7 @@ ALTER TABLE ONLY person
 
 
 --
--- TOC entry 4677 (class 2606 OID 24305)
+-- TOC entry 4704 (class 2606 OID 24305)
 -- Name: project_hamlets_project_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4214,7 +4314,7 @@ ALTER TABLE ONLY project_hamlets
 
 
 --
--- TOC entry 4645 (class 2606 OID 23753)
+-- TOC entry 4671 (class 2606 OID 23753)
 -- Name: project_project_area_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4223,7 +4323,7 @@ ALTER TABLE ONLY project_area
 
 
 --
--- TOC entry 4650 (class 2606 OID 23758)
+-- TOC entry 4676 (class 2606 OID 23758)
 -- Name: project_project_spatial_data_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4232,7 +4332,7 @@ ALTER TABLE ONLY project_spatial_data
 
 
 --
--- TOC entry 4662 (class 2606 OID 23763)
+-- TOC entry 4688 (class 2606 OID 23763)
 -- Name: project_spatial_unit_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4241,7 +4341,7 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4669 (class 2606 OID 23768)
+-- TOC entry 4696 (class 2606 OID 23768)
 -- Name: project_surveyprojectattributes_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4250,7 +4350,7 @@ ALTER TABLE ONLY surveyprojectattributes
 
 
 --
--- TOC entry 4663 (class 2606 OID 23773)
+-- TOC entry 4689 (class 2606 OID 23773)
 -- Name: proposed_use; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4259,7 +4359,7 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4659 (class 2606 OID 23778)
+-- TOC entry 4685 (class 2606 OID 23778)
 -- Name: social_tenure_relationship_source_document_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4268,7 +4368,7 @@ ALTER TABLE ONLY source_document
 
 
 --
--- TOC entry 4656 (class 2606 OID 23783)
+-- TOC entry 4682 (class 2606 OID 23783)
 -- Name: socialtenure_relationtype_social_tenure_relationship_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4277,7 +4377,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4660 (class 2606 OID 23788)
+-- TOC entry 4686 (class 2606 OID 23788)
 -- Name: source_document_struct_gid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4286,7 +4386,7 @@ ALTER TABLE ONLY source_document
 
 
 --
--- TOC entry 4612 (class 2606 OID 23793)
+-- TOC entry 4638 (class 2606 OID 23793)
 -- Name: spatial_unit_adjacent_property_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4295,7 +4395,7 @@ ALTER TABLE ONLY adjacent_property
 
 
 --
--- TOC entry 4666 (class 2606 OID 23798)
+-- TOC entry 4693 (class 2606 OID 23798)
 -- Name: spatial_unit_sunit_workflow_status_history_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4304,7 +4404,7 @@ ALTER TABLE ONLY sunit_workflow_status_history
 
 
 --
--- TOC entry 4678 (class 2606 OID 24317)
+-- TOC entry 4705 (class 2606 OID 24317)
 -- Name: spatiaunit_pwi_sptialunit_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4313,7 +4413,7 @@ ALTER TABLE ONLY spatialunit_personwithinterest
 
 
 --
--- TOC entry 4667 (class 2606 OID 23803)
+-- TOC entry 4694 (class 2606 OID 23803)
 -- Name: sunit_status_sunit_workflow_status_history_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4322,7 +4422,7 @@ ALTER TABLE ONLY sunit_workflow_status_history
 
 
 --
--- TOC entry 4657 (class 2606 OID 23808)
+-- TOC entry 4683 (class 2606 OID 23808)
 -- Name: tenure_class_social_tenure_relationship_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4331,7 +4431,7 @@ ALTER TABLE ONLY social_tenure_relationship
 
 
 --
--- TOC entry 4664 (class 2606 OID 23813)
+-- TOC entry 4690 (class 2606 OID 23813)
 -- Name: unit_spatial_unit_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -4340,7 +4440,16 @@ ALTER TABLE ONLY spatial_unit
 
 
 --
--- TOC entry 4800 (class 0 OID 0)
+-- TOC entry 4706 (class 2606 OID 24343)
+-- Name: usin; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY spatialunit_deceased_person
+    ADD CONSTRAINT usin FOREIGN KEY (usin) REFERENCES spatial_unit(usin);
+
+
+--
+-- TOC entry 4828 (class 0 OID 0)
 -- Dependencies: 6
 -- Name: public; Type: ACL; Schema: -; Owner: postgres
 --
@@ -4352,7 +4461,7 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
 --
--- TOC entry 4845 (class 0 OID 0)
+-- TOC entry 4873 (class 0 OID 0)
 -- Dependencies: 289
 -- Name: sunit_workflow_status_history_seq; Type: ACL; Schema: public; Owner: postgres
 --
@@ -4363,7 +4472,7 @@ GRANT ALL ON SEQUENCE sunit_workflow_status_history_seq TO postgres;
 GRANT ALL ON SEQUENCE sunit_workflow_status_history_seq TO PUBLIC;
 
 
--- Completed on 2015-08-06 15:52:30
+-- Completed on 2016-04-05 09:14:44
 
 --
 -- PostgreSQL database dump complete

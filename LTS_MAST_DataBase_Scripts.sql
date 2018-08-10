@@ -1,1629 +1,2176 @@
 
+CREATE EXTENSION postgis;
 
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+SET row_security = off;
 
+SET search_path = public, pg_catalog;
 
 
+CREATE FUNCTION check_id_change() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$    BEGIN
+    if (old.landid in(Select LD.landid  from la_spatialunit_land LD 
+inner Join la_ext_workflow lw on lw.workflowid = LD.workflowstatusid 
+inner Join la_ext_applicationstatus la on la.applicationstatusid = LD.applicationstatusid   
+where Lw.workflowid=6  and la.applicationstatusid=5 
+and LD.isactive = true and landid not in(select landid from la_ext_parcelSplitLand) order by LD.landid)) 
+         THEN
+            RAISE EXCEPTION 'Can’t modify the Approved/Registered Parcel.';
+            
+             END IF;
+        RETURN NEW;
+    END;
+    $$;
 
 
+ALTER FUNCTION public.check_id_change() OWNER TO postgres;
 
 
 
+CREATE FUNCTION fn_triggerall(doenable boolean) RETURNS integer
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+mytables RECORD;
+BEGIN
+  FOR mytables IN SELECT relname FROM pg_class WHERE relhastriggers =true AND relname LIKE '%la_spatialunit_land%'
+  LOOP
+    IF DoEnable THEN
+       EXECUTE 'ALTER TABLE ' || mytables.relname || ' DISABLE TRIGGER client_update_trigger';
+          
+ update  la_spatialunit_land set landsharetypeid=7  where landid =26;
 
+  
+       EXECUTE 'ALTER TABLE ' || mytables.relname || ' ENABLE TRIGGER client_update_trigger'; 
+    ELSE
+      EXECUTE 'ALTER TABLE ' || mytables.relname || ' ENABLE TRIGGER client_update_trigger';
+    END IF; 
+  END LOOP;
+ 
+  RETURN 1;
+ 
+END;
+$$;
 
 
+ALTER FUNCTION public.fn_triggerall(doenable boolean) OWNER TO postgres;
 
 
 
+CREATE FUNCTION ins_toplology_error() RETURNS TABLE(geometry geometry, error_message character varying, layer_name character varying, landid bigint, remarks character varying, statusfixed character varying)
+    LANGUAGE plpgsql
+    AS $$
+ 
+BEGIN
 
+   INSERT INTO public.topology_checks_error_log(geometry, error_message, layer_name, landid)
 
+select  a.geometry,'invalid geometry','la_spatialunit_land',a.landid from la_spatialunit_land a where st_isvalid(a.geometry)=false union all
 
+select a.geometry,'intersect','la_spatialunit_land',a.landid FROM la_spatialunit_land a INNER JOIN la_spatialunit_land b ON ST_Intersects(a.geometry,b.geometry) where a.geometry<b.geometry union all
 
+select a.geometry, 'small area','la_spatialunit_land',a.landid from la_spatialunit_land a WHERE  ST_Area(a.geometry) < 0.00001 union all
+SELECT a.geometry,'invalid geometry','la_spatialunit_land',a.landid from la_spatialunit_land a where  ST_IsEmpty(ST_GeomFromText('GEOMETRYCOLLECTION EMPTY'))=false;
+ RETURN QUERY EXECUTE 'select geometry,error_message,layer_name,landid,remarks,statusfixed
+  from topology_checks_error_log';
 
+END;
 
+$$;
 
 
+ALTER FUNCTION public.ins_toplology_error() OWNER TO postgres;
 
 
 
+CREATE FUNCTION update_area() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$BEGIN
 
+ IF Exists (select landid from la_spatialunit_land Where oldLandID=new.OLDLandID) THEN
+update la_spatialunit_land set Area=  round(cast((CAST(ST_Area(geometry) AS DOUBLE PRECISION)* CAST(111319 AS DOUBLE PRECISION)*
+ CAST(111319 AS DOUBLE PRECISION)*0.00024710538149159)as numeric),2)   Where oldLandID=new.OLDLandID and landid in(
+ select landid from la_spatialunit_land Where oldLandID=new.OLDLandID);
+  
+ 
+END IF;
 
 
 
+RETURN NEW;
+END;
+$$;
 
 
+ALTER FUNCTION public.update_area() OWNER TO postgres;
 
 
+CREATE FUNCTION updatearea() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+ 
+IF (select st_equals(new.geometry,old.geometry) FROM la_spatialunit_land where landid=new.landid) ='False' Then
+update la_spatialunit_land set Area=round(cast((CAST(ST_Area(geometry) AS DOUBLE PRECISION)* CAST(111319 AS DOUBLE PRECISION)*
+ CAST(111319 AS DOUBLE PRECISION)*0.00024710538149159)as numeric),2)   Where LandID=new.LandID;
 
+  END IF;
 
+ 
 
+RETURN NEW;
+END;
+$$;
 
 
+ALTER FUNCTION public.updatearea() OWNER TO postgres;
 
 
+CREATE FUNCTION updatearea_resourceland() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+ 
+IF (select st_equals(new.geometry,old.geometry) FROM la_spatialunit_resource_land where landid=new.landid) ='False' Then
+update la_spatialunit_resource_land set Area= 
+(CAST(ST_Area(geometry) AS DOUBLE PRECISION)* CAST(111319 AS DOUBLE PRECISION)*
+ CAST(111319 AS DOUBLE PRECISION)*0.00024710538149159)  Where LandID=new.LandID;
 
+  END IF;
 
+   
 
+RETURN NEW;
+END;
+$$;
 
 
+ALTER FUNCTION public.updatearea_resourceland() OWNER TO postgres;
 
 
+CREATE SEQUENCE error_log_seq
+    START WITH 1242
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE error_log_seq OWNER TO postgres;
 
+SET default_tablespace = '';
 
+SET default_with_oids = false;
 
 
+CREATE TABLE la_baunit_landsoilquality (
+    landsoilqualityid integer NOT NULL,
+    landsoilqualitytype character varying(50) NOT NULL,
+    landsoilqualitytype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_baunit_landsoilquality OWNER TO postgres;
 
 
+CREATE SEQUENCE la_baunit_landsoilquality_landsoilqualityid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_baunit_landsoilquality_landsoilqualityid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_baunit_landsoilquality_landsoilqualityid_seq OWNED BY la_baunit_landsoilquality.landsoilqualityid;
 
 
 
 
+CREATE TABLE la_baunit_landtype (
+    landtypeid integer NOT NULL,
+    landtype character varying(50) NOT NULL,
+    landtype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_baunit_landtype OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_baunit_landtype_landtypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_baunit_landtype_landtypeid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_baunit_landtype_landtypeid_seq OWNED BY la_baunit_landtype.landtypeid;
 
 
 
+CREATE TABLE la_baunit_landusetype (
+    landusetypeid integer NOT NULL,
+    landusetype character varying(50) NOT NULL,
+    landusetype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_baunit_landusetype OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_baunit_landusetype_landusetypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_baunit_landusetype_landusetypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_baunit_landusetype_landusetypeid_seq OWNED BY la_baunit_landusetype.landusetypeid;
 
 
 
+CREATE TABLE la_ext_applicationstatus (
+    applicationstatusid integer NOT NULL,
+    applicationstatus character varying(50) NOT NULL,
+    applicationstatus_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_applicationstatus OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_applicationstatus_applicationstatusid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_applicationstatus_applicationstatusid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_applicationstatus_applicationstatusid_seq OWNED BY la_ext_applicationstatus.applicationstatusid;
 
 
 
 
+CREATE TABLE la_ext_attribute (
+    attributeid integer NOT NULL,
+    attributevalue character varying(50) NOT NULL,
+    attributemasterid integer NOT NULL,
+    parentuid integer NOT NULL
+);
 
 
+ALTER TABLE la_ext_attribute OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_attribute_attributeid_seq
+    START WITH 300
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_attribute_attributeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_attribute_attributeid_seq OWNED BY la_ext_attribute.attributeid;
 
 
 
 
+CREATE TABLE la_ext_attributecategory (
+    attributecategoryid integer NOT NULL,
+    categoryname character varying(50) NOT NULL,
+    categorytypeid integer,
+    categorydisplayorder integer DEFAULT 1 NOT NULL
+);
 
 
+ALTER TABLE la_ext_attributecategory OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_attributecategory_attributecategoryid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_attributecategory_attributecategoryid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_attributecategory_attributecategoryid_seq OWNED BY la_ext_attributecategory.attributecategoryid;
 
 
 
 
+CREATE TABLE la_ext_attributedatatype (
+    datatypemasterid integer NOT NULL,
+    datatype character varying(20) NOT NULL
+);
 
 
+ALTER TABLE la_ext_attributedatatype OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_attributedatatype_datatypemasterid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_attributedatatype_datatypemasterid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_attributedatatype_datatypemasterid_seq OWNED BY la_ext_attributedatatype.datatypemasterid;
 
 
+CREATE TABLE la_ext_attributemaster (
+    attributemasterid integer NOT NULL,
+    fieldname character varying(50) NOT NULL,
+    fieldaliasname character varying(50),
+    datatypemasterid integer NOT NULL,
+    attributecategoryid integer,
+    referencetable character varying(50) NOT NULL,
+    size character varying(5) NOT NULL,
+    mandatory boolean,
+    listing character varying(5),
+    isactive boolean DEFAULT true NOT NULL,
+    masterattribute boolean DEFAULT true
+);
 
 
+ALTER TABLE la_ext_attributemaster OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_attributemaster_attributemasterid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_attributemaster_attributemasterid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_attributemaster_attributemasterid_seq OWNED BY la_ext_attributemaster.attributemasterid;
 
 
 
+CREATE TABLE la_ext_attributeoptions (
+    attributeoptionsid integer NOT NULL,
+    optiontext character varying(50),
+    attributemasterid integer NOT NULL,
+    parentid integer
+);
 
 
+ALTER TABLE la_ext_attributeoptions OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_attributeoptions_attributeoptionsid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_attributeoptions_attributeoptionsid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_attributeoptions_attributeoptionsid_seq OWNED BY la_ext_attributeoptions.attributeoptionsid;
 
 
 
+CREATE TABLE la_ext_baselayer (
+    baselayerid integer NOT NULL,
+    baselayer character varying(50) NOT NULL,
+    baselayer_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_baselayer OWNER TO postgres;
 
+CREATE SEQUENCE la_ext_baselayer_baselayerid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_baselayer_baselayerid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_baselayer_baselayerid_seq OWNED BY la_ext_baselayer.baselayerid;
 
 
+CREATE TABLE la_ext_bookmark (
+    bookmarkid integer NOT NULL,
+    bookmarkname character varying(100) NOT NULL,
+    projectnameid integer NOT NULL,
+    description character varying(100),
+    minx double precision NOT NULL,
+    miny double precision NOT NULL,
+    maxx double precision,
+    maxy double precision NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_bookmark OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_bookmark_bookmarkid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_bookmark_bookmarkid_seq OWNER TO postgres;
 
+ALTER SEQUENCE la_ext_bookmark_bookmarkid_seq OWNED BY la_ext_bookmark.bookmarkid;
 
 
 
 
+CREATE TABLE la_ext_categorytype (
+    categorytypeid integer NOT NULL,
+    typename character varying(100) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_categorytype OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_categorytype_categorytypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_categorytype_categorytypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_categorytype_categorytypeid_seq OWNED BY la_ext_categorytype.categorytypeid;
 
 
 
 
+CREATE SEQUENCE la_ext_customattributeoptionsid_seq
+    START WITH 100
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_customattributeoptionsid_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_customattributeoptions (
+    attributeoptionsid integer DEFAULT nextval('la_ext_customattributeoptionsid_seq'::regclass) NOT NULL,
+    optiontext character varying(50),
+    customattributeid integer NOT NULL,
+    parentid integer
+);
 
 
+ALTER TABLE la_ext_customattributeoptions OWNER TO postgres;
 
 
+CREATE TABLE la_ext_dispute (
+    disputeid integer NOT NULL,
+    landid bigint NOT NULL,
+    disputetypeid integer NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone,
+    comment character(500),
+    disputestatusid bigint
+);
 
 
+ALTER TABLE la_ext_dispute OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_dispute_seq
+    START WITH 3
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_dispute_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_disputelandmapping (
+    disputelandid integer NOT NULL,
+    partyid bigint,
+    landid integer NOT NULL,
+    persontypeid integer NOT NULL,
+    disputetypeid integer NOT NULL,
+    transactionid integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone,
+    comment character(500),
+    disputeid bigint
+);
 
 
+ALTER TABLE la_ext_disputelandmapping OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_disputelandmapping_disputelandid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_disputelandmapping_disputelandid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_disputelandmapping_disputelandid_seq OWNED BY la_ext_disputelandmapping.disputelandid;
 
 
 
 
+CREATE TABLE la_ext_disputestatus (
+    disputestatusid integer NOT NULL,
+    disputestatus character varying(50) NOT NULL,
+    disputestatus_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_disputestatus OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_disputestatus_disputestatusid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_disputestatus_disputestatusid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_disputestatus_disputestatusid_seq OWNED BY la_ext_disputestatus.disputestatusid;
 
 
 
 
+CREATE TABLE la_ext_disputetype (
+    disputetypeid integer NOT NULL,
+    disputetype character varying(50) NOT NULL,
+    disputetype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_disputetype OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_disputetype_disputetypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_disputetype_disputetypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_disputetype_disputetypeid_seq OWNED BY la_ext_disputetype.disputetypeid;
 
 
 
 
+CREATE TABLE la_ext_documentdetails (
+    documentid integer NOT NULL,
+    transactionid integer NOT NULL,
+    landid bigint NOT NULL,
+    partyid bigint,
+    documentformatid integer,
+    documentname character varying(50) NOT NULL,
+    documentlocation character varying(100) NOT NULL,
+    recordationdate date,
+    remarks character varying(250) NOT NULL,
+    documenttypeid integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_documentdetails OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_documentdetails_documentid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_documentdetails_documentid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_documentdetails_documentid_seq OWNED BY la_ext_documentdetails.documentid;
 
 
 
 
+CREATE TABLE la_ext_documentformat (
+    documentformatid integer NOT NULL,
+    documentformat character varying(50) NOT NULL,
+    documentformat_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_documentformat OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_documentformat_documentformatid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_documentformat_documentformatid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_documentformat_documentformatid_seq OWNED BY la_ext_documentformat.documentformatid;
 
 
 
+CREATE TABLE la_ext_documenttype (
+    documenttypeid integer NOT NULL,
+    documenttype character varying(50) NOT NULL,
+    documenttype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    processid integer
+);
 
 
+ALTER TABLE la_ext_documenttype OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_documenttype_documenttypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_documenttype_documenttypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_documenttype_documenttypeid_seq OWNED BY la_ext_documenttype.documenttypeid;
 
 
 
 
+CREATE TABLE la_ext_existingclaim_documentdetails (
+    claimdocumentid integer NOT NULL,
+    landid bigint NOT NULL,
+    documentrefno character varying(150) NOT NULL,
+    documentdate date,
+    documenttype character varying(50) NOT NULL,
+    plotno integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_existingclaim_documentdetails OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_existingclaim_documentid_seq
+    START WITH 300
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_existingclaim_documentid_seq OWNER TO postgres;
 
 
+CREATE TABLE la_ext_financialagency (
+    financialagencyid integer NOT NULL,
+    financialagency character varying(100) NOT NULL,
+    financialagency_en character varying(100) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_financialagency OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_financialagency_financialagencyid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_financialagency_financialagencyid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_financialagency_financialagencyid_seq OWNED BY la_ext_financialagency.financialagencyid;
 
 
+CREATE TABLE la_ext_geometrytype (
+    geometrytypeid integer NOT NULL,
+    geometryname character varying(20) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_geometrytype OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_geometrytype_geometryid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_geometrytype_geometryid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_geometrytype_geometryid_seq OWNED BY la_ext_geometrytype.geometrytypeid;
 
 
 
 
+CREATE TABLE la_ext_grouptype (
+    grouptypeid integer NOT NULL,
+    grouptype character varying(50) NOT NULL,
+    grouptype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_grouptype OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_grouptype_grouptypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_grouptype_grouptypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_grouptype_grouptypeid_seq OWNED BY la_ext_grouptype.grouptypeid;
 
 
+CREATE TABLE la_ext_landworkflowhistory (
+    landworkflowhistoryid integer NOT NULL,
+    landid bigint NOT NULL,
+    applicationstatusid integer NOT NULL,
+    userid integer NOT NULL,
+    statuschangedate date NOT NULL,
+    comments character varying(4000),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone,
+    workflowid integer
+);
 
 
+ALTER TABLE la_ext_landworkflowhistory OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_landworkflowhistory_landworkflowhistoryid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_landworkflowhistory_landworkflowhistoryid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_landworkflowhistory_landworkflowhistoryid_seq OWNED BY la_ext_landworkflowhistory.landworkflowhistoryid;
 
 
 
 
+CREATE TABLE la_ext_layer_layergroup (
+    layer_layergroupid integer NOT NULL,
+    layerid integer NOT NULL,
+    layergroupid integer NOT NULL,
+    layerorder integer NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_layer_layergroup OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_layer_layergroup_layer_layergroupid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_layer_layergroup_layer_layergroupid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_layer_layergroup_layer_layergroupid_seq OWNED BY la_ext_layer_layergroup.layer_layergroupid;
 
 
 
+CREATE TABLE la_ext_layerfield (
+    layerfieldid integer NOT NULL,
+    layerid integer NOT NULL,
+    layerfield character varying(255) NOT NULL,
+    layerfield_en character varying(255) NOT NULL,
+    keyfield character varying(50),
+    isactive boolean DEFAULT true NOT NULL,
+    alias character varying(255)
+);
 
 
+ALTER TABLE la_ext_layerfield OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_layerfield_layerfieldid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_layerfield_layerfieldid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_layerfield_layerfieldid_seq OWNED BY la_ext_layerfield.layerfieldid;
 
 
 
 
+CREATE TABLE la_ext_layergroup (
+    layergroupid integer NOT NULL,
+    layergroupname character varying(50) NOT NULL,
+    remarks character varying(250),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_layergroup OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_layergroup_layergroupid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_layergroup_layergroupid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_layergroup_layergroupid_seq OWNED BY la_ext_layergroup.layergroupid;
 
 
 
+CREATE TABLE la_ext_layertype (
+    layertypeid integer NOT NULL,
+    layertype character varying(50) NOT NULL,
+    layertype_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_layertype OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_layertype_layertypeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_layertype_layertypeid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_layertype_layertypeid_seq OWNED BY la_ext_layertype.layertypeid;
 
 
 
 
+CREATE TABLE la_ext_module (
+    moduleid integer NOT NULL,
+    modulename character varying(50) NOT NULL,
+    modulename_en character varying(50) NOT NULL,
+    description character varying(50),
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_module OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_module_moduleid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_module_moduleid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_module_moduleid_seq OWNED BY la_ext_module.moduleid;
 
 
 
 
+CREATE TABLE la_ext_month (
+    monthid integer NOT NULL,
+    month character varying(10) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_month OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_month_monthid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_month_monthid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_month_monthid_seq OWNED BY la_ext_month.monthid;
 
 
 
+CREATE SEQUENCE la_ext_parcelsplitland_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_parcelsplitland_seq OWNER TO postgres;
 
 
+CREATE TABLE la_ext_parcelsplitland (
+    parcelsplitid integer DEFAULT nextval('la_ext_parcelsplitland_seq'::regclass) NOT NULL,
+    landid bigint,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_parcelsplitland OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_personlandmapping (
+    personlandid integer NOT NULL,
+    partyid bigint NOT NULL,
+    landid bigint NOT NULL,
+    persontypeid integer NOT NULL,
+    transactionid integer NOT NULL,
+    certificateissuedate date,
+    certificateno character varying(50),
+    sharepercentage character varying(10),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_personlandmapping OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_personlandmapping_personlandid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_personlandmapping_personlandid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_personlandmapping_personlandid_seq OWNED BY la_ext_personlandmapping.personlandid;
 
 
 
+CREATE TABLE la_ext_process (
+    processid integer NOT NULL,
+    processname character varying(50),
+    processname_en character varying(50),
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_process OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_process_processid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_process_processid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_process_processid_seq OWNED BY la_ext_process.processid;
 
 
 
 
+CREATE TABLE la_ext_projectadjudicator (
+    projectadjudicatorid integer NOT NULL,
+    adjudicatorname character varying(100),
+    adjudicatorname_en character varying(100),
+    projectnameid integer NOT NULL,
+    signaturepath character varying(250),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projectadjudicator OWNER TO postgres;
 
+CREATE SEQUENCE la_ext_projectadjudicator_projectadjudicatorid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projectadjudicator_projectadjudicatorid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_projectadjudicator_projectadjudicatorid_seq OWNED BY la_ext_projectadjudicator.projectadjudicatorid;
 
 
 
+CREATE TABLE la_ext_projectarea (
+    projectareaid integer NOT NULL,
+    projectnameid integer NOT NULL,
+    spatialunitgroupid1 integer NOT NULL,
+    hierarchyid1 integer NOT NULL,
+    spatialunitgroupid2 integer NOT NULL,
+    hierarchyid2 integer NOT NULL,
+    spatialunitgroupid3 integer NOT NULL,
+    hierarchyid3 integer NOT NULL,
+    spatialunitgroupid4 integer,
+    hierarchyid4 integer,
+    spatialunitgroupid5 integer,
+    hierarchyid5 integer,
+    spatialunitgroupid6 integer,
+    hierarchyid6 integer,
+    initiationdate date,
+    description character varying(250),
+    vc_meetingdate date,
+    postalcode character varying(50),
+    authorizedmember character varying(50),
+    authorizedmembersignature character varying(550),
+    landofficer character varying(50),
+    landofficersignature character varying(550),
+    executiveofficer character varying(50),
+    executiveofficersignature character varying(550),
+    certificatenumber character varying(50),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projectarea OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_projectarea_projectareaid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projectarea_projectareaid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_projectarea_projectareaid_seq OWNED BY la_ext_projectarea.projectareaid;
 
 
 
+CREATE TABLE la_ext_projectbaselayermapping (
+    projectbaselayerid integer NOT NULL,
+    baselayerid integer NOT NULL,
+    projectnameid integer NOT NULL,
+    baselayerorder integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projectbaselayermapping OWNER TO postgres;
 
+CREATE SEQUENCE la_ext_projectbaselayermapping_projectbaselayerid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projectbaselayermapping_projectbaselayerid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_projectbaselayermapping_projectbaselayerid_seq OWNED BY la_ext_projectbaselayermapping.projectbaselayerid;
 
 
+CREATE TABLE la_ext_projectfile (
+    projectfileid integer NOT NULL,
+    projectfilename character varying(50) NOT NULL,
+    projectnameid integer NOT NULL,
+    filelocation character varying(250) NOT NULL,
+    documentformatid integer,
+    filesize integer,
+    description character varying(250),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projectfile OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_projectfile_projectfileid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projectfile_projectfileid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_projectfile_projectfileid_seq OWNED BY la_ext_projectfile.projectfileid;
 
 
 
+CREATE TABLE la_ext_projecthamlet (
+    projecthamletid integer NOT NULL,
+    hamletname character varying(100),
+    hamletname_en character varying(100),
+    projectnameid integer NOT NULL,
+    hamletcode character varying(10),
+    count integer,
+    hamletleadername character varying(500),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projecthamlet OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_projecthamlet_projecthamletid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projecthamlet_projecthamletid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_projecthamlet_projecthamletid_seq OWNED BY la_ext_projecthamlet.projecthamletid;
 
 
 
+CREATE TABLE la_ext_projection (
+    projectionid integer NOT NULL,
+    projection character varying(50) NOT NULL,
+    description character varying(50),
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_projection OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_projection_projectionid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projection_projectionid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_projection_projectionid_seq OWNED BY la_ext_projection.projectionid;
 
 
 
 
+CREATE TABLE la_ext_projectlayergroupmapping (
+    projectlayergroupid integer NOT NULL,
+    layergroupid integer NOT NULL,
+    projectnameid integer NOT NULL,
+    grouporder integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_projectlayergroupmapping OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_projectlayergroupmapping_projectlayergroupid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_projectlayergroupmapping_projectlayergroupid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_projectlayergroupmapping_projectlayergroupid_seq OWNED BY la_ext_projectlayergroupmapping.projectlayergroupid;
 
 
 
 
+CREATE SEQUENCE la_registrationsharetype_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_registrationsharetype_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_registrationsharetype (
+    registrationsharetypeid integer DEFAULT nextval('la_registrationsharetype_seq'::regclass) NOT NULL,
+    landid bigint,
+    landsharetypeid bigint,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_registrationsharetype OWNER TO postgres;
 
 
+CREATE TABLE la_ext_resource_custom_attribute (
+    customattributeid integer NOT NULL,
+    fieldname character varying(50) NOT NULL,
+    fieldaliasname character varying(50),
+    datatypemasterid integer NOT NULL,
+    attributecategoryid integer,
+    referencetable character varying(50) NOT NULL,
+    size character varying(5) NOT NULL,
+    mandatory boolean,
+    listing character varying(5),
+    isactive boolean DEFAULT true NOT NULL,
+    masterattribute boolean DEFAULT true,
+    subclassificationid integer,
+    projectid integer NOT NULL
+);
 
 
+ALTER TABLE la_ext_resource_custom_attribute OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_resource_custom_attribute_customattributeid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resource_custom_attribute_customattributeid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_resource_custom_attribute_customattributeid_seq OWNED BY la_ext_resource_custom_attribute.customattributeid;
 
 
 
 
+CREATE SEQUENCE la_ext_resourcecustomattributevalue_customattributevalueid_seq
+    START WITH 10
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourcecustomattributevalue_customattributevalueid_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resource_custom_attributevalue (
+    customattributevalueid integer DEFAULT nextval('la_ext_resourcecustomattributevalue_customattributevalueid_seq'::regclass) NOT NULL,
+    projectid integer NOT NULL,
+    landid integer NOT NULL,
+    customattributeid integer NOT NULL,
+    subclassificationid integer,
+    attributevalue character varying(1000) NOT NULL,
+    geomtype character varying(50) NOT NULL,
+    attributeoptionsid integer
+);
 
 
+ALTER TABLE la_ext_resource_custom_attributevalue OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resource_documentdetails (
+    documentid integer NOT NULL,
+    transactionid integer,
+    landid bigint,
+    partyid bigint,
+    documentformatid integer,
+    documentname character varying(50) NOT NULL,
+    documentlocation character varying(100),
+    recordationdate date,
+    remarks character varying(250) NOT NULL,
+    documenttypeid integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_resource_documentdetails OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_resource_documentdetails_documentid_seq
+    START WITH 300
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resource_documentdetails_documentid_seq OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_resourceattributevalue_attributevalueid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourceattributevalue_attributevalueid_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resourceattributevalue (
+    attributevalueid integer DEFAULT nextval('la_ext_resourceattributevalue_attributevalueid_seq'::regclass) NOT NULL,
+    projectid integer NOT NULL,
+    landid integer NOT NULL,
+    attributemasterid integer NOT NULL,
+    attributevalue character varying(1000) NOT NULL,
+    geomtype character varying(50) NOT NULL,
+    groupid integer DEFAULT 1 NOT NULL
+);
 
 
+ALTER TABLE la_ext_resourceattributevalue OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resourceclassification (
+    classificationid integer NOT NULL,
+    classificationname character varying(100) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_resourceclassification OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_resourceclassification_classificationid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourceclassification_classificationid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_resourceclassification_classificationid_seq OWNED BY la_ext_resourceclassification.classificationid;
 
 
+CREATE SEQUENCE la_ext_resourcelandclassificationmapping_landclassmappingid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourcelandclassificationmapping_landclassmappingid_seq OWNER TO postgres;
 
+CREATE TABLE la_ext_resourcelandclassificationmapping (
+    landclassmappingid integer DEFAULT nextval('la_ext_resourcelandclassificationmapping_landclassmappingid_seq'::regclass) NOT NULL,
+    projectid integer NOT NULL,
+    landid integer NOT NULL,
+    classificationid integer NOT NULL,
+    subclassificationid integer NOT NULL,
+    geomtype character varying(50) NOT NULL,
+    categoryid integer
+);
 
 
+ALTER TABLE la_ext_resourcelandclassificationmapping OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_resourcepoiattributemasterid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourcepoiattributemasterid_seq OWNER TO postgres;
 
 
+CREATE TABLE la_ext_resourcepoiattributemaster (
+    poiattributemasterid integer DEFAULT nextval('la_ext_resourcepoiattributemasterid_seq'::regclass) NOT NULL,
+    fieldname character varying(50) NOT NULL,
+    fieldaliasname character varying(50),
+    datatypemasterid integer NOT NULL,
+    attributecategoryid integer,
+    referencetable character varying(50) NOT NULL,
+    size character varying(5) NOT NULL,
+    mandatory boolean,
+    listing character varying(5),
+    isactive boolean DEFAULT true NOT NULL,
+    masterattribute boolean DEFAULT true
+);
 
 
+ALTER TABLE la_ext_resourcepoiattributemaster OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_resourcepoiattributevalue_attributevalueid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourcepoiattributevalue_attributevalueid_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resourcepoiattributevalue (
+    poiattributevalueid integer DEFAULT nextval('la_ext_resourcepoiattributevalue_attributevalueid_seq'::regclass) NOT NULL,
+    projectid integer NOT NULL,
+    landid integer NOT NULL,
+    attributemasterid integer NOT NULL,
+    attributevalue character varying(1000) NOT NULL,
+    geomtype character varying(50) NOT NULL,
+    groupid integer
+);
 
 
+ALTER TABLE la_ext_resourcepoiattributevalue OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_resourcesubclassification (
+    subclassificationid integer NOT NULL,
+    classificationid integer NOT NULL,
+    geometrytypeid integer NOT NULL,
+    subclassificationname character varying(100) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_resourcesubclassification OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_resourcesubclassification_subclassificationid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_resourcesubclassification_subclassificationid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_resourcesubclassification_subclassificationid_seq OWNED BY la_ext_resourcesubclassification.subclassificationid;
 
 
 
+CREATE TABLE la_ext_role (
+    roleid integer NOT NULL,
+    roletype character varying(30) NOT NULL,
+    roletype_en character varying(30) NOT NULL,
+    description character varying(50),
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_role OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_role_roleid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_role_roleid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_role_roleid_seq OWNED BY la_ext_role.roleid;
 
 
 
+CREATE TABLE la_ext_rolemodulemapping (
+    rolemoduleid integer NOT NULL,
+    roleid integer NOT NULL,
+    moduleid integer NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_rolemodulemapping OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_rolemodulemapping_rolemoduleid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_rolemodulemapping_rolemoduleid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_rolemodulemapping_rolemoduleid_seq OWNED BY la_ext_rolemodulemapping.rolemoduleid;
 
 
 
+CREATE TABLE la_ext_slopevalue (
+    slopevalueid integer NOT NULL,
+    slopevalue character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_slopevalue OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_slopevalue_slopevalueid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_slopevalue_slopevalueid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_slopevalue_slopevalueid_seq OWNED BY la_ext_slopevalue.slopevalueid;
 
 
+CREATE TABLE la_ext_spatialunit_personwithinterest (
+    id bigint NOT NULL,
+    landid bigint NOT NULL,
+    first_name character varying(200) NOT NULL,
+    middle_name character varying(50),
+    last_name character varying(50),
+    address character varying(200),
+    gender integer,
+    relation integer,
+    dob date,
+    projectnameid bigint,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone,
+    typeid bigint,
+    transactionid integer
+);
 
 
+ALTER TABLE la_ext_spatialunit_personwithinterest OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_spatialunit_personwithinterest_id_seq
+    START WITH 4
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_spatialunit_personwithinterest_id_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_surveyprojectattributes (
+    surveyprojectattributesid integer NOT NULL,
+    projectnameid integer NOT NULL,
+    attributemasterid integer NOT NULL,
+    attributecategoryid integer NOT NULL,
+    attributeorder integer DEFAULT 0 NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_surveyprojectattributes OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_surveyprojectattributes_surveyprojectattributesid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_surveyprojectattributes_surveyprojectattributesid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_surveyprojectattributes_surveyprojectattributesid_seq OWNED BY la_ext_surveyprojectattributes.surveyprojectattributesid;
 
 
 
+CREATE TABLE la_ext_transactiondetails (
+    transactionid integer NOT NULL,
+    processid integer,
+    applicationstatusid integer NOT NULL,
+    moduletransid integer,
+    remarks character varying(500),
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL
+);
 
 
+ALTER TABLE la_ext_transactiondetails OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_transactiondetails_transactionid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_transactiondetails_transactionid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_transactiondetails_transactionid_seq OWNED BY la_ext_transactiondetails.transactionid;
 
 
 
 
+CREATE SEQUENCE la_transactionhistory_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_transactionhistory_seq OWNER TO postgres;
 
 
 
+CREATE TABLE la_ext_transactionhistory (
+    transactionhistoryid integer DEFAULT nextval('la_transactionhistory_seq'::regclass) NOT NULL,
+    oldownerid character varying(100),
+    newownerid character varying(100),
+    landid bigint,
+    transactionid integer,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_transactionhistory OWNER TO postgres;
 
 
+CREATE TABLE la_ext_unit (
+    unitid integer NOT NULL,
+    unit character varying(50) NOT NULL,
+    unit_en character varying(50) NOT NULL,
+    isactive boolean DEFAULT true NOT NULL
+);
 
 
+ALTER TABLE la_ext_unit OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_unit_unitid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_unit_unitid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_unit_unitid_seq OWNED BY la_ext_unit.unitid;
 
 
 
+CREATE TABLE la_ext_user (
+    userid integer NOT NULL,
+    name character varying(100) NOT NULL,
+    managername character varying(100),
+    genderid integer NOT NULL,
+    username character varying(100) NOT NULL,
+    password character varying(100) NOT NULL,
+    authenticationkey character varying(250) NOT NULL,
+    emailid character varying(100) NOT NULL,
+    contactno character varying(15),
+    address character varying(100),
+    passwordexpires date,
+    lastactivitydate date,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone,
+    defaultproject character varying(25)
+);
 
 
+ALTER TABLE la_ext_user OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_user_userid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_user_userid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_user_userid_seq OWNED BY la_ext_user.userid;
 
 
 
+CREATE TABLE la_ext_userprojectmapping (
+    userprojectid integer NOT NULL,
+    userid integer NOT NULL,
+    projectnameid integer NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_userprojectmapping OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_userprojectmapping_userprojectid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_userprojectmapping_userprojectid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_userprojectmapping_userprojectid_seq OWNED BY la_ext_userprojectmapping.userprojectid;
 
 
 
+CREATE TABLE la_ext_userrolemapping (
+    userroleid integer NOT NULL,
+    userid integer NOT NULL,
+    roleid integer NOT NULL,
+    isactive boolean DEFAULT true NOT NULL,
+    createdby integer NOT NULL,
+    createddate timestamp without time zone NOT NULL,
+    modifiedby integer,
+    modifieddate timestamp without time zone
+);
 
 
+ALTER TABLE la_ext_userrolemapping OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_userrolemapping_userroleid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_userrolemapping_userroleid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_userrolemapping_userroleid_seq OWNED BY la_ext_userrolemapping.userroleid;
 
 
+CREATE TABLE la_ext_workflow (
+    workflowid integer NOT NULL,
+    workflow character varying(50),
+    workflow_en character varying(50),
+    workfloworder integer,
+    isactive boolean DEFAULT true,
+    workflowdefid integer
+);
 
 
+ALTER TABLE la_ext_workflow OWNER TO postgres;
 
 
 
+CREATE SEQUENCE la_ext_workflow_workflowid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_workflow_workflowid_seq OWNER TO postgres;
 
 
 
+ALTER SEQUENCE la_ext_workflow_workflowid_seq OWNED BY la_ext_workflow.workflowid;
 
 
 
 
+CREATE SEQUENCE la_ext_workflowactionmapping_workflowactionid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_workflowactionmapping_workflowactionid_seq OWNER TO postgres;
 
 
+CREATE TABLE la_ext_workflowactionmapping (
+    workflowactionid integer DEFAULT nextval('la_ext_workflowactionmapping_workflowactionid_seq'::regclass) NOT NULL,
+    actionname character varying(200),
+    actionname_en character varying(200),
+    roleid integer,
+    workflowid integer,
+    worder integer,
+    isactive boolean,
+    action character(50)
+);
 
 
+ALTER TABLE la_ext_workflowactionmapping OWNER TO postgres;
 
 
+CREATE TABLE la_ext_workflowdef (
+    workflowdefid integer NOT NULL,
+    name character varying(50),
+    type integer
+);
 
 
+ALTER TABLE la_ext_workflowdef OWNER TO postgres;
 
 
+CREATE SEQUENCE la_ext_workflowdef_workflowdefid_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
+ALTER TABLE la_ext_workflowdef_workflowdefid_seq OWNER TO postgres;
 
 
+ALTER SEQUENCE la_ext_workflowdef_workflowdefid_seq OWNED BY la_ext_workflowdef.workflowdefid;
 
 
 
+CREATE TABLE la_layer (
+    name character varying(255) NOT NULL,
+    alias character varying(255) NOT NULL,
+    projection character varying(255) NOT NULL,
+    unit character varying(255),
+    maxextent character varying(255) NOT NULL,
+    minextent character varying(255),
+    maxresolution integer,
+    minresolution integer,
+    numzoomlevels integer,
+    minscale integer,
+    maxscale integer,
+    transitioneffect character varying(255),
+    type character varying(255) NOT NULL,
+    style text,
+    filter character varying(255),
+    url character varying(255) NOT NULL,
+    tilesize integer,
+    buffer integer,
+    format character varying(255),
+    apikey character varying(255),
+    version character varying(255),
+    featurens character varying(255),
+    featuretype character varying(255),
+    geometryname character varying(255),
+    schemaname character varying(255),
+    geomtype character varying(255),
+    wfsname character varying(255),
+    displayname character varying(255),
+    tenantid character varying(50),
+    isbaselayer boolean DEFAULT false,
+    displayinlayermanager boolean DEFAULT false,
+    displayoutsidemaxextent boolean DEFAULT false,
+    wrapdateline boolean DEFAULT false,
+    sphericalmercator boolean DEFAULT false,
+    editable boolean DEFAULT false,
+    queryable boolean DEFAULT false,
+    exportable boolean DEFAULT false,
+    selectable boolean DEFAULT false,
+    tiled boolean DEFAULT true,
+    visibility boolean DEFAULT true
+);
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ALTER TABLE la_layer OWNER TO postgres;
 
 
 
@@ -1661,6 +2208,8 @@ ALTER TABLE la_lease_leaseid_seq OWNER TO postgres;
 ALTER SEQUENCE la_lease_leaseid_seq OWNED BY la_lease.leaseid;
 
 
+
+
 CREATE TABLE la_mortgage (
     mortgageid integer NOT NULL,
     financialagencyid integer NOT NULL,
@@ -1679,6 +2228,8 @@ CREATE TABLE la_mortgage (
 
 ALTER TABLE la_mortgage OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_mortgage_mortgageid_seq
     START WITH 1
     INCREMENT BY 1
@@ -1692,6 +2243,8 @@ ALTER TABLE la_mortgage_mortgageid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_mortgage_mortgageid_seq OWNED BY la_mortgage.mortgageid;
 
+
+
 CREATE TABLE la_party (
     partyid bigint NOT NULL,
     persontypeid integer,
@@ -1701,6 +2254,8 @@ CREATE TABLE la_party (
 
 
 ALTER TABLE la_party OWNER TO postgres;
+
+
 
 CREATE TABLE la_party_deceasedperson (
     partyid bigint NOT NULL,
@@ -1769,6 +2324,8 @@ ALTER TABLE la_party_partyid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_party_partyid_seq OWNED BY la_party.partyid;
+
+
 
 CREATE TABLE la_party_person (
     personid bigint NOT NULL,
@@ -1848,6 +2405,8 @@ CREATE TABLE la_partygroup_educationlevel (
 
 ALTER TABLE la_partygroup_educationlevel OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_partygroup_educationlevel_educationlevelid_seq
     START WITH 1
     INCREMENT BY 1
@@ -1857,6 +2416,8 @@ CREATE SEQUENCE la_partygroup_educationlevel_educationlevelid_seq
 
 
 ALTER TABLE la_partygroup_educationlevel_educationlevelid_seq OWNER TO postgres;
+
+
 
 ALTER SEQUENCE la_partygroup_educationlevel_educationlevelid_seq OWNED BY la_partygroup_educationlevel.educationlevelid;
 
@@ -1892,6 +2453,8 @@ CREATE TABLE la_partygroup_gender (
 
 ALTER TABLE la_partygroup_gender OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_partygroup_gender_genderid_seq
     START WITH 1
     INCREMENT BY 1
@@ -1902,7 +2465,11 @@ CREATE SEQUENCE la_partygroup_gender_genderid_seq
 
 ALTER TABLE la_partygroup_gender_genderid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_partygroup_gender_genderid_seq OWNED BY la_partygroup_gender.genderid;
+
+
 
 CREATE TABLE la_partygroup_identitytype (
     identitytypeid integer NOT NULL,
@@ -1928,6 +2495,8 @@ ALTER TABLE la_partygroup_identitytype_identitytypeid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_partygroup_identitytype_identitytypeid_seq OWNED BY la_partygroup_identitytype.identitytypeid;
 
+
+
 CREATE TABLE la_partygroup_maritalstatus (
     maritalstatusid integer NOT NULL,
     maritalstatus character varying(50) NOT NULL,
@@ -1952,6 +2521,8 @@ ALTER TABLE la_partygroup_maritalstatus_maritalstatusid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_partygroup_maritalstatus_maritalstatusid_seq OWNED BY la_partygroup_maritalstatus.maritalstatusid;
 
+
+
 CREATE TABLE la_partygroup_occupation (
     occupationid integer NOT NULL,
     occupation character varying(50) NOT NULL,
@@ -1961,6 +2532,8 @@ CREATE TABLE la_partygroup_occupation (
 
 
 ALTER TABLE la_partygroup_occupation OWNER TO postgres;
+
+
 
 CREATE SEQUENCE la_partygroup_occupation_occupationid_seq
     START WITH 1
@@ -1972,7 +2545,11 @@ CREATE SEQUENCE la_partygroup_occupation_occupationid_seq
 
 ALTER TABLE la_partygroup_occupation_occupationid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_partygroup_occupation_occupationid_seq OWNED BY la_partygroup_occupation.occupationid;
+
+
 
 
 CREATE TABLE la_partygroup_persontype (
@@ -2000,6 +2577,8 @@ ALTER TABLE la_partygroup_persontype_persontypeid_seq OWNER TO postgres;
 ALTER SEQUENCE la_partygroup_persontype_persontypeid_seq OWNED BY la_partygroup_persontype.persontypeid;
 
 
+
+
 CREATE TABLE la_partygroup_relationshiptype (
     relationshiptypeid integer NOT NULL,
     relationshiptype character varying(50) NOT NULL,
@@ -2009,6 +2588,8 @@ CREATE TABLE la_partygroup_relationshiptype (
 
 
 ALTER TABLE la_partygroup_relationshiptype OWNER TO postgres;
+
+
 
 CREATE SEQUENCE la_partygroup_relationshiptype_relationshiptypeid_seq
     START WITH 1
@@ -2020,7 +2601,11 @@ CREATE SEQUENCE la_partygroup_relationshiptype_relationshiptypeid_seq
 
 ALTER TABLE la_partygroup_relationshiptype_relationshiptypeid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_partygroup_relationshiptype_relationshiptypeid_seq OWNED BY la_partygroup_relationshiptype.relationshiptypeid;
+
+
 
 
 CREATE SEQUENCE la_partygroup_resident_residentid_seq
@@ -2069,6 +2654,8 @@ ALTER TABLE la_right_acquisitiontype_acquisitiontypeid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_right_acquisitiontype_acquisitiontypeid_seq OWNED BY la_right_acquisitiontype.acquisitiontypeid;
 
+
+
 CREATE TABLE la_right_claimtype (
     claimtypeid integer NOT NULL,
     claimtype character varying(50) NOT NULL,
@@ -2078,6 +2665,8 @@ CREATE TABLE la_right_claimtype (
 
 
 ALTER TABLE la_right_claimtype OWNER TO postgres;
+
+
 
 CREATE SEQUENCE la_right_claimtype_claimtypeid_seq
     START WITH 1
@@ -2089,7 +2678,11 @@ CREATE SEQUENCE la_right_claimtype_claimtypeid_seq
 
 ALTER TABLE la_right_claimtype_claimtypeid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_right_claimtype_claimtypeid_seq OWNED BY la_right_claimtype.claimtypeid;
+
+
 
 CREATE TABLE la_right_landsharetype (
     landsharetypeid integer NOT NULL,
@@ -2115,6 +2708,8 @@ ALTER TABLE la_right_landsharetype_landsharetypeid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_right_landsharetype_landsharetypeid_seq OWNED BY la_right_landsharetype.landsharetypeid;
 
+
+
 CREATE TABLE la_right_tenureclass (
     tenureclassid integer NOT NULL,
     tenureclass character varying(50) NOT NULL,
@@ -2139,6 +2734,8 @@ ALTER TABLE la_right_tenureclass_tenureclassid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_right_tenureclass_tenureclassid_seq OWNED BY la_right_tenureclass.tenureclassid;
 
+
+
 CREATE TABLE la_rrr (
     rrrid integer NOT NULL,
     rrrtype character varying(50) NOT NULL,
@@ -2147,6 +2744,8 @@ CREATE TABLE la_rrr (
 
 
 ALTER TABLE la_rrr OWNER TO postgres;
+
+
 
 CREATE SEQUENCE la_rrr_rrrid_seq
     START WITH 1
@@ -2158,7 +2757,11 @@ CREATE SEQUENCE la_rrr_rrrid_seq
 
 ALTER TABLE la_rrr_rrrid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_rrr_rrrid_seq OWNED BY la_rrr.rrrid;
+
+
 
 
 CREATE TABLE la_spatialsource_layer (
@@ -2201,6 +2804,8 @@ CREATE TABLE la_spatialsource_layer (
 
 ALTER TABLE la_spatialsource_layer OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_spatialsource_layer_layerid_seq
     START WITH 1
     INCREMENT BY 1
@@ -2211,7 +2816,11 @@ CREATE SEQUENCE la_spatialsource_layer_layerid_seq
 
 ALTER TABLE la_spatialsource_layer_layerid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_spatialsource_layer_layerid_seq OWNED BY la_spatialsource_layer.layerid;
+
+
 
 CREATE TABLE la_spatialsource_projectname (
     projectnameid integer NOT NULL,
@@ -2238,6 +2847,8 @@ CREATE TABLE la_spatialsource_projectname (
 
 
 ALTER TABLE la_spatialsource_projectname OWNER TO postgres;
+
+
 
 CREATE SEQUENCE la_spatialsource_projectname_projectnameid_seq
     START WITH 1
@@ -2283,6 +2894,8 @@ CREATE TABLE la_spatialunit_aoi (
 
 ALTER TABLE la_spatialunit_aoi OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_spatialunit_aoi_id_seq1
     START WITH 5
     INCREMENT BY 1
@@ -2302,6 +2915,8 @@ CREATE SEQUENCE la_spatialunit_aoiid_seq
 
 
 ALTER TABLE la_spatialunit_aoiid_seq OWNER TO postgres;
+
+
 
 CREATE TABLE la_spatialunit_land (
     geometry geometry(Polygon,4326),
@@ -2381,6 +2996,8 @@ CREATE SEQUENCE la_spatialunit_resource_land_landid_seq
 
 ALTER TABLE la_spatialunit_resource_land_landid_seq OWNER TO postgres;
 
+
+
 CREATE TABLE la_spatialunit_resource_land (
     geometry geometry(Polygon,4326),
     ogc_fid bigint,
@@ -2427,6 +3044,8 @@ CREATE TABLE la_spatialunit_resource_land (
 
 
 ALTER TABLE la_spatialunit_resource_land OWNER TO postgres;
+
+
 
 CREATE TABLE la_spatialunit_resource_line (
     geometry geometry(LineString,4326),
@@ -2523,6 +3142,8 @@ CREATE TABLE la_spatialunit_resource_point (
 
 ALTER TABLE la_spatialunit_resource_point OWNER TO postgres;
 
+
+
 CREATE TABLE la_spatialunitgroup (
     spatialunitgroupid integer NOT NULL,
     hierarchy character varying(50) NOT NULL,
@@ -2547,6 +3168,8 @@ CREATE TABLE la_spatialunitgroup_hierarchy (
 
 ALTER TABLE la_spatialunitgroup_hierarchy OWNER TO postgres;
 
+
+
 CREATE SEQUENCE la_spatialunitgroup_hierarchy_hierarchyid_seq
     START WITH 1
     INCREMENT BY 1
@@ -2557,7 +3180,11 @@ CREATE SEQUENCE la_spatialunitgroup_hierarchy_hierarchyid_seq
 
 ALTER TABLE la_spatialunitgroup_hierarchy_hierarchyid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_spatialunitgroup_hierarchy_hierarchyid_seq OWNED BY la_spatialunitgroup_hierarchy.hierarchyid;
+
+
 
 
 CREATE SEQUENCE la_spatialunitgroup_spatialunitgroupid_seq
@@ -2570,7 +3197,11 @@ CREATE SEQUENCE la_spatialunitgroup_spatialunitgroupid_seq
 
 ALTER TABLE la_spatialunitgroup_spatialunitgroupid_seq OWNER TO postgres;
 
+
+
 ALTER SEQUENCE la_spatialunitgroup_spatialunitgroupid_seq OWNED BY la_spatialunitgroup.spatialunitgroupid;
+
+
 
 CREATE SEQUENCE la_surrenderlease_leaseid_seq
     START WITH 35
@@ -2581,6 +3212,8 @@ CREATE SEQUENCE la_surrenderlease_leaseid_seq
 
 
 ALTER TABLE la_surrenderlease_leaseid_seq OWNER TO postgres;
+
+
 
 CREATE TABLE la_surrenderlease (
     leaseid integer DEFAULT nextval('la_surrenderlease_leaseid_seq'::regclass) NOT NULL,
@@ -2602,6 +3235,8 @@ CREATE TABLE la_surrenderlease (
 
 
 ALTER TABLE la_surrenderlease OWNER TO postgres;
+
+
 
 CREATE TABLE la_surrendermortgage (
     mortgageid integer NOT NULL,
@@ -2631,6 +3266,8 @@ CREATE SEQUENCE la_surrendermortgage_mortgageid_seq
 
 
 ALTER TABLE la_surrendermortgage_mortgageid_seq OWNER TO lts;
+
+
 
 CREATE VIEW media_attributes AS
  SELECT DISTINCT spa.surveyprojectattributesid,
@@ -2663,6 +3300,8 @@ CREATE VIEW natural_person_attributes AS
 
 ALTER TABLE natural_person_attributes OWNER TO postgres;
 
+
+
 CREATE VIEW nonnatural_person_attributes AS
  SELECT DISTINCT spa.surveyprojectattributesid,
     a.parentuid,
@@ -2677,6 +3316,8 @@ CREATE VIEW nonnatural_person_attributes AS
 
 
 ALTER TABLE nonnatural_person_attributes OWNER TO postgres;
+
+
 
 CREATE VIEW right_attributes AS
  SELECT DISTINCT spa.surveyprojectattributesid,
@@ -2693,6 +3334,8 @@ CREATE VIEW right_attributes AS
 
 ALTER TABLE right_attributes OWNER TO postgres;
 
+
+
 CREATE VIEW spatial_unit_attributes AS
  SELECT DISTINCT spa.surveyprojectattributesid,
     a.parentuid,
@@ -2707,6 +3350,8 @@ CREATE VIEW spatial_unit_attributes AS
 
 
 ALTER TABLE spatial_unit_attributes OWNER TO postgres;
+
+
 
 CREATE TABLE topology_checks_error_log (
     id integer DEFAULT nextval('error_log_seq'::regclass) NOT NULL,
@@ -2723,6 +3368,8 @@ CREATE TABLE topology_checks_error_log (
 
 ALTER TABLE topology_checks_error_log OWNER TO postgres;
 
+
+
 CREATE TABLE vertexlabel (
     gid integer NOT NULL,
     the_geom geometry(Geometry,4326) NOT NULL
@@ -2736,14 +3383,24 @@ ALTER TABLE ONLY la_baunit_landsoilquality ALTER COLUMN landsoilqualityid SET DE
 
 ALTER TABLE ONLY la_baunit_landtype ALTER COLUMN landtypeid SET DEFAULT nextval('la_baunit_landtype_landtypeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_baunit_landusetype ALTER COLUMN landusetypeid SET DEFAULT nextval('la_baunit_landusetype_landusetypeid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_applicationstatus ALTER COLUMN applicationstatusid SET DEFAULT nextval('la_ext_applicationstatus_applicationstatusid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_attribute ALTER COLUMN attributeid SET DEFAULT nextval('la_ext_attribute_attributeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_attributecategory ALTER COLUMN attributecategoryid SET DEFAULT nextval('la_ext_attributecategory_attributecategoryid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_attributedatatype ALTER COLUMN datatypemasterid SET DEFAULT nextval('la_ext_attributedatatype_datatypemasterid_seq'::regclass);
 
@@ -2751,55 +3408,93 @@ ALTER TABLE ONLY la_ext_attributedatatype ALTER COLUMN datatypemasterid SET DEFA
 ALTER TABLE ONLY la_ext_attributemaster ALTER COLUMN attributemasterid SET DEFAULT nextval('la_ext_attributemaster_attributemasterid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_attributeoptions ALTER COLUMN attributeoptionsid SET DEFAULT nextval('la_ext_attributeoptions_attributeoptionsid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_baselayer ALTER COLUMN baselayerid SET DEFAULT nextval('la_ext_baselayer_baselayerid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_bookmark ALTER COLUMN bookmarkid SET DEFAULT nextval('la_ext_bookmark_bookmarkid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_categorytype ALTER COLUMN categorytypeid SET DEFAULT nextval('la_ext_categorytype_categorytypeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_disputelandmapping ALTER COLUMN disputelandid SET DEFAULT nextval('la_ext_disputelandmapping_disputelandid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_disputestatus ALTER COLUMN disputestatusid SET DEFAULT nextval('la_ext_disputestatus_disputestatusid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_disputetype ALTER COLUMN disputetypeid SET DEFAULT nextval('la_ext_disputetype_disputetypeid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_documentdetails ALTER COLUMN documentid SET DEFAULT nextval('la_ext_documentdetails_documentid_seq'::regclass);
 
 
 ALTER TABLE ONLY la_ext_documentformat ALTER COLUMN documentformatid SET DEFAULT nextval('la_ext_documentformat_documentformatid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_documenttype ALTER COLUMN documenttypeid SET DEFAULT nextval('la_ext_documenttype_documenttypeid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_financialagency ALTER COLUMN financialagencyid SET DEFAULT nextval('la_ext_financialagency_financialagencyid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_geometrytype ALTER COLUMN geometrytypeid SET DEFAULT nextval('la_ext_geometrytype_geometryid_seq'::regclass);
 
 
 ALTER TABLE ONLY la_ext_grouptype ALTER COLUMN grouptypeid SET DEFAULT nextval('la_ext_grouptype_grouptypeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_landworkflowhistory ALTER COLUMN landworkflowhistoryid SET DEFAULT nextval('la_ext_landworkflowhistory_landworkflowhistoryid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_layer_layergroup ALTER COLUMN layer_layergroupid SET DEFAULT nextval('la_ext_layer_layergroup_layer_layergroupid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_layerfield ALTER COLUMN layerfieldid SET DEFAULT nextval('la_ext_layerfield_layerfieldid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_layergroup ALTER COLUMN layergroupid SET DEFAULT nextval('la_ext_layergroup_layergroupid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_layertype ALTER COLUMN layertypeid SET DEFAULT nextval('la_ext_layertype_layertypeid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_module ALTER COLUMN moduleid SET DEFAULT nextval('la_ext_module_moduleid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_month ALTER COLUMN monthid SET DEFAULT nextval('la_ext_month_monthid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_personlandmapping ALTER COLUMN personlandid SET DEFAULT nextval('la_ext_personlandmapping_personlandid_seq'::regclass);
@@ -2808,15 +3503,23 @@ ALTER TABLE ONLY la_ext_personlandmapping ALTER COLUMN personlandid SET DEFAULT 
 ALTER TABLE ONLY la_ext_process ALTER COLUMN processid SET DEFAULT nextval('la_ext_process_processid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectadjudicator ALTER COLUMN projectadjudicatorid SET DEFAULT nextval('la_ext_projectadjudicator_projectadjudicatorid_seq'::regclass);
 
 
 ALTER TABLE ONLY la_ext_projectarea ALTER COLUMN projectareaid SET DEFAULT nextval('la_ext_projectarea_projectareaid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_projectbaselayermapping ALTER COLUMN projectbaselayerid SET DEFAULT nextval('la_ext_projectbaselayermapping_projectbaselayerid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectfile ALTER COLUMN projectfileid SET DEFAULT nextval('la_ext_projectfile_projectfileid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_projecthamlet ALTER COLUMN projecthamletid SET DEFAULT nextval('la_ext_projecthamlet_projecthamletid_seq'::regclass);
 
@@ -2824,18 +3527,30 @@ ALTER TABLE ONLY la_ext_projecthamlet ALTER COLUMN projecthamletid SET DEFAULT n
 ALTER TABLE ONLY la_ext_projection ALTER COLUMN projectionid SET DEFAULT nextval('la_ext_projection_projectionid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectlayergroupmapping ALTER COLUMN projectlayergroupid SET DEFAULT nextval('la_ext_projectlayergroupmapping_projectlayergroupid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_resource_custom_attribute ALTER COLUMN customattributeid SET DEFAULT nextval('la_ext_resource_custom_attribute_customattributeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_resourceclassification ALTER COLUMN classificationid SET DEFAULT nextval('la_ext_resourceclassification_classificationid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_resourcesubclassification ALTER COLUMN subclassificationid SET DEFAULT nextval('la_ext_resourcesubclassification_subclassificationid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_role ALTER COLUMN roleid SET DEFAULT nextval('la_ext_role_roleid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_rolemodulemapping ALTER COLUMN rolemoduleid SET DEFAULT nextval('la_ext_rolemodulemapping_rolemoduleid_seq'::regclass);
 
@@ -2843,10 +3558,16 @@ ALTER TABLE ONLY la_ext_rolemodulemapping ALTER COLUMN rolemoduleid SET DEFAULT 
 ALTER TABLE ONLY la_ext_slopevalue ALTER COLUMN slopevalueid SET DEFAULT nextval('la_ext_slopevalue_slopevalueid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_surveyprojectattributes ALTER COLUMN surveyprojectattributesid SET DEFAULT nextval('la_ext_surveyprojectattributes_surveyprojectattributesid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_transactiondetails ALTER COLUMN transactionid SET DEFAULT nextval('la_ext_transactiondetails_transactionid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_ext_unit ALTER COLUMN unitid SET DEFAULT nextval('la_ext_unit_unitid_seq'::regclass);
@@ -2855,9 +3576,15 @@ ALTER TABLE ONLY la_ext_unit ALTER COLUMN unitid SET DEFAULT nextval('la_ext_uni
 ALTER TABLE ONLY la_ext_user ALTER COLUMN userid SET DEFAULT nextval('la_ext_user_userid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_ext_userprojectmapping ALTER COLUMN userprojectid SET DEFAULT nextval('la_ext_userprojectmapping_userprojectid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_ext_userrolemapping ALTER COLUMN userroleid SET DEFAULT nextval('la_ext_userrolemapping_userroleid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_ext_workflow ALTER COLUMN workflowid SET DEFAULT nextval('la_ext_workflow_workflowid_seq'::regclass);
 
@@ -2865,32 +3592,56 @@ ALTER TABLE ONLY la_ext_workflow ALTER COLUMN workflowid SET DEFAULT nextval('la
 ALTER TABLE ONLY la_ext_workflowdef ALTER COLUMN workflowdefid SET DEFAULT nextval('la_ext_workflowdef_workflowdefid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_lease ALTER COLUMN leaseid SET DEFAULT nextval('la_lease_leaseid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_mortgage ALTER COLUMN mortgageid SET DEFAULT nextval('la_mortgage_mortgageid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_party ALTER COLUMN partyid SET DEFAULT nextval('la_party_partyid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_partygroup_educationlevel ALTER COLUMN educationlevelid SET DEFAULT nextval('la_partygroup_educationlevel_educationlevelid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_partygroup_gender ALTER COLUMN genderid SET DEFAULT nextval('la_partygroup_gender_genderid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_partygroup_identitytype ALTER COLUMN identitytypeid SET DEFAULT nextval('la_partygroup_identitytype_identitytypeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_partygroup_maritalstatus ALTER COLUMN maritalstatusid SET DEFAULT nextval('la_partygroup_maritalstatus_maritalstatusid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_partygroup_occupation ALTER COLUMN occupationid SET DEFAULT nextval('la_partygroup_occupation_occupationid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_partygroup_persontype ALTER COLUMN persontypeid SET DEFAULT nextval('la_partygroup_persontype_persontypeid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_partygroup_relationshiptype ALTER COLUMN relationshiptypeid SET DEFAULT nextval('la_partygroup_relationshiptype_relationshiptypeid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_right_acquisitiontype ALTER COLUMN acquisitiontypeid SET DEFAULT nextval('la_right_acquisitiontype_acquisitiontypeid_seq'::regclass);
+
+
 
 
 ALTER TABLE ONLY la_right_claimtype ALTER COLUMN claimtypeid SET DEFAULT nextval('la_right_claimtype_claimtypeid_seq'::regclass);
@@ -2902,18 +3653,32 @@ ALTER TABLE ONLY la_right_landsharetype ALTER COLUMN landsharetypeid SET DEFAULT
 ALTER TABLE ONLY la_right_tenureclass ALTER COLUMN tenureclassid SET DEFAULT nextval('la_right_tenureclass_tenureclassid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_rrr ALTER COLUMN rrrid SET DEFAULT nextval('la_rrr_rrrid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_spatialsource_layer ALTER COLUMN layerid SET DEFAULT nextval('la_spatialsource_layer_layerid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_spatialsource_projectname ALTER COLUMN projectnameid SET DEFAULT nextval('la_spatialsource_projectname_projectnameid_seq'::regclass);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land ALTER COLUMN landid SET DEFAULT nextval('la_spatialunit_land_landid_seq'::regclass);
+
+
 
 ALTER TABLE ONLY la_spatialunitgroup ALTER COLUMN spatialunitgroupid SET DEFAULT nextval('la_spatialunitgroup_spatialunitgroupid_seq'::regclass);
 
+
+
 ALTER TABLE ONLY la_spatialunitgroup_hierarchy ALTER COLUMN hierarchyid SET DEFAULT nextval('la_spatialunitgroup_hierarchy_hierarchyid_seq'::regclass);
+
+
 
 
 SELECT pg_catalog.setval('error_log_seq', 3373, true);
@@ -2925,7 +3690,11 @@ INSERT INTO la_baunit_landsoilquality (landsoilqualityid, landsoilqualitytype, l
 INSERT INTO la_baunit_landsoilquality (landsoilqualityid, landsoilqualitytype, landsoilqualitytype_en, isactive) VALUES (4, 'Very poor', 'Very poor', true);
 
 
+
+
 SELECT pg_catalog.setval('la_baunit_landsoilquality_landsoilqualityid_seq', 4, true);
+
+
 
 INSERT INTO la_baunit_landtype (landtypeid, landtype, landtype_en, isactive) VALUES (1, 'Flat/Plain', 'Flat/Plain', true);
 INSERT INTO la_baunit_landtype (landtypeid, landtype, landtype_en, isactive) VALUES (2, 'Sloping', 'Sloping', true);
@@ -2933,7 +3702,11 @@ INSERT INTO la_baunit_landtype (landtypeid, landtype, landtype_en, isactive) VAL
 INSERT INTO la_baunit_landtype (landtypeid, landtype, landtype_en, isactive) VALUES (4, 'Valley', 'Valley', true);
 INSERT INTO la_baunit_landtype (landtypeid, landtype, landtype_en, isactive) VALUES (9999, 'Dummy', 'Dummy', false);
 
+
+
 SELECT pg_catalog.setval('la_baunit_landtype_landtypeid_seq', 4, true);
+
+
 
 
 INSERT INTO la_baunit_landusetype (landusetypeid, landusetype, landusetype_en, isactive) VALUES (1, 'Agriculture', 'Agriculture', true);
@@ -2953,6 +3726,8 @@ INSERT INTO la_baunit_landusetype (landusetypeid, landusetype, landusetype_en, i
 INSERT INTO la_baunit_landusetype (landusetypeid, landusetype, landusetype_en, isactive) VALUES (12, 'Minning', 'Minning', true);
 
 
+
+
 SELECT pg_catalog.setval('la_baunit_landusetype_landusetypeid_seq', 14, true);
 
 
@@ -2962,7 +3737,13 @@ INSERT INTO la_ext_applicationstatus (applicationstatusid, applicationstatus, ap
 INSERT INTO la_ext_applicationstatus (applicationstatusid, applicationstatus, applicationstatus_en, isactive) VALUES (4, 'Pending', 'Pending', true);
 INSERT INTO la_ext_applicationstatus (applicationstatusid, applicationstatus, applicationstatus_en, isactive) VALUES (5, 'Registered', 'Registered', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_applicationstatus_applicationstatusid_seq', 5, true);
+
+
+
+
 
 
 SELECT pg_catalog.setval('la_ext_attribute_attributeid_seq', 1, true);
@@ -2987,7 +3768,11 @@ INSERT INTO la_ext_attributecategory (attributecategoryid, categoryname, categor
 INSERT INTO la_ext_attributecategory (attributecategoryid, categoryname, categorytypeid, categorydisplayorder) VALUES (13, 'Public', 2, 8);
 INSERT INTO la_ext_attributecategory (attributecategoryid, categoryname, categorytypeid, categorydisplayorder) VALUES (15, 'Other', 2, 9);
 
+
+
 SELECT pg_catalog.setval('la_ext_attributecategory_attributecategoryid_seq', 19, true);
+
+
 
 
 INSERT INTO la_ext_attributedatatype (datatypemasterid, datatype) VALUES (1, 'String');
@@ -2997,7 +3782,11 @@ INSERT INTO la_ext_attributedatatype (datatypemasterid, datatype) VALUES (4, 'Nu
 INSERT INTO la_ext_attributedatatype (datatypemasterid, datatype) VALUES (5, 'Dropdown');
 INSERT INTO la_ext_attributedatatype (datatypemasterid, datatype) VALUES (6, 'Multiselect');
 
+
+
 SELECT pg_catalog.setval('la_ext_attributedatatype_datatypemasterid_seq', 7, false);
+
+
 
 INSERT INTO la_ext_attributemaster (attributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (1011, 'private', 'private', 1, 10, 'custom', '100', true, '1', true, false);
 INSERT INTO la_ext_attributemaster (attributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (1012, 'common', 'common', 1, 11, 'custom', '100', true, '1', true, false);
@@ -3179,7 +3968,11 @@ INSERT INTO la_ext_attributemaster (attributemasterid, fieldname, fieldaliasname
 INSERT INTO la_ext_attributemaster (attributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (1106, 'Agency Name', 'Agency Name ', 1, 13, 'la_ext_resourceattributevalue', '', true, '2', true, true);
 INSERT INTO la_ext_attributemaster (attributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (1164, 'Owner Type-Own2', 'Owner Type', 5, 17, 'la_ext_resourceattributevalue', '100', true, '1', true, true);
 
+
+
 SELECT pg_catalog.setval('la_ext_attributemaster_attributemasterid_seq', 1165, true);
+
+
 
 
 INSERT INTO la_ext_attributeoptions (attributeoptionsid, optiontext, attributemasterid, parentid) VALUES (1005, 'male', 1020, 1005);
@@ -3374,7 +4167,11 @@ INSERT INTO la_ext_attributeoptions (attributeoptionsid, optiontext, attributema
 INSERT INTO la_ext_attributeoptions (attributeoptionsid, optiontext, attributemasterid, parentid) VALUES (1143, 'Country 4', 1069, 1143);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_attributeoptions_attributeoptionsid_seq', 1413, true);
+
+
 
 
 INSERT INTO la_ext_baselayer (baselayerid, baselayer, baselayer_en, isactive) VALUES (1, 'Bing_Aerial', 'Bing_Aerial', true);
@@ -3386,16 +4183,26 @@ INSERT INTO la_ext_baselayer (baselayerid, baselayer, baselayer_en, isactive) VA
 INSERT INTO la_ext_baselayer (baselayerid, baselayer, baselayer_en, isactive) VALUES (7, 'MapQuest_OSM', 'MapQuest_OSM', true);
 INSERT INTO la_ext_baselayer (baselayerid, baselayer, baselayer_en, isactive) VALUES (8, 'Open_Street_Map', 'Open_Street_Map', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_baselayer_baselayerid_seq', 8, true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_bookmark_bookmarkid_seq', 1, true);
+
+
 
 INSERT INTO la_ext_categorytype (categorytypeid, typename, isactive) VALUES (1, 'Parcel', true);
 INSERT INTO la_ext_categorytype (categorytypeid, typename, isactive) VALUES (2, 'Resource', true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_categorytype_categorytypeid_seq', 2, true);
+
+
 
 
 INSERT INTO la_ext_customattributeoptions (attributeoptionsid, optiontext, customattributeid, parentid) VALUES (101, 'Cultivated', 7, 101);
@@ -3990,17 +4797,31 @@ INSERT INTO la_ext_customattributeoptions (attributeoptionsid, optiontext, custo
 INSERT INTO la_ext_customattributeoptions (attributeoptionsid, optiontext, customattributeid, parentid) VALUES (706, 'Sub Class Attribute 1', 291, 2);
 INSERT INTO la_ext_customattributeoptions (attributeoptionsid, optiontext, customattributeid, parentid) VALUES (707, 'Sub Class Attribute 2', 291, 2);
 
+
+
 SELECT pg_catalog.setval('la_ext_customattributeoptionsid_seq', 707, true);
+
+
+
+
 
 SELECT pg_catalog.setval('la_ext_dispute_seq', 1, true);
 
+
+
 SELECT pg_catalog.setval('la_ext_disputelandmapping_disputelandid_seq', 1, true);
+
+
 
 INSERT INTO la_ext_disputestatus (disputestatusid, disputestatus, disputestatus_en, isactive) VALUES (1, 'Active', 'Active', true);
 INSERT INTO la_ext_disputestatus (disputestatusid, disputestatus, disputestatus_en, isactive) VALUES (2, 'Resolved', 'Resolved', true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_disputestatus_disputestatusid_seq', 2, true);
+
+
 
 INSERT INTO la_ext_disputetype (disputetypeid, disputetype, disputetype_en, isactive) VALUES (1, 'Boundary', 'Boundary', true);
 INSERT INTO la_ext_disputetype (disputetypeid, disputetype, disputetype_en, isactive) VALUES (2, 'Counter claim (Inter family)', 'Counter claim (Inter family)', true);
@@ -4008,168 +4829,12 @@ INSERT INTO la_ext_disputetype (disputetypeid, disputetype, disputetype_en, isac
 INSERT INTO la_ext_disputetype (disputetypeid, disputetype, disputetype_en, isactive) VALUES (4, 'Counter claim (Others)', 'Counter claim (Others)', true);
 INSERT INTO la_ext_disputetype (disputetypeid, disputetype, disputetype_en, isactive) VALUES (5, 'Other interests', 'Other interests', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_disputetype_disputetypeid_seq', 5, true);
 
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (1, 1, 1, 1, 2, 'mast_0518_112538.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (3, 3, 2, 4, 2, 'mast_0518_112843.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (4, 2, 1, 2, NULL, 'Sale', '', '2018-05-18', 'Sale Single Tenancy', 1, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (5, 4, 3, 5, 2, 'mast_0518_113014.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (6, 4, 3, 6, 2, 'mast_0518_113103.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (7, 5, 1, 7, NULL, 'Doc', '', '2018-05-02', 'Change of Ownership Vishal, Krishna', 1, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (9, 7, 5, 10, 2, 'mast_0518_172146.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (10, 8, 6, 11, 2, 'mast_0518_172354.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (11, 10, 8, 14, 2, 'mast_0518_172845.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (12, 10, 8, 15, 2, 'mast_0518_172852.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (2, 3, 2, 3, 2, 'james.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (13, 12, 10, 16, 2, 'mast_0518_180223.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (14, 12, 10, 17, 2, 'mast_0518_180232.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (15, 13, 11, 18, 2, 'mast_0518_171243.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-21', '', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (16, 14, 1, 19, NULL, 'gsdfg', '', '2018-05-02', 'fgh', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (17, 15, 1, 20, NULL, 'dry', '', '2018-05-02', 'tyrty', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (18, 16, 1, 21, NULL, 'fgjh', '', '2018-05-04', 'rey', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (19, 17, 1, 22, NULL, 'fdh', '', '2018-05-03', 'dfsh', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (20, 18, 1, 23, NULL, 'trr', '', '2018-05-03', 'trwy', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (21, 19, 1, 24, NULL, 'dfsjkh', '', '2018-05-02', 'dfshsdf', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (22, 20, 1, 25, NULL, 'guyyu', '', '2018-05-02', 'tyu', 1, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (23, 1, 1, 26, NULL, 'rtr', '', '2018-05-04', 'retrt', 1, true, 1, '2018-05-24 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (24, 21, 1, 26, NULL, 'ghg', '', '2018-05-02', 'hgj', 1, true, 1, '2018-05-24 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (25, 22, 1, 8, NULL, 'tytr', '', '2018-05-01', 'trytry', 1, true, 1, '2018-05-24 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (26, 23, 12, 27, 2, 'mast_0525_112345.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-25', '', NULL, true, 1, '2018-05-25 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (27, 24, 1, 8, NULL, 'sdffdg', '', '2018-05-02', 'jkk', 1, true, 1, '2018-05-25 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (28, 25, 1, 8, NULL, 'jk', '', '2018-05-01', 'hjgk', 1, true, 1, '2018-05-25 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (33, 2, 1, 2, NULL, 'yj', '', '2018-03-06', 'ghj', 1, true, 1, '2018-05-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (32, 2, 1, 2, NULL, 'ghj', '', '2018-03-06', 'dgadfg', 1, false, 1, '2018-05-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (31, 2, 1, 2, NULL, 'mkjhk', '', '2018-03-06', 'jhk', 1, false, 1, '2018-05-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (30, 2, 1, 2, NULL, 'yu', '', '2018-03-06', 'yu', 1, false, 1, '2018-05-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (29, 2, 1, 2, NULL, 'hgj', '', '2018-03-06', 'ghjgh', 1, false, 1, '2018-05-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (35, 32, 21, 41, 3, 'images.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-01', '', NULL, true, 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (34, 32, 21, 40, 3, 'images.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-01', '', NULL, false, 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (36, 58, 36, 72, NULL, 'images.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-06', 'ghj', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (37, 59, 36, 73, NULL, 'ghfgh', '', '2018-03-05', 'fgh', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (38, 60, 36, 72, NULL, 'ytu', '', '2018-03-05', 'tyurt', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (39, 61, 36, 72, NULL, 'hfd', '', '2018-03-15', 'fgh', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (40, 64, 36, 72, NULL, 'sdf', '', '2018-06-06', 'sdf', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (41, 65, 36, 76, NULL, 'tyutyu', '', '2018-03-06', 'tyu', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (42, 66, 36, 77, NULL, 'hfg', '', '2018-02-07', 'ghdjd', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (43, 67, 36, 78, NULL, 'ghjk', '', '2018-03-05', 'hjk', 1, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (44, 71, 26, 82, NULL, 'Passport', '', '2018-06-14', 'Indian Passport', 1, true, 1, '2018-06-05 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (8, 6, 4, 9, 2, 'james.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (45, 72, 52, 84, 2, 'mast_0606_112345.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (46, 73, 53, 85, 2, 'mast_0606_112732.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (48, 75, 55, 87, 2, 'mast_0606_132415.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (49, 78, 58, 90, 2, 'mast_0606_133950.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (51, 77, 57, 89, 2, 'mast_0606_134407.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (53, 76, 56, 88, 2, 'mast_0606_135918.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (55, 79, 59, 91, 2, 'mast_0606_141152.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (57, 80, 60, 92, 2, 'mast_0606_141543.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (59, 74, 54, 86, 2, 'mast_0606_130733.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (60, 75, 55, NULL, 2, 'mast_0606_132254.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (61, 78, 58, NULL, 2, 'mast_0606_134119.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (62, 77, 57, NULL, 2, 'mast_0606_134442.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (63, 76, 56, NULL, 2, 'mast_0606_135932.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (64, 79, 59, NULL, 2, 'mast_0606_141204.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (65, 80, 60, NULL, 2, 'mast_0606_141558.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (66, 81, 61, NULL, 2, 'mast_0606_143742.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (67, 82, 62, 94, 2, 'mast_0606_150337.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (69, 83, 1, 95, NULL, 'Name', '', '2018-06-01', 'Indian passport', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (70, 84, 26, 96, NULL, 'Lease doc', '', '2018-06-07', 'passport', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (68, 82, 62, NULL, 2, 'image002.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (71, 85, 63, 97, 2, 'mast_0607_102503.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (72, 85, 63, NULL, 2, 'mast_0607_102521.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (73, 87, 26, 82, NULL, 'Surrender of Lease dc', '', '2018-06-07', 'doc', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (74, 88, 26, 82, NULL, 'Mortagage doc', '', '2018-06-07', 'Doc', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (75, 86, 64, NULL, 2, 'mast_0607_111111.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (76, 89, 65, NULL, 2, 'mast_0607_112010.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (77, 90, 66, NULL, 2, 'mast_0607_112937.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (78, 91, 67, NULL, 2, 'mast_0607_113726.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (107, 134, 51, 128, NULL, 'sdffdg', '', '2018-06-06', 'sdfdf', 1, true, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (108, 136, 108, 58, NULL, 'fd', '', '2018-06-06', 'sdfsd', 1, true, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (79, 93, 68, NULL, 2, '05d02fb3-b0cb-4ea8-9263-2fc66967131e.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '10', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (80, 94, 1, 2, NULL, 'hj', '', '2018-03-05', 'ghj', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (81, 99, 68, 104, NULL, '8c9a6db9-4f70-4759-8218-4dc024113901.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-06', 'fg', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (82, 100, 68, 105, NULL, '153db26f-97fb-4321-bfb1-351f2819326d.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-05', 'vjdghj', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (83, 101, 68, 104, NULL, '22b92174-b86e-43b1-8762-cc0fa7a756ab.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-05', 'fbd', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (84, 102, 68, 104, NULL, '6427fadd-36c2-4ede-bdb6-b86dd2d96e1e.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-06', 'sdf', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (85, 103, 68, 104, NULL, '399883f5-a79b-44f5-aa04-87187657dab8.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-04', 'sdf', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (86, 104, 68, 106, NULL, '153db26f-97fb-4321-bfb1-351f2819326d.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-06', 'dgadfg', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (87, 105, 68, 107, NULL, '5cd934f2-ee84-4bad-9084-295c7f940722.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-02-07', 'dgadfg', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (88, 106, 68, 108, NULL, '8c9a6db9-4f70-4759-8218-4dc024113901.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-06', 'etyue', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (89, 107, 82, NULL, 2, 'Hfhf', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', 'Hfgfgd', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (90, 109, 84, NULL, 2, 'Image ', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', 'Dmi', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (91, 110, 85, NULL, 2, 'Hf', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', 'Hf', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (92, 111, 86, 112, 2, 'mast_0607_152154.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (93, 111, 86, NULL, 2, 'Phoyo', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', 'bc BBC f', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (94, 26, 1, 28, NULL, 'Current Opening - 14th March 2018.docx', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-06', 'dfsg', 1, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (95, 91, 67, 101, NULL, '153db26f-97fb-4321-bfb1-351f2819326d.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (96, 48, 37, 61, NULL, '6427fadd-36c2-4ede-bdb6-b86dd2d96e1e.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (97, 48, 37, 62, NULL, 'man.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-07', '', NULL, true, 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (98, 114, 1, 115, NULL, 'hgfgd', '', '2018-03-05', 'fgh', 1, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (99, 117, 1, 28, NULL, 'fgsdfg', '', '2018-03-05', 'dfgdf', 1, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (100, 120, 1, 116, NULL, 'Current Opening - 14th March 2018.docx', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-05', 'sdfdf', 1, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (101, 124, 1, 28, NULL, '6427fadd-36c2-4ede-bdb6-b86dd2d96e1e.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-03-15', 'sdf', 1, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (102, 125, 1, 28, NULL, 'tyh', '', '2018-03-15', 'fgdh', 1, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (103, 112, 36, 113, NULL, 'gh', '', '2018-03-06', 'fgh', 1, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (104, 128, 105, 121, NULL, 'fdhg', '', '2018-06-06', 'fgsh', 1, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (105, 129, 67, 123, NULL, 'assdas', '', '2018-06-01', 'asd', 1, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (109, 138, 105, 121, NULL, 'sfdfdsf', '', '2018-06-07', 'fdsfsf', 1, true, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (111, 140, 67, 123, NULL, 'sad', '', '2018-06-20', 'sadsad', 1, true, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (110, 135, 51, 129, NULL, 'hjgjg', '', '2018-02-07', 'ghjfgjh', 1, false, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (112, 135, 51, 129, NULL, 'ghhgh', '', '2018-03-06', 'fghfgh', 1, false, 1, '2018-06-15 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (118, 144, 51, 81, NULL, 'hjhgj', '', '2018-03-07', 'dghj', 1, false, 1, '2018-06-15 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (119, 144, 51, 81, NULL, 'jhkh', '', '2018-03-05', 'jhkf', 1, false, 1, '2018-06-15 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (120, 146, 39, 136, NULL, 'fgj', '', '2018-06-07', 'dgadfg', 1, false, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (121, 146, 39, 136, NULL, 'ghg', '', '2018-03-06', 'ghj', 1, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (122, 147, 39, 138, NULL, 'fgh', '', '2018-03-05', 'sdf', 1, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (106, 132, 51, 81, NULL, 'sda', '', '2018-06-06', 'asdsad', 1, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (123, 148, 39, 136, NULL, 'jkl', '', '2018-03-05', 'kjl', 1, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (124, 149, 39, 136, NULL, 'nm,n', '', '2018-06-05', 'sdf', 1, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (125, 150, 39, 139, NULL, 'hgj', '', '2018-02-07', 'ghj', 1, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (126, 151, 108, 140, NULL, 'rt', '', '2018-02-07', 'dgadfg', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (127, 32, 21, 40, NULL, 'man.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-19', '', NULL, true, 1, '2018-06-19 00:00:00', 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (128, 152, 37, 141, NULL, 'ghg', '', '2018-03-06', 'fghfg', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (129, 144, 37, 142, NULL, 'fdh', '', '2018-03-05', 'gfhfg', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (130, 154, 37, 141, NULL, 'bvn', '', '2018-03-05', 'vbnvb', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (131, 155, 37, 141, NULL, 'bvn', '', '2018-03-15', 'bvn', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (132, 156, 37, 141, NULL, 'cvb', '', '2018-03-15', 'sdf', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (133, 157, 37, 144, NULL, 'xczv', '', '2018-03-06', 'xczv', 1, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (134, 158, 37, 146, NULL, 'ghjgh', '', '2018-03-06', 'ghjgh', 1, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (135, 162, 37, 146, NULL, 'asda', '', '2018-06-13', 'asdad', 1, true, 1, '2018-06-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (136, 169, 141, NULL, 4, 'jfj', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-28', 'fjf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (137, 170, 142, NULL, 4, 'hfhf', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-28', 'fhhf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (138, 171, 143, NULL, 4, 'sbs', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-28', 'gdgd', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (140, 172, 144, NULL, 4, 'hf', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'fjf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (141, 173, 145, NULL, 4, 'hh', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'hhb', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (142, 174, 146, NULL, 2, 'jf', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'jf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (143, 174, 146, NULL, 4, 'fu', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'gjgjgjjgjg', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (145, 175, 147, 162, 3, 'customOptionsdeleted.png', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', '', NULL, true, 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (146, 176, 148, 163, 2, 'mast_0629_123019.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', '', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (147, 176, 148, NULL, 2, 'ggh', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'ggtg', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (144, 175, 147, NULL, 4, 'james.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'jfj', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (148, 177, 149, NULL, 2, 'hf.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'jfjf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (149, 178, 150, NULL, 4, 'hff.mp4', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', 'hfhf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (150, 178, 150, 165, NULL, 'james.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-06-29', '', NULL, true, 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (151, 145, 123, 135, NULL, 'james.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-02', '', NULL, true, 1, '2018-07-02 00:00:00', 1, '2018-07-02 00:00:00');
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (152, 135, 51, 129, NULL, 'fd', '', '2018-03-06', 'dgadfg', 1, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (153, 179, 51, 129, NULL, 'dgffdg', '', '2018-03-05', 'fdgd', 1, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (154, 180, 51, 129, NULL, 'fd', '', '2018-07-02', 'fdg', 1, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (155, 181, 51, 129, NULL, 'fddf', '', '2018-07-04', 'dffdss', 1, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (156, 182, 151, 176, 2, 'mast_0702_143627.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-02', '', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (157, 182, 151, NULL, 2, 'image.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-02', 'image', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (158, 182, 151, NULL, 4, 'video.mp4', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-02', 'video', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (159, 183, 139, 177, NULL, 'vbn', '', '2018-07-02', 'vbn', 1, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (160, 184, 138, 179, NULL, 'mn,nbm,', '', '2018-07-10', 'mnb,nbm', 1, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (161, 185, 67, 180, NULL, 'gfhfg', '', '2018-07-02', 'gfhfg', 1, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (162, 186, 149, 181, NULL, 'bnmbnm', '', '2018-07-04', 'nbmbn', 1, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (163, 187, 29, 182, NULL, 'fghf', '', '2018-07-01', 'fgh', 1, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (164, 188, 29, 183, NULL, 'bnbv', '', '2018-07-02', 'ghjghj', 1, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (165, 189, 29, 184, NULL, 'ytu', '', '2018-07-02', 'ytu', 1, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (166, 190, 29, 185, NULL, '0''l', '', '2018-07-02', '[l-[l=', 1, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (167, 191, 152, 186, 2, 'mast_0718_121738.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-18', '', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (168, 191, 152, NULL, 2, 'image.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-18', 'image', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (169, 192, 152, 187, NULL, 'fghgfh', '', '2018-03-06', 'fghfg', 1, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (170, 193, 153, 188, 2, 'mast_0719_173410.jpg', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-19', '', NULL, true, 1, '2018-07-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (171, 193, 153, NULL, 4, 'video.mp4', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-07-19', 'video', NULL, true, 1, '2018-07-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (172, 195, 46, 190, NULL, 'NepalSarkarPerson2.PNG', '/storage/emulated/0/MAST/multimedia/Parcel_Media', '2018-08-01', 'fgh', 1, true, 1, '2018-08-02 00:00:00', NULL, NULL);
+
+
 
 SELECT pg_catalog.setval('la_ext_documentdetails_documentid_seq', 172, true);
 
@@ -4180,7 +4845,11 @@ INSERT INTO la_ext_documentformat (documentformatid, documentformat, documentfor
 INSERT INTO la_ext_documentformat (documentformatid, documentformat, documentformat_en, isactive) VALUES (4, 'Video/mp4', 'Video/mp4', true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_documentformat_documentformatid_seq', 4, true);
+
+
 
 
 INSERT INTO la_ext_documenttype (documenttypeid, documenttype, documenttype_en, isactive, processid) VALUES (5, 'Other', 'Other', true, 1);
@@ -4196,22 +4865,36 @@ INSERT INTO la_ext_documenttype (documenttypeid, documenttype, documenttype_en, 
 INSERT INTO la_ext_documenttype (documenttypeid, documenttype, documenttype_en, isactive, processid) VALUES (6, 'Other', 'Other', true, 6);
 INSERT INTO la_ext_documenttype (documenttypeid, documenttype, documenttype_en, isactive, processid) VALUES (12, 'Application Letter', ' Application Letter ', true, 7);
 
+
+
 SELECT pg_catalog.setval('la_ext_documenttype_documenttypeid_seq', 13, true);
+
+
 
 INSERT INTO la_ext_existingclaim_documentdetails (claimdocumentid, landid, documentrefno, documentdate, documenttype, plotno, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (1, 10, '5225', '2018-05-18', 'Land Instrument 1', 2244, true, 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00');
 
+
+
 SELECT pg_catalog.setval('la_ext_existingclaim_documentid_seq', 1, true);
+
+
 
 
 INSERT INTO la_ext_financialagency (financialagencyid, financialagency, financialagency_en, isactive) VALUES (1, 'Bank', 'Bank', true);
 INSERT INTO la_ext_financialagency (financialagencyid, financialagency, financialagency_en, isactive) VALUES (2, 'Rural Finance Institution', 'Rural Finance Institution', true);
 INSERT INTO la_ext_financialagency (financialagencyid, financialagency, financialagency_en, isactive) VALUES (3, 'Mirco-Finance', 'Mirco-Finance', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_financialagency_financialagencyid_seq', 3, true);
+
+
 
 INSERT INTO la_ext_geometrytype (geometrytypeid, geometryname, isactive) VALUES (1, 'Point', true);
 INSERT INTO la_ext_geometrytype (geometrytypeid, geometryname, isactive) VALUES (2, 'Line', true);
 INSERT INTO la_ext_geometrytype (geometrytypeid, geometryname, isactive) VALUES (3, 'Polygon', true);
+
+
 
 
 SELECT pg_catalog.setval('la_ext_geometrytype_geometryid_seq', 3, true);
@@ -4225,118 +4908,18 @@ INSERT INTO la_ext_grouptype (grouptypeid, grouptype, grouptype_en, isactive) VA
 INSERT INTO la_ext_grouptype (grouptypeid, grouptype, grouptype_en, isactive) VALUES (3, 'Association (legal)', 'Association (legal)', true);
 INSERT INTO la_ext_grouptype (grouptypeid, grouptype, grouptype_en, isactive) VALUES (5, 'Informal Association (non-legal)', 'Informal Association (non-legal)', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_grouptype_grouptypeid_seq', 7, true);
 
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (1, 1, 4, 1, '2018-05-18', 'vvzvz', true, 1, '2018-05-18 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (2, 1, 4, 1, '2018-05-18', 'bxvzvz', true, 1, '2018-05-18 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (3, 1, 4, 1, '2018-05-18', 'vxvxzv', true, 1, '2018-05-18 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (4, 1, 2, 1, '2018-05-18', 'xbcxb', true, 1, '2018-05-18 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (5, 11, 4, 1, '2018-05-24', 'ok', true, 1, '2018-05-24 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (6, 11, 4, 1, '2018-05-24', 'gg', true, 1, '2018-05-24 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (7, 11, 4, 1, '2018-05-24', 'dfgfd', true, 1, '2018-05-24 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (8, 10, 4, 1, '2018-06-01', 'rthrt', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (9, 7, 4, 1, '2018-06-01', 'rty', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (10, 7, 4, 1, '2018-06-01', 'rtyr', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (11, 7, 4, 1, '2018-06-01', 'rtyrt', true, 1, '2018-06-01 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (12, 10, 4, 1, '2018-06-01', 'plplp', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (13, 14, 4, 1, '2018-06-01', 'move to process data kamal', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (14, 18, 4, 1, '2018-06-01', 'move to process data kamal', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (15, 18, 4, 1, '2018-06-01', 'field verification ', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (16, 18, 4, 1, '2018-06-01', 'Feild verification and update land record ', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (21, 26, 4, 1, '2018-06-01', 'Process data ', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (22, 26, 4, 1, '2018-06-01', 'Land verification ', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (23, 26, 4, 1, '2018-06-01', 'generate print and land certi ', true, 1, '2018-06-01 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (24, 28, 4, 1, '2018-06-01', 'asdsadsa', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (25, 36, 4, 1, '2018-06-01', 'regter', true, 1, '2018-06-01 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (26, 36, 4, 1, '2018-06-01', 'rtyr', true, 1, '2018-06-01 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (27, 36, 4, 1, '2018-06-01', 'tryer', true, 1, '2018-06-01 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (28, 36, 2, 1, '2018-06-01', 'ytutyu', true, 1, '2018-06-01 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (29, 51, 4, 1, '2018-06-04', 'okj', true, 1, '2018-06-04 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (30, 51, 4, 1, '2018-06-04', 'gdfgd', true, 1, '2018-06-04 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (31, 51, 4, 1, '2018-06-04', 'dfgfd', true, 1, '2018-06-04 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (32, 26, 2, 1, '2018-06-05', 'dasda', true, 1, '2018-06-05 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (33, 2, 4, 1, '2018-06-05', 'hdfhg', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (34, 3, 4, 1, '2018-06-05', '[[', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (35, 2, 4, 1, '2018-06-05', 'll', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (36, 2, 4, 1, '2018-06-05', 'llll', true, 1, '2018-06-05 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (37, 3, 4, 1, '2018-06-05', 'lllsdsaddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (38, 50, 4, 1, '2018-06-05', 'sdgsdg', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (39, 50, 4, 1, '2018-06-05', 'sgsdg  sfsd fdfsds ', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (40, 49, 4, 1, '2018-06-05', 'oooo', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (41, 48, 4, 1, '2018-06-05', 'oo', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (42, 49, 4, 1, '2018-06-05', 'oo', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (43, 48, 4, 1, '2018-06-05', 'oooo', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (44, 47, 4, 1, '2018-06-05', 'ooooooooooooooooooooooo', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (45, 47, 4, 1, '2018-06-05', 'i[p[i[[[', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (46, 29, 4, 1, '2018-06-05', 'gsdgsg', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (47, 28, 4, 1, '2018-06-05', 'fghfghfgh', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (48, 29, 4, 1, '2018-06-05', 'dsfsdfs', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (49, 28, 4, 1, '2018-06-05', 'fdsfsdf', true, 1, '2018-06-05 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (50, 46, 4, 1, '2018-06-05', 'asfsa', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (51, 46, 4, 1, '2018-06-05', 'ffffffffffffffffffffffffffffffffffffffffsafa', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (52, 46, 4, 1, '2018-06-05', 'safasssssssssssssssssssssssssssssssssss', true, 1, '2018-06-05 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (53, 45, 4, 1, '2018-06-05', 'asfsa', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (54, 45, 4, 1, '2018-06-05', 'safasf', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (55, 39, 4, 1, '2018-06-05', 'dfdsfsd', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (56, 39, 4, 1, '2018-06-05', 'sdfdsfds', true, 1, '2018-06-05 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (57, 37, 4, 1, '2018-06-05', 'sdfsdf', true, 1, '2018-06-05 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (58, 39, 4, 1, '2018-06-05', 'sdfsdfsdfsd', true, 1, '2018-06-05 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (59, 38, 4, 1, '2018-06-06', 'hgdj', true, 1, '2018-06-06 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (60, 38, 4, 1, '2018-06-06', 'dghj', true, 1, '2018-06-06 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (61, 38, 4, 1, '2018-06-06', 'dghjd', true, 1, '2018-06-06 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (62, 37, 4, 1, '2018-06-06', 'tyutyr', true, 1, '2018-06-06 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (63, 37, 4, 1, '2018-06-06', 'uyr', true, 1, '2018-06-06 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (64, 68, 4, 1, '2018-06-07', 'etu', true, 1, '2018-06-07 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (65, 68, 4, 1, '2018-06-07', 'etyu', true, 1, '2018-06-07 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (66, 68, 4, 1, '2018-06-07', 'etyu', true, 1, '2018-06-07 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (67, 68, 2, 1, '2018-06-07', 'sfhsfh', true, 1, '2018-06-07 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (68, 67, 4, 1, '2018-06-07', 'fhgh', true, 1, '2018-06-07 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (69, 67, 4, 1, '2018-06-07', 'dgh', true, 1, '2018-06-07 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (70, 67, 4, 1, '2018-06-07', 'fgdhfd', true, 1, '2018-06-07 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (71, 67, 2, 1, '2018-06-11', 'sadsadas', true, 1, '2018-06-11 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (72, 51, 2, 1, '2018-06-11', 'dsadsad', true, 1, '2018-06-11 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (73, 105, 4, 1, '2018-06-11', 'jfgd', true, 1, '2018-06-11 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (74, 105, 4, 1, '2018-06-11', 'fgdh', true, 1, '2018-06-11 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (75, 105, 4, 1, '2018-06-11', 'fhg', true, 1, '2018-06-11 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (76, 105, 2, 1, '2018-06-11', 'gfhfg', true, 1, '2018-06-11 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (77, 102, 4, 1, '2018-06-11', 'dfgdfg', true, 1, '2018-06-11 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (78, 102, 4, 1, '2018-06-11', 'fdgfdg', true, 1, '2018-06-11 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (79, 102, 4, 1, '2018-06-11', 'fdgdgd', true, 1, '2018-06-11 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (80, 102, 2, 1, '2018-06-11', 'fdgfdgdf', true, 1, '2018-06-11 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (81, 108, 4, 1, '2018-06-11', 'sdfsf', true, 1, '2018-06-11 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (82, 108, 4, 1, '2018-06-11', 'sdfdsf', true, 1, '2018-06-11 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (83, 108, 4, 1, '2018-06-11', 'sdfsd', true, 1, '2018-06-11 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (84, 108, 2, 1, '2018-06-11', 'sdfsdf', true, 1, '2018-06-11 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (85, 39, 2, 1, '2018-06-18', 'ytuytuytu', true, 1, '2018-06-18 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (86, 37, 2, 1, '2018-06-19', 'rtgyfth', true, 1, '2018-06-19 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (87, 123, 4, 1, '2018-06-19', 'adsad', true, 1, '2018-06-19 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (88, 123, 4, 1, '2018-06-19', 'sadsa', true, 1, '2018-06-19 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (89, 123, 4, 1, '2018-06-19', 'sdgdsg', true, 1, '2018-06-19 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (90, 122, 4, 1, '2018-06-19', 'sdgsdg', true, 1, '2018-06-19 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (91, 29, 4, 1, '2018-06-29', 'fdgfdg', true, 1, '2018-06-29 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (92, 150, 4, 1, '2018-07-02', 'jhkjhk', true, 1, '2018-07-02 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (93, 150, 4, 1, '2018-07-02', 'jhkhjk', true, 1, '2018-07-02 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (94, 150, 4, 1, '2018-07-02', 'jhkhj', true, 1, '2018-07-02 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (95, 123, 2, 1, '2018-07-17', 'mn,mnb,', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (96, 150, 2, 1, '2018-07-17', 'ghjghj', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (97, 151, 4, 1, '2018-07-17', 'gghjg', true, 1, '2018-07-17 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (98, 151, 4, 1, '2018-07-17', 'ghjgj', true, 1, '2018-07-17 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (99, 151, 4, 1, '2018-07-17', 'ghjghj', true, 1, '2018-07-17 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (100, 151, 2, 1, '2018-07-17', 'ghjgh', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (101, 149, 4, 1, '2018-07-17', 'gfjg', true, 1, '2018-07-17 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (102, 149, 4, 1, '2018-07-17', 'hgjgh', true, 1, '2018-07-17 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (103, 149, 4, 1, '2018-07-17', 'ghjhg', true, 1, '2018-07-17 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (104, 149, 2, 1, '2018-07-17', 'khkjjhk', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (105, 46, 2, 1, '2018-07-17', 'utyuty', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (106, 38, 2, 1, '2018-07-17', 'klgj', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (107, 29, 2, 1, '2018-07-17', 'ghjghj', true, 1, '2018-07-17 00:00:00', NULL, NULL, 4);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (108, 152, 4, 1, '2018-07-18', 'fghfgh', true, 1, '2018-07-18 00:00:00', NULL, NULL, 1);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (109, 152, 4, 1, '2018-07-18', 'fghfgh', true, 1, '2018-07-18 00:00:00', NULL, NULL, 2);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (110, 152, 4, 1, '2018-07-18', 'fghfgh', true, 1, '2018-07-18 00:00:00', NULL, NULL, 3);
-INSERT INTO la_ext_landworkflowhistory (landworkflowhistoryid, landid, applicationstatusid, userid, statuschangedate, comments, isactive, createdby, createddate, modifiedby, modifieddate, workflowid) VALUES (111, 152, 2, 1, '2018-07-18', 'fghfghf', true, 1, '2018-07-18 00:00:00', NULL, NULL, 4);
+
+
+
 
 
 SELECT pg_catalog.setval('la_ext_landworkflowhistory_landworkflowhistoryid_seq', 111, true);
+
+
 
 
 INSERT INTO la_ext_layer_layergroup (layer_layergroupid, layerid, layergroupid, layerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (275, 31, 81, 1, true, 1, '2018-04-10 17:55:10.229', 1, '2018-04-10 17:55:10.229');
@@ -4348,6 +4931,8 @@ INSERT INTO la_ext_layer_layergroup (layer_layergroupid, layerid, layergroupid, 
 INSERT INTO la_ext_layer_layergroup (layer_layergroupid, layerid, layergroupid, layerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (281, 38, 81, 7, true, 1, '2018-04-10 17:55:10.394', 1, '2018-04-10 17:55:10.394');
 INSERT INTO la_ext_layer_layergroup (layer_layergroupid, layerid, layergroupid, layerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (282, 41, 81, 8, true, 1, '2018-04-10 17:55:10.404', 1, '2018-04-10 17:55:10.404');
 INSERT INTO la_ext_layer_layergroup (layer_layergroupid, layerid, layergroupid, layerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (283, 31, 82, 1, true, 1, '2018-08-02 14:40:09.717', 1, '2018-08-02 14:40:09.717');
+
+
 
 
 SELECT pg_catalog.setval('la_ext_layer_layergroup_layer_layergroupid_seq', 283, true);
@@ -4534,19 +5119,31 @@ INSERT INTO la_ext_layerfield (layerfieldid, layerid, layerfield, layerfield_en,
 INSERT INTO la_ext_layerfield (layerfieldid, layerid, layerfield, layerfield_en, keyfield, isactive, alias) VALUES (508, 31, 'tenureclassid', 'tenureclassid', 'landid', true, 'tenureclassid');
 
 
+
+
 SELECT pg_catalog.setval('la_ext_layerfield_layerfieldid_seq', 508, true);
+
+
 
 
 INSERT INTO la_ext_layergroup (layergroupid, layergroupname, remarks, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (81, 'projectLayerGroup', 'projectLayerGroup', true, 1, '2018-04-10 17:55:10.195', 1, '2018-04-10 17:55:10.195');
 INSERT INTO la_ext_layergroup (layergroupid, layergroupname, remarks, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (82, 'Planet Layer Group', 'Planet Layer Group', true, 1, '2018-08-02 14:40:09.695', 1, '2018-08-02 14:40:09.695');
 
+
+
 SELECT pg_catalog.setval('la_ext_layergroup_layergroupid_seq', 82, true);
+
+
 
 
 INSERT INTO la_ext_layertype (layertypeid, layertype, layertype_en, isactive) VALUES (1, 'WFS', 'WFS ', true);
 INSERT INTO la_ext_layertype (layertypeid, layertype, layertype_en, isactive) VALUES (2, 'WMS', 'WMS ', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_layertype_layertypeid_seq', 2, true);
+
+
 
 INSERT INTO la_ext_module (moduleid, modulename, modulename_en, description, isactive) VALUES (1, 'bookmark', 'bookmark', '1', true);
 INSERT INTO la_ext_module (moduleid, modulename, modulename_en, description, isactive) VALUES (2, 'clear_selection', 'clear_selection', '1', true);
@@ -4602,196 +5199,22 @@ INSERT INTO la_ext_month (monthid, month, isactive) VALUES (9, '8', true);
 INSERT INTO la_ext_month (monthid, month, isactive) VALUES (10, '9', true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_month_monthid_seq', 1, false);
+
+
+
+
 
 
 SELECT pg_catalog.setval('la_ext_parcelsplitland_seq', 14, true);
 
 
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (3, 3, 2, 1, 3, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (4, 4, 2, 1, 3, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (1, 1, 1, 1, 1, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (5, 5, 3, 1, 4, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (6, 6, 3, 1, 4, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (9, 9, 4, 1, 6, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (10, 10, 5, 2, 7, '2018-05-18', NULL, NULL, true, 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (11, 11, 6, 1, 8, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (13, 13, 7, 1, 9, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (15, 17, 10, 1, 12, NULL, NULL, NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (16, 18, 11, 1, 13, NULL, NULL, NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (7, 7, 1, 1, 5, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (17, 19, 1, 1, 14, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (18, 20, 1, 1, 15, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (19, 21, 1, 1, 16, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (20, 22, 1, 1, 17, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (21, 23, 1, 1, 18, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (22, 24, 1, 1, 19, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (24, 27, 12, 1, 23, NULL, NULL, NULL, true, 1, '2018-05-25 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (23, 25, 1, 1, 20, NULL, NULL, NULL, false, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (8, 8, 1, 1, 5, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (73, 77, 36, 1, 66, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (26, 29, 13, 1, 27, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (27, 30, 14, 1, 27, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (28, 31, 14, 1, 27, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (29, 32, 15, 1, 27, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (30, 33, 15, 1, 27, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (31, 34, 16, 2, 27, '2018-06-01', NULL, NULL, true, 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (32, 35, 17, 1, 28, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (33, 36, 18, 1, 29, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (34, 37, 18, 1, 29, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (35, 38, 19, 1, 30, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (36, 39, 20, 1, 31, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (37, 40, 21, 1, 32, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (38, 41, 21, 1, 32, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (39, 42, 22, 1, 33, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (40, 43, 23, 1, 34, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (41, 44, 24, 1, 35, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (42, 45, 25, 1, 36, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (45, 48, 27, 1, 38, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (46, 49, 28, 1, 39, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (49, 52, 30, 1, 41, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (50, 53, 31, 1, 42, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (51, 54, 32, 1, 43, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (54, 57, 34, 1, 45, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (55, 58, 35, 1, 46, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (60, 63, 38, 2, 49, '2018-06-01', NULL, NULL, true, 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (62, 65, 40, 1, 51, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (63, 66, 41, 1, 52, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (64, 67, 42, 1, 53, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (65, 68, 43, 1, 54, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (66, 69, 44, 1, 55, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (67, 70, 45, 1, 56, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (68, 71, 46, 1, 57, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (56, 59, 36, 1, 47, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (57, 60, 36, 1, 47, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (70, 74, 47, 1, 62, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (71, 75, 48, 1, 63, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (69, 72, 36, 1, 58, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (43, 46, 26, 1, 37, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (72, 76, 36, 1, 65, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (94, 101, 67, 1, 91, NULL, NULL, NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (74, 79, 49, 1, 68, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (75, 80, 50, 1, 69, NULL, NULL, NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (44, 47, 26, 1, 37, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (77, 82, 26, 1, 71, NULL, NULL, NULL, true, 1, '2018-06-05 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (78, 83, 26, 1, 71, NULL, NULL, NULL, true, 1, '2018-06-05 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (12, 12, 7, 1, 9, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (14, 16, 10, 1, 12, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (79, 84, 52, 1, 72, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (80, 85, 53, 1, 73, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (81, 86, 54, 1, 74, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (82, 87, 55, 1, 75, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (83, 88, 56, 1, 76, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (84, 89, 57, 1, 77, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (85, 90, 58, 1, 78, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (86, 91, 59, 1, 79, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (87, 92, 60, 1, 80, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (88, 93, 61, 1, 81, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (89, 94, 62, 1, 82, NULL, NULL, NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (90, 97, 63, 1, 85, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (91, 98, 64, 1, 86, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (92, 99, 65, 1, 89, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (93, 100, 66, 1, 90, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (2, 2, 1, 1, 2, NULL, NULL, NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (25, 28, 1, 1, 26, NULL, NULL, NULL, false, 1, '2018-05-31 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (61, 64, 39, 1, 50, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (58, 61, 37, 1, 48, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (59, 62, 37, 1, 48, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (52, 55, 33, 1, 44, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (53, 56, 33, 1, 44, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (47, 50, 29, 1, 40, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (76, 81, 51, 1, 70, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (48, 51, 29, 1, 40, NULL, NULL, NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (95, 102, 68, 1, 93, NULL, NULL, NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (96, 104, 68, 1, 99, NULL, NULL, NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (97, 106, 68, 1, 104, NULL, NULL, NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (98, 107, 68, 1, 105, NULL, NULL, NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (99, 108, 68, 1, 106, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (100, 109, 82, 1, 107, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (101, 108, 83, 1, 108, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (102, 110, 84, 1, 109, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (103, 111, 85, 1, 110, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (104, 112, 86, 1, 111, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (106, 30, 95, 1, 115, NULL, NULL, NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (107, 31, 95, 1, 116, NULL, NULL, NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (112, 119, 1, 11, 123, NULL, NULL, NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (113, 120, 1, 11, 123, NULL, NULL, NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (105, 113, 36, 1, 112, NULL, NULL, NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (114, 112, 105, 1, 127, NULL, NULL, NULL, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (115, 121, 105, 1, 128, NULL, NULL, NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (116, 122, 105, 1, 128, NULL, NULL, NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (184, 185, 29, 1, 190, NULL, NULL, NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (108, 32, 102, 1, 118, NULL, NULL, NULL, false, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (109, 33, 102, 1, 119, NULL, NULL, NULL, false, 1, '2018-06-08 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (150, 151, 140, 1, 168, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (119, 125, 102, 1, 130, NULL, NULL, NULL, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (120, 126, 102, 1, 131, NULL, NULL, NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (121, 127, 102, 1, 131, NULL, NULL, NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (124, 58, 117, 1, 137, NULL, NULL, NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (128, 132, 120, 1, 141, NULL, NULL, NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (129, 133, 121, 1, 142, NULL, NULL, NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (130, 134, 122, 1, 143, NULL, NULL, NULL, true, 1, '2018-06-14 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (131, 135, 123, 1, 145, NULL, NULL, NULL, true, 1, '2018-06-15 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (151, 152, 33, 1, 44, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (152, 153, 33, 1, 44, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (132, 136, 39, 1, 146, NULL, NULL, NULL, false, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (133, 137, 39, 1, 146, NULL, NULL, NULL, false, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (134, 139, 39, 1, 150, NULL, NULL, NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (122, 58, 108, 1, 133, NULL, NULL, NULL, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (135, 140, 108, 1, 151, NULL, NULL, NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (125, 130, 37, 1, 48, NULL, NULL, NULL, false, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (126, 131, 37, 1, 48, NULL, NULL, NULL, false, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (136, 141, 37, 1, 152, NULL, NULL, NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (153, 154, 29, 1, 40, NULL, NULL, NULL, false, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (138, 144, 37, 1, 157, NULL, NULL, NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (137, 143, 37, 1, 157, NULL, NULL, NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (140, 146, 37, 1, 158, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (139, 145, 37, 1, 158, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (141, 147, 37, 11, 159, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (142, 148, 37, 11, 159, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (155, 156, 141, 1, 169, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (156, 157, 142, 1, 170, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (157, 158, 143, 1, 171, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (158, 159, 144, 1, 172, NULL, NULL, NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (154, 155, 29, 1, 40, NULL, NULL, NULL, false, 1, '2018-06-28 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (159, 160, 145, 1, 173, NULL, NULL, NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (160, 161, 146, 2, 174, '2018-06-29', NULL, NULL, true, 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (161, 162, 147, 1, 175, NULL, NULL, NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (162, 163, 148, 1, 176, NULL, NULL, NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (164, 165, 150, 1, 178, NULL, NULL, NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (165, 166, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (166, 167, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (167, 168, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (168, 169, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (169, 170, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (170, 171, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (171, 172, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (172, 173, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (173, 174, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (174, 175, 150, 1, 178, NULL, NULL, NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (123, 129, 51, 1, 135, NULL, NULL, NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (175, 176, 151, 1, 182, NULL, NULL, NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (117, 123, 67, 1, 129, NULL, NULL, NULL, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (177, 178, 139, 1, 183, NULL, NULL, NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (149, 81, 139, 1, 167, NULL, NULL, NULL, true, 1, '2018-06-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (118, 124, 67, 1, 129, NULL, NULL, NULL, false, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (176, 177, 139, 1, 183, NULL, NULL, NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (147, 126, 138, 1, 166, NULL, NULL, NULL, false, 1, '2018-06-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (148, 127, 138, 1, 166, NULL, NULL, NULL, false, 1, '2018-06-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (178, 179, 138, 1, 184, NULL, NULL, NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (127, 81, 119, 1, 139, NULL, NULL, NULL, false, 1, '2018-06-13 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (179, 180, 67, 1, 185, NULL, NULL, NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (163, 164, 149, 1, 177, NULL, NULL, NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (180, 181, 149, 1, 186, NULL, NULL, NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (182, 183, 29, 1, 188, NULL, NULL, NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (181, 182, 29, 1, 187, NULL, NULL, NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (183, 184, 29, 1, 189, NULL, NULL, NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (185, 186, 152, 1, 191, NULL, NULL, NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (186, 187, 152, 1, 192, NULL, NULL, NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (187, 188, 153, 1, 193, NULL, NULL, NULL, true, 1, '2018-07-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_personlandmapping (personlandid, partyid, landid, persontypeid, transactionid, certificateissuedate, certificateno, sharepercentage, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (188, 189, 154, 1, 194, NULL, NULL, NULL, true, 1, '2018-07-20 00:00:00', NULL, NULL);
 
 SELECT pg_catalog.setval('la_ext_personlandmapping_personlandid_seq', 188, true);
+
+
 
 
 INSERT INTO la_ext_process (processid, processname, processname_en, isactive) VALUES (1, 'Lease', 'Lease', true);
@@ -4804,21 +5227,35 @@ INSERT INTO la_ext_process (processid, processname, processname_en, isactive) VA
 INSERT INTO la_ext_process (processid, processname, processname_en, isactive) VALUES (8, 'Parcel Split', 'Parcel Split', true);
 INSERT INTO la_ext_process (processid, processname, processname_en, isactive) VALUES (9, 'Surrender of Mortgage', 'Surrender of Mortgage', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_process_processid_seq', 7, true);
+
+
+
+
 
 
 SELECT pg_catalog.setval('la_ext_projectadjudicator_projectadjudicatorid_seq', 1, false);
 
+
+
 INSERT INTO la_ext_projectarea (projectareaid, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, initiationdate, description, vc_meetingdate, postalcode, authorizedmember, authorizedmembersignature, landofficer, landofficersignature, executiveofficer, executiveofficersignature, certificatenumber, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (118, 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, '', 'dfgsdgsdfg', NULL, '', NULL, '', NULL, '', true, 1, '2018-08-02 14:41:29.922', 1, '2018-08-02 14:41:29.922');
 INSERT INTO la_ext_projectarea (projectareaid, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, initiationdate, description, vc_meetingdate, postalcode, authorizedmember, authorizedmembersignature, landofficer, landofficersignature, executiveofficer, executiveofficersignature, certificatenumber, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (130, 1, 1, 1, 2, 2, 3, 7, 4, 44, 5, 311, NULL, NULL, NULL, NULL, '2018-05-01', 'fgj', 'ghfj', NULL, '', NULL, 'fgj', NULL, 'ghj', true, 1, '2018-08-02 15:48:49.635', 1, '2018-08-02 15:48:49.635');
 
+
+
 SELECT pg_catalog.setval('la_ext_projectarea_projectareaid_seq', 130, true);
+
+
 
 INSERT INTO la_ext_projectbaselayermapping (projectbaselayerid, baselayerid, projectnameid, baselayerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (116, 5, 2, NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL);
 INSERT INTO la_ext_projectbaselayermapping (projectbaselayerid, baselayerid, projectnameid, baselayerorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (128, 5, 1, NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL);
 
 
 SELECT pg_catalog.setval('la_ext_projectbaselayermapping_projectbaselayerid_seq', 128, true);
+
+
 
 
 INSERT INTO la_ext_projectfile (projectfileid, projectfilename, projectnameid, filelocation, documentformatid, filesize, description, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (3, 'kakay.mbtiles', 2, 'resources/documents/Liberia/mbtiles', 1, 12828, 'test', true, 1, '2011-11-11 00:00:00', 1, '2011-11-11 00:00:00');
@@ -4833,17 +5270,29 @@ INSERT INTO la_ext_projectfile (projectfileid, projectfilename, projectnameid, f
 INSERT INTO la_ext_projectfile (projectfileid, projectfilename, projectnameid, filelocation, documentformatid, filesize, description, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (2, 'GE_A1.mbtiles', 2, 'resources/documents/Liberia/mbtiles', 1, 12828, 'jkfity', true, 1, '2011-11-11 00:00:00', 1, '2011-11-11 00:00:00');
 INSERT INTO la_ext_projectfile (projectfileid, projectfilename, projectnameid, filelocation, documentformatid, filesize, description, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (1, 'community_boundry.mbtiles', 2, 'resources/documents/Liberia/mbtiles', 1, 12828, 'khtrtiy', true, 1, '2010-10-10 00:00:00', 1, '2011-11-11 00:00:00');
 
+
+
 SELECT pg_catalog.setval('la_ext_projectfile_projectfileid_seq', 100, true);
 
+
+
+
+
 SELECT pg_catalog.setval('la_ext_projecthamlet_projecthamletid_seq', 1, false);
+
+
 
 INSERT INTO la_ext_projection (projectionid, projection, description, isactive) VALUES (1, 'EPSG:4326', 'EPSG:4326', true);
 INSERT INTO la_ext_projection (projectionid, projection, description, isactive) VALUES (2, 'EPSG:900913', 'EPSG:900913', true);
 
 SELECT pg_catalog.setval('la_ext_projection_projectionid_seq', 1, false);
 
+
+
 INSERT INTO la_ext_projectlayergroupmapping (projectlayergroupid, layergroupid, projectnameid, grouporder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (98, 81, 2, NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL);
 INSERT INTO la_ext_projectlayergroupmapping (projectlayergroupid, layergroupid, projectnameid, grouporder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (110, 82, 1, NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL);
+
+
 
 
 SELECT pg_catalog.setval('la_ext_projectlayergroupmapping_projectlayergroupid_seq', 110, true);
@@ -4865,6 +5314,8 @@ INSERT INTO la_ext_registrationsharetype (registrationsharetypeid, landid, lands
 INSERT INTO la_ext_registrationsharetype (registrationsharetypeid, landid, landsharetypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (16, 38, 8, true, 1, '2018-07-17 00:00:00', NULL, NULL);
 INSERT INTO la_ext_registrationsharetype (registrationsharetypeid, landid, landsharetypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (17, 29, 6, true, 1, '2018-07-17 00:00:00', NULL, NULL);
 INSERT INTO la_ext_registrationsharetype (registrationsharetypeid, landid, landsharetypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (18, 152, 6, true, 1, '2018-07-18 00:00:00', NULL, NULL);
+
+
 
 INSERT INTO la_ext_resource_custom_attribute (customattributeid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute, subclassificationid, projectid) VALUES (2, 'Resource Custom Attribute', 'Resource Custom Attribute', 5, 10, 'Custom', '100', true, '1', true, false, NULL, 2);
 INSERT INTO la_ext_resource_custom_attribute (customattributeid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute, subclassificationid, projectid) VALUES (7, 'Resource Custom Attribute Sub Class 5', 'Resource Custom Attribute Sub Class 5', 5, 10, 'Custom', '100', true, '1', true, false, 3, 2);
@@ -5155,450 +5606,27 @@ INSERT INTO la_ext_resource_custom_attribute (customattributeid, fieldname, fiel
 INSERT INTO la_ext_resource_custom_attribute (customattributeid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute, subclassificationid, projectid) VALUES (291, 'Resource Custom Attribute Sub Class 5', 'Resource Custom Attribute Sub Class 5', 5, 13, 'Custom', '130', true, '1', true, false, 40, 2);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_resource_custom_attribute_customattributeid_seq', 1, false);
 
 
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (228, 2, 8, 20, 13, '10', 'Polygon', 139);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (229, 2, 8, 20, 13, '30', 'Polygon', 140);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (235, 2, 10, 2, NULL, 'blue', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (236, 2, 10, 2, NULL, 'brown', 'Polygon', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (237, 2, 10, 2, NULL, 'yelow', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (238, 2, 10, 20, 13, '1', 'Polygon', 139);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (239, 2, 10, 20, 13, '2', 'Polygon', 140);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (243, 2, 11, 101, 14, 's1', 'Polygon', 302);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (244, 2, 11, 101, 14, 's2', 'Polygon', 303);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (245, 2, 12, 128, NULL, 'rr1', 'Polygon', 356);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (246, 2, 12, 128, NULL, 'rr2', 'Polygon', 357);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (247, 2, 12, 128, NULL, 'rr3', 'Polygon', 358);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (248, 2, 12, 142, 14, 's1', 'Polygon', 385);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (249, 2, 12, 142, 14, 's3', 'Polygon', 386);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (250, 2, 13, 169, NULL, '1', 'Polygon', 439);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (251, 2, 13, 169, NULL, '2', 'Polygon', 440);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (252, 2, 13, 169, NULL, '3', 'Polygon', 441);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (253, 2, 13, 170, 1, 's1', 'Polygon', 442);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (254, 2, 13, 170, 1, 's2', 'Polygon', 443);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (255, 2, 14, 210, NULL, 'a1', 'Polygon', 542);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (256, 2, 14, 210, NULL, 'a2', 'Polygon', 543);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (257, 2, 14, 210, NULL, 'a3', 'Polygon', 544);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (258, 2, 14, 217, 7, 's1', 'Polygon', 557);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (259, 2, 14, 217, 7, 's2', 'Polygon', 558);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (260, 2, 16, 251, NULL, 'b1', 'Polygon', 625);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (261, 2, 16, 251, NULL, 'b2', 'Polygon', 626);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (262, 2, 16, 251, NULL, 'b3', 'Polygon', 627);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (263, 2, 16, 288, 37, 'a1', 'Polygon', 700);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (264, 2, 16, 288, 37, 'a2', 'Polygon', 701);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (240, 2, 11, 87, NULL, '10', 'Polygon', 273);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (241, 2, 11, 87, NULL, '20', 'Polygon', 274);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (242, 2, 11, 87, NULL, '30', 'Polygon', 275);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (265, 2, 18, 2, NULL, 'd', 'Point', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (266, 2, 18, 2, NULL, 'd', 'Point', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (267, 2, 18, 2, NULL, 'd1', 'Point', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (268, 2, 18, 20, 13, 's', 'Point', 139);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (269, 2, 18, 20, 13, 's', 'Point', 140);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (270, 2, 19, 2, NULL, 'd', 'Point', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (271, 2, 19, 2, NULL, 'dd', 'Point', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (272, 2, 19, 2, NULL, 'e', 'Point', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (273, 2, 19, 6, 2, 'ddd', 'Point', 113);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (274, 2, 19, 6, 2, 'x', 'Point', 112);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (275, 2, 20, 2, NULL, 'blue', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (276, 2, 20, 2, NULL, 'brown', 'Polygon', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (277, 2, 20, 2, NULL, 'yellow', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (278, 2, 20, 30, 23, '1', 'Polygon', 159);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (279, 2, 20, 30, 23, '2', 'Polygon', 160);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (280, 2, 21, 2, NULL, 'Hfhf', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (281, 2, 21, 2, NULL, 'Hfhf', 'Polygon', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (282, 2, 21, 2, NULL, 'Hfhf', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (283, 2, 24, 2, NULL, 'Hf Hf', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (225, 2, 8, 2, NULL, 'gfd', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (226, 2, 8, 2, NULL, 'fgsd', 'Polygon', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (227, 2, 8, 2, NULL, 'bfds', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (230, 2, 9, 9, NULL, 'krgjhdh', 'Polygon', 117);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (231, 2, 9, 9, NULL, 'rajfghdghj', 'Polygon', 116);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (232, 2, 9, 9, NULL, 'singhgfjdgjd', 'Polygon', 118);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (233, 2, 9, 60, 14, 'hgjdghj', 'Polygon', 220);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (234, 2, 9, 60, 14, 'rdghj', 'Polygon', 219);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (284, 2, 25, 2, NULL, '1', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (285, 2, 25, 2, NULL, '2', 'Polygon', 104);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (286, 2, 25, 2, NULL, '3', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (287, 2, 25, 20, 13, '1', 'Polygon', 139);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (288, 2, 25, 20, 13, '2', 'Polygon', 140);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (289, 2, 26, 9, NULL, '1', 'Polygon', 116);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (290, 2, 26, 9, NULL, '2', 'Polygon', 117);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (291, 2, 26, 9, NULL, '3', 'Polygon', 118);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (292, 2, 26, 59, 13, '1', 'Polygon', 217);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (293, 2, 26, 59, 13, '2', 'Polygon', 218);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (294, 2, 27, 2, NULL, 'bfhf', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (295, 2, 27, 2, NULL, 'hd', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (296, 2, 27, 21, 14, 'bfbf', 'Polygon', 142);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (297, 2, 28, 9, NULL, 'fhff', 'Polygon', 118);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (298, 2, 28, 9, NULL, 'hff', 'Polygon', 116);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (299, 2, 29, 2, NULL, '1', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (300, 2, 29, 31, 24, '2', 'Polygon', 161);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (301, 2, 30, 2, NULL, 'hf', 'Polygon', 103);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (302, 2, 30, 2, NULL, 'hff', 'Polygon', 105);
-INSERT INTO la_ext_resource_custom_attributevalue (customattributevalueid, projectid, landid, customattributeid, subclassificationid, attributevalue, geomtype, attributeoptionsid) VALUES (303, 2, 30, 31, 24, 'hfhr', 'Polygon', 161);
 
 
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (321, NULL, NULL, NULL, 2, 'mast_0318_204958.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (322, NULL, NULL, NULL, 2, 'mast_0318_204958.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (319, NULL, NULL, NULL, 2, 'mast_0318_204435.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (323, NULL, NULL, NULL, 2, 'mast_0318_204958.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (324, NULL, NULL, NULL, 2, 'mast_0318_204958.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (325, NULL, NULL, NULL, 2, 'mast_0318_204958.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (326, NULL, NULL, NULL, 2, 'mast_0318_210122.jpg', NULL, '2018-03-18', '', NULL, true, 1, '2018-03-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (327, NULL, NULL, NULL, 2, 'mast_0320_171813.jpg', NULL, '2018-03-20', '', NULL, true, 1, '2018-03-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (328, NULL, NULL, NULL, 2, 'mast_0403_123821.jpg', NULL, '2018-04-03', '', NULL, true, 1, '2018-04-03 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (329, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (330, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (331, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (332, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (333, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (334, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (335, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (336, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (337, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (338, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (339, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (340, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (341, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (342, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (343, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (344, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (345, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (346, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (347, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (348, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (349, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (350, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (351, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (352, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (353, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (354, NULL, NULL, NULL, 2, 'mast_0404_134916.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (355, NULL, NULL, NULL, 2, 'mast_0404_141309.jpg', NULL, '2018-04-04', '', NULL, true, 1, '2018-04-04 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (356, NULL, NULL, NULL, 2, 'mast_0410_180835.jpg', NULL, '2018-04-10', '', NULL, true, 1, '2018-04-10 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (357, NULL, NULL, NULL, 2, 'mast_0411_155149.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (358, NULL, NULL, NULL, 2, 'mast_0411_155230.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (359, NULL, NULL, NULL, 2, 'mast_0411_155149.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (360, NULL, NULL, NULL, 2, 'mast_0411_155230.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (361, NULL, NULL, NULL, 2, 'mast_0411_155149.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (362, NULL, NULL, NULL, 2, 'mast_0411_155230.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (363, NULL, NULL, NULL, 2, 'mast_0411_155433.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (364, NULL, NULL, NULL, 2, 'mast_0411_155149.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (365, NULL, NULL, NULL, 2, 'mast_0411_155230.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (366, NULL, NULL, NULL, 2, 'mast_0411_155433.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (367, NULL, NULL, NULL, 2, 'mast_0411_164911.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (368, NULL, NULL, NULL, 2, 'mast_0411_165014.jpg', NULL, '2018-04-11', '', NULL, true, 1, '2018-04-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (369, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (370, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (371, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (372, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (373, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (374, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (375, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (376, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (377, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (378, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (379, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (380, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (381, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (382, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (383, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (384, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (385, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (386, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (387, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (388, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (389, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (390, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (391, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (392, NULL, NULL, NULL, 2, 'mast_0518_171243.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (393, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-18', '', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (394, NULL, NULL, NULL, 2, 'mast_0518_171413.jpg', NULL, '2018-05-21', '', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (395, NULL, NULL, NULL, 2, 'mast_0601_120634.jpg', NULL, '2018-06-01', '', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (396, NULL, 22, NULL, 2, 'mast_0606_152124.jpg', '/storage/emulated/0/MAST/multimedia/Resource_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (397, NULL, 23, NULL, 2, 'mast_0606_152521.jpg', '/storage/emulated/0/MAST/multimedia/Resource_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
-INSERT INTO la_ext_resource_documentdetails (documentid, transactionid, landid, partyid, documentformatid, documentname, documentlocation, recordationdate, remarks, documenttypeid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (398, NULL, 24, NULL, 2, 'mast_0606_153341.jpg', '/storage/emulated/0/MAST/multimedia/Resource_Media', '2018-06-06', '', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL);
+
+
+
 
 SELECT pg_catalog.setval('la_ext_resource_documentdetails_documentid_seq', 398, true);
 
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (83, 2, 8, 1158, 'Primary occupant /Point of contact', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (84, 2, 8, 1017, 'shyam', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (85, 2, 8, 1018, 'kr', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (86, 2, 8, 1019, 'guptta', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (87, 2, 8, 1020, 'male', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (89, 2, 8, 1022, 'divorced', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (92, 2, 8, 1025, 'Yes', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (93, 2, 8, 1026, 'noida', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (94, 2, 8, 1030, '12346', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (88, 2, 8, 1021, '05-18-2018', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (95, 2, 9, 1163, 'Primary occupant /Point of contact', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (96, 2, 9, 1163, 'occupant', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (97, 2, 9, 1063, 'rshul', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (98, 2, 9, 1063, 'rsj', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (99, 2, 9, 1065, 'kr', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (100, 2, 9, 1065, 'kr', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (101, 2, 9, 1066, 'gupta', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (102, 2, 9, 1066, 'singh', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (103, 2, 9, 1067, 'male', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (104, 2, 9, 1067, 'male', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (106, 2, 9, 1068, '2018-05-18', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (107, 2, 9, 1064, 'married', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (108, 2, 9, 1064, 'married', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (109, 2, 9, 1069, 'Liberian', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (110, 2, 9, 1069, 'Liberian', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (111, 2, 9, 1070, 'Frolay', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (112, 2, 9, 1070, 'Duobehyee', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (113, 2, 9, 1071, 'Yes', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (114, 2, 9, 1071, 'Yes', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (115, 2, 9, 1074, 'delhi', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (116, 2, 9, 1074, 'delji', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (117, 2, 9, 1073, '12345', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (118, 2, 9, 1073, '588', 'Polygon', 26);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (119, 2, 10, 1158, 'Primary occupant /Point of contact', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (120, 2, 10, 1017, 'virsj', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (121, 2, 10, 1018, 'kr', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (122, 2, 10, 1019, 'singh', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (123, 2, 10, 1020, 'male', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (124, 2, 10, 1021, '2018-05-18', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (125, 2, 10, 1022, 'divorced', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (126, 2, 10, 1023, 'Liberian', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (127, 2, 10, 1024, 'Duo-ah', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (128, 2, 10, 1025, 'Yes', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (129, 2, 10, 1026, 'delji', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (130, 2, 10, 1030, '12345790', 'Polygon', 29);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (131, 2, 11, 1162, 'Primary occupant /Point of contact', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (132, 2, 11, 1077, 'glb', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (133, 2, 11, 1078, '5', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (134, 2, 11, 1079, 'ram', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (135, 2, 11, 1080, 'kr', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (136, 2, 11, 1081, 'gupta', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (137, 2, 11, 1082, 'delhi', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (138, 2, 11, 1086, '12345780', 'Polygon', 34);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (139, 2, 12, 1161, 'Primary occupant /Point of contact', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (140, 2, 12, 1031, 'glb', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (141, 2, 12, 1032, '12345', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (142, 2, 12, 1033, '2018-05-18', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (143, 2, 12, 1034, '6', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (144, 2, 12, 1035, 'raja', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (145, 2, 12, 1036, 'kr', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (146, 2, 12, 1037, 'simgh', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (147, 2, 12, 1038, 'delhi', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (148, 2, 12, 1042, '1234567890', 'Polygon', 40);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (149, 2, 13, 1160, 'Primary occupant /Point of contact', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (150, 2, 13, 1160, 'occupant', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (151, 2, 13, 1096, 'party', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (152, 2, 13, 1096, 'community', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (153, 2, 13, 1097, 'tushar', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (154, 2, 13, 1097, 'rsj', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (155, 2, 13, 1098, 'kr', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (156, 2, 13, 1098, 'kr', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (157, 2, 13, 1099, 'singh', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (158, 2, 13, 1099, 'singh', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (159, 2, 13, 1100, 'delhi', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (160, 2, 13, 1100, 'dekhi', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (161, 2, 13, 1105, '12347890', 'Polygon', 46);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (162, 2, 13, 1105, '88888', 'Polygon', 47);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (163, 2, 14, 1159, 'Primary occupant /Point of contact', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (164, 2, 14, 1087, '5', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (165, 2, 14, 1088, 'komsl', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (166, 2, 14, 1089, 'lr', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (167, 2, 14, 1090, 'singh', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (168, 2, 14, 1091, 'delhi', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (169, 2, 14, 1095, '488', 'Polygon', 69);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (170, 2, 16, 1165, 'Primary occupant /Point of contact', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (171, 2, 16, 1106, 'rkgit', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (172, 2, 16, 1107, 'National', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (173, 2, 16, 1108, 'rsm', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (174, 2, 16, 1109, 'r', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (175, 2, 16, 1110, 'singh', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (176, 2, 16, 1111, 'delhi', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (177, 2, 16, 1112, '22', 'Polygon', 74);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (178, 2, 18, 1158, 'Primary occupant /Point of contact', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (179, 2, 18, 1017, 'rd', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (180, 2, 18, 1018, 'dd', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (181, 2, 18, 1019, 'dd', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (182, 2, 18, 1020, 'male', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (183, 2, 18, 1021, '2018-05-24', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (184, 2, 18, 1022, 'married', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (185, 2, 18, 1023, 'Liberian', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (186, 2, 18, 1024, 'Duo', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (187, 2, 18, 1025, 'Yes', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (188, 2, 18, 1026, 'hshs', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (189, 2, 18, 1030, '66', 'Point', 48);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (190, 2, 19, 1158, 'Primary occupant /Point of contact', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (191, 2, 19, 1017, 'a', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (192, 2, 19, 1018, 'b', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (193, 2, 19, 1019, 'c', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (194, 2, 19, 1020, 'male', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (195, 2, 19, 1021, '2018-05-24', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (196, 2, 19, 1022, 'married', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (197, 2, 19, 1023, 'Liberian', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (198, 2, 19, 1024, 'Duo', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (199, 2, 19, 1025, 'Yes', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (200, 2, 19, 1026, 'hxhx', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (201, 2, 19, 1030, '666799', 'Point', 51);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (202, 2, 20, 1158, 'Primary occupant /Point of contact', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (203, 2, 20, 1017, 'anuj', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (90, 2, 8, 1023, 'Country 1', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (204, 2, 20, 1018, 'kr', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (205, 2, 20, 1019, 'rathi', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (206, 2, 20, 1020, 'male', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (207, 2, 20, 1021, '2018-05-25', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (208, 2, 20, 1022, 'married', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (209, 2, 20, 1023, 'Liberian', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (210, 2, 20, 1024, 'Duo-ah', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (211, 2, 20, 1025, 'Yes', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (212, 2, 20, 1026, 'delji', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (213, 2, 20, 1030, '3464', 'Polygon', 54);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (214, 2, 21, 1158, 'Primary occupant /Point of contact', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (215, 2, 21, 1017, 'fh', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (216, 2, 21, 1018, 'Fh', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (217, 2, 21, 1019, 'F', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (218, 2, 21, 1020, 'male', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (219, 2, 21, 1021, '2018-06-06', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (220, 2, 21, 1022, 'married', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (221, 2, 21, 1023, 'Liberian', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (222, 2, 21, 1024, 'Dubuzon', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (223, 2, 21, 1025, 'Yes', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (224, 2, 21, 1026, 'Hdhd', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (225, 2, 21, 1030, '64646944', 'Polygon', 380);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (226, 2, 22, 1158, 'Primary occupant /Point of contact', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (227, 2, 22, 1017, 'Dd', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (228, 2, 22, 1018, 'Ff', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (229, 2, 22, 1019, 'Ff', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (230, 2, 22, 1020, 'male', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (231, 2, 22, 1021, '2018-06-06', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (232, 2, 22, 1022, 'divorced', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (233, 2, 22, 1023, 'Liberian', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (234, 2, 22, 1024, 'Duo-ah', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (235, 2, 22, 1025, 'Yes', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (236, 2, 22, 1026, 'Dmdjd', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (237, 2, 22, 1030, '9595595', 'Point', 382);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (238, 2, 23, 1158, 'Primary occupant /Point of contact', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (239, 2, 23, 1017, 'T', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (240, 2, 23, 1018, 'U', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (241, 2, 23, 1019, 'V', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (242, 2, 23, 1020, 'female', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (243, 2, 23, 1021, '2018-06-06', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (244, 2, 23, 1022, 'married', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (245, 2, 23, 1023, 'Liberian', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (246, 2, 23, 1024, 'Borpea', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (247, 2, 23, 1025, 'Yes', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (248, 2, 23, 1026, 'Jdd', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (249, 2, 23, 1030, '9895598', 'Polygon', 191);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (250, 2, 24, 1158, 'Primary occupant /Point of contact', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (251, 2, 24, 1017, 'Hf', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (252, 2, 24, 1018, 'Hf', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (253, 2, 24, 1019, 'Fh', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (254, 2, 24, 1020, 'male', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (255, 2, 24, 1021, '2018-06-06', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (256, 2, 24, 1022, 'married', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (257, 2, 24, 1023, 'Liberian', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (258, 2, 24, 1024, 'Duo', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (259, 2, 24, 1025, 'Yes', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (260, 2, 24, 1026, 'Hf', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (261, 2, 24, 1030, '656654', 'Polygon', 193);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (105, 2, 9, 1068, '05-18-2018', 'Polygon', 23);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (262, 2, 25, 1158, 'Primary occupant /Point of contact', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (263, 2, 25, 1017, 'raj', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (264, 2, 25, 1018, 'kr', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (265, 2, 25, 1019, 'singh', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (266, 2, 25, 1020, 'male', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (267, 2, 25, 1021, '2018-06-13', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (268, 2, 25, 1022, 'married', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (269, 2, 25, 1023, 'Liberian', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (270, 2, 25, 1024, 'Duo-ah', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (271, 2, 25, 1025, 'Yes', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (272, 2, 25, 1026, 'hddj', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (273, 2, 25, 1030, '44464', 'Polygon', 244);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (274, 2, 26, 1163, 'Primary occupant /Point of contact', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (275, 2, 26, 1163, 'occupant', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (276, 2, 26, 1063, 'lakshay', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (277, 2, 26, 1063, 'raj', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (278, 2, 26, 1065, 'kr', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (279, 2, 26, 1065, 'kr', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (280, 2, 26, 1066, 'guota', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (281, 2, 26, 1066, 'singh', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (282, 2, 26, 1067, 'male', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (283, 2, 26, 1067, 'male', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (284, 2, 26, 1068, '2018-06-13', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (285, 2, 26, 1068, '2018-06-13', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (286, 2, 26, 1064, 'married', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (287, 2, 26, 1064, 'married', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (288, 2, 26, 1069, 'Liberian', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (289, 2, 26, 1069, 'Liberian', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (290, 2, 26, 1070, 'Duobehyee', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (291, 2, 26, 1070, 'Duobehyee', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (292, 2, 26, 1071, 'Yes', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (293, 2, 26, 1071, 'Yes', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (294, 2, 26, 1074, 'delhi', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (295, 2, 26, 1074, 'djjd', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (296, 2, 26, 1073, '6444994', 'Polygon', 249);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (297, 2, 26, 1073, '949449', 'Polygon', 252);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (298, 2, 27, 1158, 'Primary occupant /Point of contact', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (299, 2, 27, 1017, 'hf', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (300, 2, 27, 1018, 'bf', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (301, 2, 27, 1019, 'hf', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (302, 2, 27, 1020, 'male', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (303, 2, 27, 1021, '2018-06-14', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (304, 2, 27, 1022, 'married', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (305, 2, 27, 1023, 'Not Known', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (306, 2, 27, 1024, 'Ethnicity 1', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (307, 2, 27, 1025, 'Yes', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (308, 2, 27, 1026, 'hfhf', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (309, 2, 27, 1030, '575548', 'Polygon', 242);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (310, 2, 28, 1163, 'Primary occupant /Point of contact', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (311, 2, 28, 1163, 'occupant', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (312, 2, 28, 1063, 'hf', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (313, 2, 28, 1063, 'hfhf', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (314, 2, 28, 1065, 'hf', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (315, 2, 28, 1065, 'hfhf', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (316, 2, 28, 1066, 'hf', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (317, 2, 28, 1066, 'bfhf', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (318, 2, 28, 1067, 'male', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (319, 2, 28, 1067, 'male', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (320, 2, 28, 1068, '2018-06-14', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (321, 2, 28, 1068, '2018-06-14', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (322, 2, 28, 1064, 'married', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (323, 2, 28, 1064, 'married', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (324, 2, 28, 1069, 'Country 1', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (325, 2, 28, 1069, 'Country 1', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (326, 2, 28, 1070, 'Ethnicity 1', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (327, 2, 28, 1070, 'Ethnicity 1', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (328, 2, 28, 1071, 'Yes', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (329, 2, 28, 1071, 'Yes', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (330, 2, 28, 1074, 'hd', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (331, 2, 28, 1074, 'ygg', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (332, 2, 28, 1073, '555454', 'Polygon', 247);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (333, 2, 28, 1073, '5555', 'Polygon', 490);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (91, 2, 8, 1024, 'Ethnicity 1', 'Polygon', 18);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (334, 2, 29, 1158, 'Primary occupant /Point of contact', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (335, 2, 29, 1017, 'x', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (336, 2, 29, 1018, 'y', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (337, 2, 29, 1019, 'z', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (338, 2, 29, 1020, 'male', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (339, 2, 29, 1021, '2018-06-15', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (340, 2, 29, 1022, 'married', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (341, 2, 29, 1023, 'Country 1', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (342, 2, 29, 1024, 'Ethnicity 1', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (343, 2, 29, 1025, 'Yes', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (344, 2, 29, 1026, '133', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (345, 2, 29, 1030, '644', 'Polygon', 248);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (346, 2, 30, 1158, 'Primary occupant /Point of contact', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (347, 2, 30, 1017, 'hf', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (348, 2, 30, 1018, 'hfbflh', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (349, 2, 30, 1019, 'bf', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (350, 2, 30, 1020, 'male', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (351, 2, 30, 1021, '2018-07-02', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (352, 2, 30, 1022, 'married', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (353, 2, 30, 1023, 'Country 1', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (354, 2, 30, 1024, 'Ethnicity 2', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (355, 2, 30, 1025, 'Yes', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (356, 2, 30, 1026, 'bbc', 'Polygon', 294);
-INSERT INTO la_ext_resourceattributevalue (attributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (357, 2, 30, 1030, '54', 'Polygon', 294);
+
+
+
 
 
 SELECT pg_catalog.setval('la_ext_resourceattributevalue_attributevalueid_seq', 357, true);
+
+
 
 
 INSERT INTO la_ext_resourceclassification (classificationid, classificationname, isactive) VALUES (1, 'Built-Up-Area', true);
@@ -5611,37 +5639,21 @@ INSERT INTO la_ext_resourceclassification (classificationid, classificationname,
 INSERT INTO la_ext_resourceclassification (classificationid, classificationname, isactive) VALUES (8, 'Wetland', true);
 INSERT INTO la_ext_resourceclassification (classificationid, classificationname, isactive) VALUES (9, 'Water', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_resourceclassification_classificationid_seq', 9, true);
+
+
 
 SELECT pg_catalog.setval('la_ext_resourcecustomattributevalue_customattributevalueid_seq', 303, true);
 
 
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (8, 2, 8, 4, 13, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (9, 2, 9, 4, 14, 'Polygon', 17);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (10, 2, 10, 4, 13, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (11, 2, 11, 4, 14, 'Polygon', 18);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (12, 2, 12, 4, 14, 'Polygon', 14);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (13, 2, 13, 1, 1, 'Polygon', 12);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (14, 2, 14, 3, 7, 'Polygon', 11);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (15, 2, 15, 4, 14, 'Polygon', 9);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (16, 2, 16, 9, 37, 'Polygon', 13);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (17, 2, 17, 3, 7, 'Polygon', 15);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (18, 2, 18, 4, 13, 'Point', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (19, 2, 19, 1, 2, 'Point', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (20, 2, 20, 6, 23, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (21, 2, 21, 4, 14, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (22, 2, 22, 4, 13, 'Point', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (23, 2, 23, 4, 13, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (24, 2, 24, 4, 14, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (25, 2, 25, 4, 13, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (26, 2, 26, 4, 13, 'Polygon', 17);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (27, 2, 27, 4, 14, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (28, 2, 28, 6, 23, 'Polygon', 17);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (29, 2, 29, 6, 24, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (30, 2, 30, 6, 24, 'Polygon', 10);
-INSERT INTO la_ext_resourcelandclassificationmapping (landclassmappingid, projectid, landid, classificationid, subclassificationid, geomtype, categoryid) VALUES (31, 2, 31, 4, 14, 'Polygon', 9);
+
+
 
 SELECT pg_catalog.setval('la_ext_resourcelandclassificationmapping_landclassmappingid_seq', 31, true);
+
+
 
 INSERT INTO la_ext_resourcepoiattributemaster (poiattributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (1, 'First Name', 'First Name', 1, NULL, 'resourcepoiattribute', '100', true, '1', true, true);
 INSERT INTO la_ext_resourcepoiattributemaster (poiattributemasterid, fieldname, fieldaliasname, datatypemasterid, attributecategoryid, referencetable, size, mandatory, listing, isactive, masterattribute) VALUES (2, 'Middle Name', 'Middle Name', 1, NULL, 'resourcepoiattribute', '100', true, '2', true, true);
@@ -5654,87 +5666,13 @@ INSERT INTO la_ext_resourcepoiattributemaster (poiattributemasterid, fieldname, 
 SELECT pg_catalog.setval('la_ext_resourcepoiattributemasterid_seq', 1, false);
 
 
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (284, 2, 8, 1, 'tushar', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (285, 2, 8, 2, 'kr', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (286, 2, 8, 3, 'gupta', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (287, 2, 8, 6, 'Male', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (288, 2, 8, 5, 'Mother', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (290, 2, 9, 1, 'rsm', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (291, 2, 9, 2, 'kr', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (292, 2, 9, 3, 'singh', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (293, 2, 9, 6, 'Female', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (294, 2, 9, 5, 'Grandmother', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (295, 2, 9, 4, '2018-05-18', 'Polygon', 24);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (296, 2, 10, 1, 'vishal', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (297, 2, 10, 2, 'lr', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (298, 2, 10, 3, 'sinh', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (299, 2, 10, 6, 'Male', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (300, 2, 10, 5, 'Father', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (301, 2, 10, 4, '2018-05-18', 'Polygon', 31);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (302, 2, 11, 1, 'rsm', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (303, 2, 11, 2, 'kr', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (304, 2, 11, 3, 'simgh', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (305, 2, 11, 6, 'Female', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (306, 2, 11, 5, 'Father', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (307, 2, 11, 4, '2018-05-18', 'Polygon', 37);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (308, 2, 12, 1, 'ratan', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (309, 2, 12, 2, 'kr', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (310, 2, 12, 3, 'singh', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (311, 2, 12, 6, 'Male', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (312, 2, 12, 5, 'Sister', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (313, 2, 12, 4, '2018-05-18', 'Polygon', 43);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (314, 2, 13, 1, 'rajay', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (315, 2, 13, 2, 'kr', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (316, 2, 13, 3, 'singh', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (317, 2, 13, 6, 'Male', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (320, 2, 14, 1, 'vishal', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (321, 2, 14, 2, 'kr', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (322, 2, 14, 3, 'singh', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (323, 2, 14, 6, 'Female', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (324, 2, 14, 5, 'Brother', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (325, 2, 14, 4, '2018-05-18', 'Polygon', 71);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (326, 2, 16, 1, 'ram', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (327, 2, 16, 2, 'kr', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (328, 2, 16, 3, 'singh', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (329, 2, 16, 6, 'Male', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (330, 2, 16, 5, 'Father', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (331, 2, 16, 4, '2018-05-18', 'Polygon', 76);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (319, 2, 13, 4, '05-18-2018', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (318, 2, 13, 5, 'Daughter', 'Polygon', 49);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (332, 2, 20, 1, 'ratan ', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (333, 2, 20, 2, 'rk', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (334, 2, 20, 3, 'singh', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (335, 2, 20, 6, 'Male', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (336, 2, 20, 5, 'Mother', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (337, 2, 20, 4, '2018-05-25', 'Polygon', 58);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (338, 2, 25, 1, 'ratan', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (339, 2, 25, 2, 'kr', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (340, 2, 25, 3, 'singh', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (341, 2, 25, 6, 'Female', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (342, 2, 25, 5, 'Grandmother', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (343, 2, 25, 4, '2018-06-13', 'Polygon', 246);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (344, 2, 26, 1, 'atul', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (345, 2, 26, 2, 'kr', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (346, 2, 26, 3, 'singh', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (347, 2, 26, 6, 'Male', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (348, 2, 26, 5, 'Mother', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (349, 2, 26, 4, '2018-06-13', 'Polygon', 250);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (350, 2, 27, 1, 'bf', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (351, 2, 27, 2, 'hfkfh', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (352, 2, 27, 3, 'jf', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (353, 2, 27, 6, 'Female', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (354, 2, 27, 5, 'Father', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (355, 2, 27, 4, '2018-06-14', 'Polygon', 244);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (289, 2, 8, 4, '05-18-2018', 'Polygon', 20);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (356, 2, 30, 1, 'hf', 'Polygon', 296);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (357, 2, 30, 2, 'hf', 'Polygon', 296);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (358, 2, 30, 3, 'nf', 'Polygon', 296);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (359, 2, 30, 6, 'Male', 'Polygon', 296);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (360, 2, 30, 5, 'Grandfather', 'Polygon', 296);
-INSERT INTO la_ext_resourcepoiattributevalue (poiattributevalueid, projectid, landid, attributemasterid, attributevalue, geomtype, groupid) VALUES (361, 2, 30, 4, '2018-07-02', 'Polygon', 296);
+
+
 
 
 SELECT pg_catalog.setval('la_ext_resourcepoiattributevalue_attributevalueid_seq', 361, true);
+
+
 
 
 INSERT INTO la_ext_resourcesubclassification (subclassificationid, classificationid, geometrytypeid, subclassificationname, isactive) VALUES (1, 1, 3, 'Urban', true);
@@ -5778,7 +5716,11 @@ INSERT INTO la_ext_resourcesubclassification (subclassificationid, classificatio
 INSERT INTO la_ext_resourcesubclassification (subclassificationid, classificationid, geometrytypeid, subclassificationname, isactive) VALUES (39, 9, 3, 'Lagoon ', true);
 INSERT INTO la_ext_resourcesubclassification (subclassificationid, classificationid, geometrytypeid, subclassificationname, isactive) VALUES (40, 9, 3, 'Sea and Ocean', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_resourcesubclassification_subclassificationid_seq', 40, true);
+
+
 
 
 INSERT INTO la_ext_role (roleid, roletype, roletype_en, description, isactive) VALUES (2, 'DPI', 'DPI', 'DPI Land Official', true);
@@ -5788,6 +5730,8 @@ INSERT INTO la_ext_role (roleid, roletype, roletype_en, description, isactive) V
 INSERT INTO la_ext_role (roleid, roletype, roletype_en, description, isactive) VALUES (6, 'TRUSTED INTERMEDIARY', 'TRUSTED INTERMEDIARY', 'CFV Agent', true);
 INSERT INTO la_ext_role (roleid, roletype, roletype_en, description, isactive) VALUES (7, 'USER', 'USER', 'User', true);
 INSERT INTO la_ext_role (roleid, roletype, roletype_en, description, isactive) VALUES (1, 'ROLE_ADMIN', 'ADMIN', 'System Administrator', true);
+
+
 
 SELECT pg_catalog.setval('la_ext_role_roleid_seq', 7, true);
 
@@ -5829,100 +5773,20 @@ INSERT INTO la_ext_rolemodulemapping (rolemoduleid, roleid, moduleid, isactive, 
 INSERT INTO la_ext_rolemodulemapping (rolemoduleid, roleid, moduleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (36, 1, 36, true, 1, '0208-10-05 00:00:00', NULL, NULL);
 INSERT INTO la_ext_rolemodulemapping (rolemoduleid, roleid, moduleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (8, 1, 8, true, 1, '0208-10-05 00:00:00', NULL, NULL);
 
+
+
 SELECT pg_catalog.setval('la_ext_rolemodulemapping_rolemoduleid_seq', 38, true);
+
+
 
 INSERT INTO la_ext_slopevalue (slopevalueid, slopevalue, isactive) VALUES (1, 'vfgdvd', true);
 
+
+
 SELECT pg_catalog.setval('la_ext_slopevalue_slopevalueid_seq', 1, false);
 
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (2, 2, 'ratan', 'kr', 'singh', NULL, 2, 9, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 3);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (1, 1, 'ajay', 'kr', 'singh', NULL, 1, 9, '2018-05-18', NULL, false, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 1);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (3, 3, 'ram', 'kr', 'singh', NULL, 1, 9, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 4);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (6, 4, 'tiger', 'kr', 'singh', NULL, 1, 7, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 6);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (7, 6, 'ram', 'kr', 'singh', NULL, 1, 6, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 8);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (8, 7, 'amvar', 'kr', 'singh', NULL, 1, 9, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 9);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (9, 10, 'hfhf', 'bfhf', 'hfhf', NULL, 2, 8, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 12);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (10, 11, 'a', 'b', 'c', NULL, 1, 9, '2018-05-21', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, 13);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (13, 1, 'aaaaaaaaaaaaaaa', 'bbbbbbbbbbbbb', 'dfg', NULL, 1, 1, '2018-05-24', NULL, true, 1, '2018-05-24 00:00:00', NULL, NULL, NULL, 21);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (38, 67, 'jghjf', 'fgj', 'fgjf', NULL, 1, 1, '2018-06-07', NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 91);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (53, 39, 'jghjghj', 'ghdjghj', 'jghj', NULL, 1, 2, '2017-01-01', NULL, false, 1, '2018-06-18 00:00:00', NULL, NULL, NULL, 146);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (54, 39, 'dghj', 'fdgfd', 'sdfs', NULL, 1, 2, '2017-12-31', NULL, false, 1, '2018-06-18 00:00:00', NULL, NULL, NULL, 146);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (56, 39, 'hgjghjfghgfhf', 'ghjg', 'ghj', NULL, 1, 3, '2017-01-01', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, NULL, 150);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (46, 51, 'fgdhg', 'ghj', 'jdgh', NULL, 1, 2, '2017-01-01', NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL, NULL, 134);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (47, 51, 'yutyu', 'tyuty', 'utyutu', NULL, 1, 3, '2017-12-31', NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL, NULL, 134);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (57, 108, 'ghfd', 'fgew1`', 'gf1', NULL, 1, 8, '2017-12-31', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, 151);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (11, 1, 'fhgh', 'fhjk', 'fjk', NULL, 1, 1, '2018-05-21', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, 14);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (12, 1, 'hdg', 'dh', 'dfh', NULL, 1, 1, '2018-05-22', NULL, true, 1, '2018-05-22 00:00:00', NULL, NULL, NULL, 5);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (4, 13, 'hdhd', 'dhhd', 'djhd', NULL, 1, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 27);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (14, 15, 'hff', 'fhhf', 'hyf', NULL, 2, 7, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 27);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (17, 17, 'fhhf', 'fjf', 'fhf', NULL, 2, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 28);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (18, 18, 'hfhf', 'fhf', 'fhf', NULL, 2, 7, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 29);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (19, 19, 'fhhf', 'fjf', 'fhf', NULL, 2, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 30);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (20, 22, 'fhhf', 'fjf', 'fhf', NULL, 2, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 33);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (21, 24, 'fhhf', 'fjf', 'fhf', NULL, 2, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 35);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (22, 35, 'Bf', 'Fjf', 'Fh', NULL, 2, 8, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 46);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (23, 36, 'Fhf', 'Fhf', 'Fhf', NULL, 2, 7, '2018-06-01', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 47);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (25, 36, 'ghj', 'ghj', 'ghj', NULL, 1, 1, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 59);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (24, 36, 'iyui', 'yuiyu', 'yuiy', NULL, 1, 1, '2018-06-01', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 58);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (26, 36, 'uyty', 'tyity', 'uitr', NULL, 1, 1, '2018-06-01', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 65);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (27, 36, 'ujhgj', 'ghjg', 'ghj', NULL, 1, 1, '2018-06-01', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, 67);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (5, 1, 'Ambar', 'Kumar', 'shar', NULL, 1, 1, '2018-05-18', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, 5);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (28, 1, 'Ram', 'Kr', 'Sharma', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 83);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (29, 26, 'POI', 'KR', 'shar', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 84);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (30, 1, 'dgh', 'fgh', 'fh', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 95);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (31, 68, 'asdf', 'sdaf', 'sdaf', NULL, 1, 1, '2018-06-07', NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 93);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (33, 68, 'gdfgh', 'fh', 'fgh', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 100);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (32, 68, 'fghfgh', 'fgh', 'fgh', NULL, 1, 1, '2018-06-07', NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 99);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (34, 68, '7e56', 'trd', 'tyr', NULL, 1, 1, '2018-06-07', NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 104);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (36, 68, 'etuy', 'urt', 'eurtu', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 106);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (35, 68, 'euu', 'tyutu', 'tyu', NULL, 1, 1, '2018-06-07', NULL, false, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 105);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (37, 82, 'Hf', 'Jf', 'Jf', NULL, 2, 9, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 107);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (39, 38, 'fgh', 'fgh', 'gfh', NULL, 1, 1, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 49);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (40, 84, 'Hf', 'Bf', 'Bf', NULL, 2, 8, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 109);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (41, 85, 'Hf', 'Hd', 'Hd', NULL, 2, 8, '2018-06-07', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, 110);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (15, 1, 'try', 'tryt', 'ryer', NULL, 1, 1, '2018-05-28', NULL, false, 1, '2018-05-28 00:00:00', NULL, NULL, NULL, 2);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (16, 1, 'tryrty', 'rtyrty', 'rty', NULL, 1, 1, '2018-05-28', NULL, false, 1, '2018-05-28 00:00:00', NULL, NULL, NULL, 2);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (42, 1, 'fghf', 'sfhfs', 'fh', NULL, 1, 1, '2018-06-08', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, NULL, 114);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (43, 1, 'dsfa', 'sadf', 'sadf', NULL, 1, 1, '2018-06-08', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, NULL, 120);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (44, 36, 'dfg', 'dfsgdsf', 'g', NULL, 1, 1, '2018-06-11', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, NULL, 112);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (45, 105, 'yurt', 'ty', 'rtu', NULL, 1, 1, '2018-06-11', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, NULL, 128);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (63, 29, 'fgfh', 'fgsh', 'hfghfh', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 40);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (49, 51, 'dfgg', 'fdgd', 'dfgdfg', NULL, 1, 2, '2017-01-01', NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL, NULL, 135);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (50, 117, 'gj', 'dghj', 'ghdj', NULL, 1, 1, '2018-06-13', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, NULL, 137);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (51, 120, 'e', 'f', 'g', NULL, 1, 9, '2018-06-13', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, NULL, 141);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (52, 121, 'vikas', 'kr', 'guo@', NULL, 2, 9, '2018-06-13', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, NULL, 142);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (60, 37, 'dfg', 'dfg', 'dfg', NULL, 1, 8, '2017-12-31', NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, 157);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (61, 37, 'xczbvxcz', 'xczbvxzcbv', 'xzcvxzcbv', NULL, 2, 10, '2017-12-31', NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, 157);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (55, 39, 'fghuhi', 'sgh', 'fgh', NULL, 1, 3, '2017-01-01', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, NULL, 147);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (59, 37, 'fghfg', 'gfhfgh', 'fgh', NULL, 1, 4, '2017-01-01', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, 144);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (58, 37, 'hfghdfhfghfg', 'fghdfh', 'fghf', NULL, 1, 3, '2017-01-01', NULL, false, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, 152);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (62, 37, 'jghj', 'ghj', 'ghjg', NULL, 1, 2, '2017-12-31', NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, NULL, 158);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (64, 150, 'fgh', 'fghfg', 'fghfgh', NULL, 1, 1, '2018-06-29', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (65, 150, 'ghfgh', 'hfgh', 'fghfg', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (66, 150, 'vnbbn', 'nvbn', 'nbnn', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (67, 150, 'fgh', 'fgh', 'fghfg', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (68, 150, 'xbcb', 'vcbcbv', 'vcb', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (69, 150, 'fdgdf', 'dfgfd', 'fdg', NULL, 1, 1, '2018-06-29', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (70, 150, 'fdgsfdg', 'dfgsdf', 'sfdg', NULL, 1, 1, '2018-07-02', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (71, 150, 'tye', 'rtyry', 'rtyry', NULL, 1, 1, '2018-07-02', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (72, 150, 'ytuytuyt', 'ytuyu', 'ytuyuryu', NULL, 1, 1, '2018-07-02', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 178);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (73, 123, 'ghjgj', 'ghjghj', 'fghjfgh', NULL, 1, 1, '2018-07-02', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 145);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (48, 51, 'fgh', 'fgh', 'gfh', NULL, 1, 2, '2017-01-01', NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL, NULL, 135);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (74, 151, 'hfhf', 'fjfjjf', 'jfjf', NULL, 2, 7, '2018-07-02', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 182);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (75, 151, 'hgj', 'hgj', 'ghj', NULL, 1, 1, '2018-07-02', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 182);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (76, 151, 'hjg', 'ghj', 'ghjfghj', NULL, 1, 1, '2018-07-02', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL, NULL, 182);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (77, 139, 'vbnvn', 'vbnvn', 'vbn', NULL, 1, 3, '2017-12-31', NULL, false, 1, '2018-07-17 00:00:00', NULL, NULL, NULL, 183);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (78, 138, 'mnmn', ',mn,nm,', 'nm,nbm,', NULL, 1, 3, '2017-12-31', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, NULL, 184);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (79, 67, 'gfhfg', 'fghfg', 'fghf', NULL, 1, 3, '2017-12-31', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, NULL, 185);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (80, 149, 'bnmbn', 'mnbbnm', 'nbm', NULL, 1, 4, '2017-12-31', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, NULL, 186);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (81, 29, 'fdg', 'fdghd', 'hfdh', NULL, 1, 4, '2017-12-31', NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 187);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (82, 29, 'ghjg', 'ghj', 'ghjgh', NULL, 1, 2, '2017-12-31', NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 188);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (84, 29, 'fgh', 'fgh', 'fgh', NULL, 1, 4, '2017-12-31', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 190);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (83, 29, 'ytu', 'tyu', 'utyu', NULL, 1, 3, '2017-12-31', NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 189);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (86, 152, 'hfgh', 'fghf', 'fghfg', NULL, 1, 3, '2017-12-31', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 192);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (85, 152, 'hfhf', 'fnjf', 'jfjf', NULL, 2, 6, '2018-07-18', NULL, false, 1, '2018-07-18 00:00:00', NULL, NULL, NULL, 191);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (87, 153, 'jf', 'fn', 'nf', NULL, 2, 7, '2018-07-19', NULL, true, 1, '2018-07-19 00:00:00', NULL, NULL, NULL, 193);
-INSERT INTO la_ext_spatialunit_personwithinterest (id, landid, first_name, middle_name, last_name, address, gender, relation, dob, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate, typeid, transactionid) VALUES (88, 46, 'gfh', 'hfgh', 'fgh', NULL, 1, 4, '2017-01-01', NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL, NULL, 195);
+
+
 
 SELECT pg_catalog.setval('la_ext_spatialunit_personwithinterest_id_seq', 88, true);
 
@@ -6114,241 +5978,19 @@ INSERT INTO la_ext_surveyprojectattributes (surveyprojectattributesid, projectna
 INSERT INTO la_ext_surveyprojectattributes (surveyprojectattributesid, projectnameid, attributemasterid, attributecategoryid, attributeorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (214, 2, 1164, 17, 26, true, 1, '2018-01-24 00:00:00', 1, '2018-01-24 00:00:00');
 INSERT INTO la_ext_surveyprojectattributes (surveyprojectattributesid, projectnameid, attributemasterid, attributecategoryid, attributeorder, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (215, 2, 1165, 13, 27, true, 1, '2018-01-24 00:00:00', 1, '2018-01-24 00:00:00');
 
+
+
 SELECT pg_catalog.setval('la_ext_surveyprojectattributes_surveyprojectattributesid_seq', 215, true);
 
 
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (2, 2, 2, 2, '', true, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (14, 7, 2, 19, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (15, 7, 2, 20, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (16, 7, 2, 21, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (17, 7, 2, 22, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (18, 7, 2, 23, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (19, 7, 2, 24, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (20, 7, 2, 25, '', true, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (3, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (4, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (6, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (7, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (8, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (9, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (10, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (11, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (12, 1, 1, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (13, 1, 1, 1, '', false, 1, '2018-05-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (1, 1, 2, 1, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (21, 1, 2, 1, '', true, 1, '2018-05-24 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (22, 3, 2, 1, '', true, 1, '2018-05-24 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (23, 1, 1, 1, '', true, 1, '2018-05-25 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (24, 5, 2, 6, '', true, 1, '2018-05-25 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (102, 3, 2, 5, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (26, 2, 2, 28, '', true, 1, '2018-05-31 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (27, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (28, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (29, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (30, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (31, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (32, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (33, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (34, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (35, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (36, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (37, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (38, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (39, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (40, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (41, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (42, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (43, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (44, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (45, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (46, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (47, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (48, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (49, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (50, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (51, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (52, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (53, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (54, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (55, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (56, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (57, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (58, 2, 2, 72, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (59, 1, 2, 2, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (60, 5, 2, 7, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (61, 3, 2, 2, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (62, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (63, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (64, 9, 2, 4, NULL, true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (65, 6, 2, 76, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (66, 7, 2, 77, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (67, 1, 2, 3, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (68, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (69, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (70, 1, 1, 1, '', true, 1, '2018-06-01 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (25, 9, 2, 3, NULL, false, 1, '2018-05-25 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (71, 2, 2, 83, '', true, 1, '2018-06-05 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (72, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (73, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (74, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (75, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (76, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (77, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (78, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (79, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (80, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (81, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (82, 1, 1, 1, '', true, 1, '2018-06-06 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (83, 1, 2, 4, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (84, 1, 2, 5, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (85, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (86, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (94, 5, 2, 9, '', false, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (88, 3, 2, 3, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (89, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (90, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (91, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (92, 9, 2, 5, NULL, true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (93, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (95, 1, 2, 6, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (96, 5, 2, 10, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (97, 3, 2, 4, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (98, 9, 2, 6, NULL, true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (99, 2, 2, 104, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (100, 1, 2, 7, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (101, 5, 2, 11, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (103, 9, 2, 7, NULL, true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (104, 6, 2, 106, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (105, 4, 2, 107, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (106, 7, 2, 108, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (107, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (108, NULL, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (109, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (110, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (111, 1, 1, 1, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (112, 2, 2, 113, '', true, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (115, NULL, 1, 1, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (116, NULL, 1, 1, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (114, 1, 2, 9, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (125, 9, 1, 8, NULL, true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (5, 4, 2, 8, '', false, 1, '2018-05-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (87, 5, 2, 8, '', false, 1, '2018-06-07 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (117, 5, 2, 12, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (118, NULL, 1, 1, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (119, NULL, 1, 1, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (120, 1, 2, 10, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (123, 4, 2, 120, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (124, 3, 2, 6, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (126, 3, 1, 7, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (127, NULL, 1, 1, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (128, 2, 2, 122, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (129, 2, 2, 124, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (130, 2, 2, 125, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (131, 2, 2, 127, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (132, 8, 1, 81, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (133, NULL, 1, 1, '', true, 1, '2018-06-11 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (134, 1, 2, 11, '', true, 1, '2018-06-12 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (135, 2, 2, 129, '', true, 1, '2018-06-12 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (136, 8, 1, 58, '', true, 1, '2018-06-12 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (137, NULL, 1, 1, '', true, 1, '2018-06-12 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (138, 8, 1, 121, '', true, 1, '2018-06-12 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (139, NULL, 1, 1, '', true, 1, '2018-06-13 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (140, 8, 1, 123, '', true, 1, '2018-06-13 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (141, 1, 1, 1, '', true, 1, '2018-06-13 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (142, 1, 1, 1, '', true, 1, '2018-06-13 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (143, 1, 1, 1, '', true, 1, '2018-06-14 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (145, 1, 1, 1, '', true, 1, '2018-06-15 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (146, 2, 2, 137, '', true, 1, '2018-06-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (147, 1, 2, 12, '', true, 1, '2018-06-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (148, 5, 2, 14, '', true, 1, '2018-06-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (149, 3, 2, 8, '', true, 1, '2018-06-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (113, 1, 1, 8, '', true, 1, '2018-06-08 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (150, 6, 2, 139, '', true, 1, '2018-06-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (151, 2, 2, 140, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (152, 2, 2, 141, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (153, 1, 1, 13, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (144, 5, 2, 13, '', true, 1, '2018-06-15 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (154, 5, 2, 15, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (155, 3, 2, 9, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (156, 9, 2, 9, NULL, true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (157, 2, 2, 144, '', true, 1, '2018-06-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (158, 2, 2, 146, '', true, 1, '2018-06-20 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (159, 2, 2, 148, '', true, 1, '2018-06-20 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (160, 1, 1, 14, '', true, 1, '2018-06-20 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (161, 1, 1, 15, '', true, 1, '2018-06-20 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (162, 8, 1, 146, '', true, 1, '2018-06-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (166, NULL, 2, 1, '', true, 1, '2018-06-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (167, NULL, 2, 1, '', true, 1, '2018-06-21 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (168, 1, 1, 1, '', true, 1, '2018-06-28 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (169, 1, 1, 1, '', true, 1, '2018-06-28 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (170, 1, 1, 1, '', true, 1, '2018-06-28 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (171, 1, 1, 1, '', true, 1, '2018-06-28 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (172, 1, 1, 1, '', true, 1, '2018-06-28 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (173, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (174, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (175, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (176, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (177, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (178, 1, 1, 1, '', true, 1, '2018-06-29 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (179, 5, 2, 16, '', true, 1, '2018-07-02 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (180, 3, 2, 10, '', true, 1, '2018-07-02 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (181, 9, 2, 10, NULL, true, 1, '2018-07-02 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (182, 1, 1, 1, '', true, 1, '2018-07-02 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (183, 4, 2, 178, '', true, 1, '2018-07-17 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (184, 4, 2, 179, '', true, 1, '2018-07-17 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (185, 6, 2, 180, '', true, 1, '2018-07-17 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (186, 6, 2, 181, '', true, 1, '2018-07-17 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (187, 4, 2, 182, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (188, 6, 2, 183, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (189, 6, 2, 184, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (190, 6, 2, 185, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (191, 1, 1, 1, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (192, 6, 2, 187, '', true, 1, '2018-07-18 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (193, 1, 1, 1, '', true, 1, '2018-07-19 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (194, 1, 1, 1, '', true, 1, '2018-07-20 00:00:00');
-INSERT INTO la_ext_transactiondetails (transactionid, processid, applicationstatusid, moduletransid, remarks, isactive, createdby, createddate) VALUES (195, 1, 2, 16, '', true, 1, '2018-08-02 00:00:00');
+
+
+
 
 SELECT pg_catalog.setval('la_ext_transactiondetails_transactionid_seq', 195, true);
 
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (7, '1', '2', 1, 2, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (8, '2', '7,8', 1, 5, true, 1, '2018-05-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (9, '7', '7,19', 1, 14, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (10, '19', '19,20', 1, 15, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (11, '20', '20,21', 1, 16, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (12, '21', '21,22', 1, 17, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (13, '22', '22,23', 1, 18, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (14, '23', '23,24', 1, 19, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (15, '24', '24,25', 1, 20, true, 1, '2018-05-21 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (16, '59,60', '72', 36, 58, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (17, '72', '76', 36, 65, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (18, '76', '77', 36, 66, true, 1, '2018-06-01 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (19, '46,47', '82,83', 26, 71, true, 1, '2018-06-05 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (20, '102', '104', 68, 99, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (21, '104', '106', 68, 104, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (22, '106', '107', 68, 105, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (23, '107', '108', 68, 106, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (24, '2', '28', 1, 26, true, 1, '2018-06-07 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (25, '77', '113', 36, 112, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (26, '112', '121,122', 105, 128, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (27, '101', '123,124', 67, 129, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (28, '32,33', '125', 102, 130, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (29, '125', '126,127', 102, 131, true, 1, '2018-06-11 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (30, '64', '136,137', 39, 146, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (31, '136,137', '139', 39, 150, true, 1, '2018-06-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (32, '58', '140', 108, 151, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (33, '61,62,130,131', '141', 37, 152, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (34, '141', '144,143', 37, 157, true, 1, '2018-06-19 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (35, '144,143', '146,145', 37, 158, true, 1, '2018-06-20 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (36, '81', '129', 51, 135, true, 1, '2018-07-02 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (37, '81', '177,178', 139, 183, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (38, '126,127', '179', 138, 184, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (39, '123,124', '180', 67, 185, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (40, '164', '181', 149, 186, true, 1, '2018-07-17 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (41, '51', '182', 29, 187, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (42, '182', '183', 29, 188, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (43, '183', '184', 29, 189, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (44, '184', '185', 29, 190, true, 1, '2018-07-18 00:00:00', NULL, NULL);
-INSERT INTO la_ext_transactionhistory (transactionhistoryid, oldownerid, newownerid, landid, transactionid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (45, '186', '187', 152, 192, true, 1, '2018-07-18 00:00:00', NULL, NULL);
+
+
 
 
 INSERT INTO la_ext_unit (unitid, unit, unit_en, isactive) VALUES (1, 'Foot', 'Foot', true);
@@ -6359,7 +6001,11 @@ INSERT INTO la_ext_unit (unitid, unit, unit_en, isactive) VALUES (5, 'Miles', 'M
 INSERT INTO la_ext_unit (unitid, unit, unit_en, isactive) VALUES (6, 'dd', 'dd', true);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_unit_unitid_seq', 6, true);
+
+
 
 INSERT INTO la_ext_user (userid, name, managername, genderid, username, password, authenticationkey, emailid, contactno, address, passwordexpires, lastactivitydate, isactive, createdby, createddate, modifiedby, modifieddate, defaultproject) VALUES (24, 'MAST Demo', '1', 1, 'demo', 'gzHazgEPoxLsVb1/MvcIo4eVKfCaV9Fm', 'qDQHfCKxVpLHIlrmQYonaowFRQDmUpYT84aTl2hPqIH68OeJcYPIK8YmUNw2UFZI7KYJaa1lx4S8Ru5n9QqcJSy%2Bzm0ekFkX', 'leland.smith@tetratech.com', '1234567890', '123 Anywhere', '2019-12-31', '2018-08-02', true, 1, '2018-08-02 15:11:07.405', 1, '2018-08-02 15:11:07.405', 'MAST Demo');
 INSERT INTO la_ext_user (userid, name, managername, genderid, username, password, authenticationkey, emailid, contactno, address, passwordexpires, lastactivitydate, isactive, createdby, createddate, modifiedby, modifieddate, defaultproject) VALUES (1, 'abc', '', 1, 'admin', 'SV/eJ0xo8TzVg4bi0K9BOA==', '%2BX59c9r40W%2FfllF8YwqLfZvnTeSnRzA1zVeWqhyLdaHFVtHbUjswIc0d9%2FzwEbq8', 'abc@gmail.com', '8475988148', 'Test Address ', '2018-10-12', '2018-08-03', true, 1, '2018-08-03 14:31:17.504', 1, '2018-08-03 14:31:17.504', 'MAST Demo');
@@ -6367,7 +6013,11 @@ INSERT INTO la_ext_user (userid, name, managername, genderid, username, password
 INSERT INTO la_ext_user (userid, name, managername, genderid, username, password, authenticationkey, emailid, contactno, address, passwordexpires, lastactivitydate, isactive, createdby, createddate, modifiedby, modifieddate, defaultproject) VALUES (23, 'Rmsi  user', '1', 1, 'Rmsi', 'oRaVJ22dC9+yi6jk7HEeKA==', 'U4Q7Gcqmv7z%2FFahPsGFXaExIshpxWilrj%2B1ElCmhG0yYKNqbwUnpLxfLecSqH79U', 'test@rmsi.com', '1234567890', 'Test Address', '2017-12-13', '2018-08-03', true, 1, '2018-08-03 14:31:38.376', 1, '2018-08-03 14:31:38.376', 'MAST Demo');
 
 
+
+
 SELECT pg_catalog.setval('la_ext_user_userid_seq', 24, true);
+
+
 
 
 INSERT INTO la_ext_userprojectmapping (userprojectid, userid, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (179, 8, 2, true, 1, '2018-08-02 00:00:00', 0, NULL);
@@ -6376,12 +6026,18 @@ INSERT INTO la_ext_userprojectmapping (userprojectid, userid, projectnameid, isa
 INSERT INTO la_ext_userprojectmapping (userprojectid, userid, projectnameid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (194, 1, 1, true, 1, '2018-08-02 00:00:00', 0, NULL);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_userprojectmapping_userprojectid_seq', 194, true);
+
+
 
 INSERT INTO la_ext_userrolemapping (userroleid, userid, roleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (53, 24, 1, true, 1, '2018-08-02 15:11:07.405', 0, NULL);
 INSERT INTO la_ext_userrolemapping (userroleid, userid, roleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (63, 1, 1, true, 1, '2018-08-03 14:31:17.503', 0, NULL);
 INSERT INTO la_ext_userrolemapping (userroleid, userid, roleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (64, 8, 1, true, 1, '2018-08-03 14:31:28.413', 0, NULL);
 INSERT INTO la_ext_userrolemapping (userroleid, userid, roleid, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (65, 23, 1, true, 1, '2018-08-03 14:31:38.376', 0, NULL);
+
+
 
 SELECT pg_catalog.setval('la_ext_userrolemapping_userroleid_seq', 65, true);
 
@@ -6394,7 +6050,11 @@ INSERT INTO la_ext_workflow (workflowid, workflow, workflow_en, workfloworder, i
 INSERT INTO la_ext_workflow (workflowid, workflow, workflow_en, workfloworder, isactive, workflowdefid) VALUES (6, 'Approved', 'Approved', 6, true, 1);
 
 
+
+
 SELECT pg_catalog.setval('la_ext_workflow_workflowid_seq', 6, false);
+
+
 
 
 INSERT INTO la_ext_workflowactionmapping (workflowactionid, actionname, actionname_en, roleid, workflowid, worder, isactive, action) VALUES (15, 'Print Land Certificate ', 'Print Land Certificate ', 1, 4, 3, true, 'print                                             ');
@@ -6417,7 +6077,11 @@ INSERT INTO la_ext_workflowactionmapping (workflowactionid, actionname, actionna
 INSERT INTO la_ext_workflowactionmapping (workflowactionid, actionname, actionname_en, roleid, workflowid, worder, isactive, action) VALUES (18, 'Edit Spatial', 'Edit Spatial', 1, 5, 2, true, 'delete                                            ');
 INSERT INTO la_ext_workflowactionmapping (workflowactionid, actionname, actionname_en, roleid, workflowid, worder, isactive, action) VALUES (9, 'Edit Spatial ', 'Edit Spatial', 1, 3, 1, true, 'edit  spatial                                     ');
 
+
+
 SELECT pg_catalog.setval('la_ext_workflowactionmapping_workflowactionid_seq', 1, false);
+
+
 
 INSERT INTO la_ext_workflowdef (workflowdefid, name, type) VALUES (1, 'NewProjectWorkFlow', 2);
 
@@ -6425,424 +6089,36 @@ INSERT INTO la_ext_workflowdef (workflowdefid, name, type) VALUES (1, 'NewProjec
 SELECT pg_catalog.setval('la_ext_workflowdef_workflowdefid_seq', 1, false);
 
 
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (1, 2, 1, 2343, false, 1, '2018-05-24 00:00:00', NULL, NULL, 26, 1, 8, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (2, 2, 1, 2434234, false, 1, '2018-06-01 00:00:00', NULL, NULL, 73, 36, 72, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (3, 2, 1, 2434234, true, 1, '2018-06-01 00:00:00', NULL, NULL, 78, 36, 77, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (5, 3, 9, 1200000, false, 1, '2018-06-07 00:00:00', NULL, NULL, 96, 26, 82, '2018-06-01', '2018-06-29');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (4, 3, 9, 1200000, false, 1, '2018-06-07 00:00:00', NULL, NULL, 95, 1, 2, '2018-03-01', '2018-06-30');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (6, 2, 1, 45636, false, 1, '2018-06-07 00:00:00', NULL, NULL, 103, 1, 2, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (7, 2, 1, 34535, false, 1, '2018-06-07 00:00:00', NULL, NULL, 105, 68, 104, '2018-05-01', '2018-09-28');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (9, 2, 1, 2434234, false, 1, '2018-06-08 00:00:00', NULL, NULL, 115, 1, 28, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (8, 2, 1, 2434234, false, 1, '2018-06-08 00:00:00', NULL, NULL, 114, 1, 28, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (10, 2, 1, 2434234, true, 1, '2018-06-08 00:00:00', NULL, NULL, 116, 1, 28, '2018-05-01', '2018-05-31');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (12, 2, 1, 2434234, false, 1, '2018-06-18 00:00:00', NULL, NULL, 138, 39, 136, '2018-04-04', '2018-09-28');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (13, 2, 1, 2434234, false, 1, '2018-06-19 00:00:00', NULL, NULL, 142, 37, 141, '2018-05-01', '2018-06-14');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (14, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, 149, 37, 146, NULL, NULL);
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (15, NULL, NULL, NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, 150, 37, 146, NULL, NULL);
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (11, 2, 1, 2434234, false, 1, '2018-06-12 00:00:00', NULL, NULL, 128, 51, 81, '2018-04-04', '2018-03-24');
-INSERT INTO la_lease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate) VALUES (16, 1, 1, 1200000, true, 1, '2018-08-02 00:00:00', NULL, NULL, 190, 46, 71, '2018-08-01', '2018-11-22');
+
 
 SELECT pg_catalog.setval('la_lease_leaseid_seq', 16, true);
 
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (1, 3, '2018-05-01', '2018-05-31', 20, false, 1, '2018-05-24 00:00:00', NULL, NULL, 1, 8);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (2, 1, '2018-06-06', '2018-03-21', 5454, false, 1, '2018-06-01 00:00:00', NULL, NULL, 36, 72);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (3, 1, '2018-06-01', '2018-06-30', 56456546, false, 1, '2018-06-07 00:00:00', NULL, NULL, 26, 82);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (4, 2, '2018-03-23', '2018-10-31', 456546, false, 1, '2018-06-07 00:00:00', NULL, NULL, 1, 2);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (5, 2, '2018-03-23', '2018-10-31', 55000, false, 1, '2018-06-07 00:00:00', NULL, NULL, 68, 104);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (6, 2, '2018-03-23', '2018-06-06', 55000, false, 1, '2018-06-08 00:00:00', NULL, NULL, 1, 28);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (7, 1, '2018-03-23', '2018-03-21', 600000, true, 1, '2018-06-08 00:00:00', NULL, NULL, 1, 28);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (8, 2, '2018-03-23', '2018-10-31', 600000, true, 1, '2018-06-18 00:00:00', NULL, NULL, 39, 136);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (9, 1, '2018-03-23', '2018-10-31', 34256456, false, 1, '2018-06-19 00:00:00', NULL, NULL, 37, 141);
-INSERT INTO la_mortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid) VALUES (10, 1, '2018-03-23', '2018-03-21', 600000, false, 1, '2018-07-02 00:00:00', NULL, NULL, 51, 129);
+
+
+
 
 
 SELECT pg_catalog.setval('la_mortgage_mortgageid_seq', 10, true);
 
 
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (1, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (2, 11, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (3, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (4, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (5, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (6, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (9, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (10, 2, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (11, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (12, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (13, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (14, 3, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (15, 10, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (16, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (17, 1, 1, '2018-05-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (18, 1, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (19, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (20, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (21, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (22, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (23, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (24, 11, 1, '2018-05-21 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (7, 11, 1, '2018-05-24 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (8, 11, 1, '2018-05-24 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (26, 1, 1, '2018-05-24 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (27, 1, 1, '2018-05-25 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (25, 11, 1, '2018-05-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (28, 11, 1, '2018-05-31 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (29, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (30, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (31, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (32, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (33, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (34, 2, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (35, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (36, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (37, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (38, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (39, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (40, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (41, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (42, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (43, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (44, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (45, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (46, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (47, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (48, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (49, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (50, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (51, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (52, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (53, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (54, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (55, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (56, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (57, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (58, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (59, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (60, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (61, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (62, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (63, 2, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (64, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (65, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (66, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (67, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (68, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (69, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (70, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (71, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (72, 11, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (73, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (74, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (75, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (76, 11, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (77, 11, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (78, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (79, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (80, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (81, 1, 1, '2018-06-01 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (82, 11, 1, '2018-06-05 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (83, 11, 1, '2018-06-05 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (84, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (85, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (86, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (87, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (88, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (89, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (90, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (91, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (92, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (93, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (94, 1, 1, '2018-06-06 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (95, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (96, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (97, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (98, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (99, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (100, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (101, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (102, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (103, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (104, 11, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (105, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (106, 11, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (107, 11, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (108, 11, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (109, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (110, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (111, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (112, 1, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (113, 11, 1, '2018-06-07 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (114, 1, 1, '2018-06-08 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (115, 1, 1, '2018-06-08 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (116, 1, 1, '2018-06-08 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (120, 11, 1, '2018-06-08 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (119, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (121, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (122, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (123, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (124, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (125, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (126, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (127, 11, 1, '2018-06-11 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (128, 1, 1, '2018-06-12 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (130, 1, 1, '2018-06-13 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (131, 1, 1, '2018-06-13 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (132, 1, 1, '2018-06-13 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (133, 1, 1, '2018-06-13 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (134, 1, 1, '2018-06-14 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (135, 1, 1, '2018-06-15 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (136, 11, 1, '2018-06-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (137, 11, 1, '2018-06-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (138, 1, 1, '2018-06-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (139, 11, 1, '2018-06-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (140, 11, 1, '2018-06-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (141, 11, 1, '2018-06-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (142, 1, 1, '2018-06-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (143, 11, 1, '2018-06-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (144, 11, 1, '2018-06-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (145, 11, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (146, 11, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (147, 11, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (148, 11, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (149, 1, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (150, 1, 1, '2018-06-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (151, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (152, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (153, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (154, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (155, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (156, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (157, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (158, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (159, 1, 1, '2018-06-28 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (160, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (161, 2, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (162, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (163, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (164, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (165, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (166, 1, 1, '2018-06-29 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (167, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (168, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (169, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (170, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (171, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (172, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (173, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (174, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (175, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (176, 1, 1, '2018-07-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (177, 11, 1, '2018-07-17 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (178, 11, 1, '2018-07-17 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (179, 11, 1, '2018-07-17 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (180, 11, 1, '2018-07-17 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (181, 11, 1, '2018-07-17 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (182, 11, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (183, 11, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (184, 11, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (185, 11, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (186, 1, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (187, 11, 1, '2018-07-18 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (188, 1, 1, '2018-07-19 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (189, 1, 1, '2018-07-20 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (190, 1, 1, '2018-08-02 00:00:00');
-INSERT INTO la_party (partyid, persontypeid, createdby, createddate) VALUES (129, 11, 1, '2018-08-03 00:00:00');
 
 
-INSERT INTO la_party_organization (organizationid, organizationname, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, identitytypeid, identityregistrationno, contactno, faxno, emailid, website, grouptypeid, isactive, createdby, createddate, modifiedby, modifieddate, address, firstname, middlename, lastname) VALUES (10, 'glb', 1, 1, 2, 2, 3, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '123456780', NULL, NULL, NULL, 3, true, 1, '2018-05-18 00:00:00', NULL, NULL, 'noida', 'raj', 'kr', 'singh');
-INSERT INTO la_party_organization (organizationid, organizationname, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, identitytypeid, identityregistrationno, contactno, faxno, emailid, website, grouptypeid, isactive, createdby, createddate, modifiedby, modifieddate, address, firstname, middlename, lastname) VALUES (34, 'rmsi', 1, 1, 2, 2, 3, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '5454', NULL, NULL, NULL, 4, true, 1, '2018-06-01 00:00:00', NULL, NULL, 'fh', 'ocuoant', 'dhhd', 'bfh');
-INSERT INTO la_party_organization (organizationid, organizationname, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, identitytypeid, identityregistrationno, contactno, faxno, emailid, website, grouptypeid, isactive, createdby, createddate, modifiedby, modifieddate, address, firstname, middlename, lastname) VALUES (63, 'Bffjd', 1, 1, 2, 2, 3, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '54', NULL, NULL, NULL, 2, true, 1, '2018-06-01 00:00:00', NULL, NULL, 'Hfgjd', 'Hd', 'Fhf', 'Hf');
-INSERT INTO la_party_organization (organizationid, organizationname, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, identitytypeid, identityregistrationno, contactno, faxno, emailid, website, grouptypeid, isactive, createdby, createddate, modifiedby, modifieddate, address, firstname, middlename, lastname) VALUES (161, 'ggh', 1, 1, 2, 2, 3, 7, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '3552', NULL, NULL, NULL, 1, true, 1, '2018-06-29 00:00:00', NULL, NULL, 'hh', 'gg', 'hh', 'gg');
+
+
+
+
+
 
 SELECT pg_catalog.setval('la_party_partyid_seq', 190, true);
 
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (1, 'anuj', 'kr', 'singh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 2, '1234', '2018-05-18', NULL, NULL, NULL, '55555', 'noida', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (2, 'Gaurav', 'Kumar', 'Mittal', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, '535333', '2018-05-18', NULL, NULL, NULL, '53535', 'Noida', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (3, 'rsm', 'kr', 'singh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 2, NULL, 1, '1234', '2018-05-18', NULL, NULL, NULL, '971723651', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (4, 'shyam', 'kr', 'singh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 2, 3, NULL, 2, '1234', '2018-05-18', NULL, NULL, NULL, '9717236551', 'noida', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (5, 'ashok', 'kr', 'singh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 5, '1233', '2018-05-18', NULL, NULL, NULL, '23457890', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (6, 'rohan', 'kr', 'singh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 2, NULL, 4, '1234', '2018-05-18', NULL, NULL, NULL, '1224567890', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (9, 'alok', 'kr', 'sen', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 1, 3, NULL, 1, '1234', '2018-05-18', NULL, NULL, NULL, '1234576890', 'delji', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (11, 'rwj', 'kr', 'singh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 3, '2222', '2018-05-18', NULL, NULL, NULL, '1234780', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (12, 'raj', 'kr', 'singh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 1, 2, NULL, 2, '12333', '2018-05-18', NULL, NULL, NULL, '12346790', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (13, 'ratan', 'kr', 'singh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 2, NULL, 3, '1234', '2018-05-18', NULL, NULL, NULL, '97127377', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (14, 'prashu', 'kr', 'singg', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 2, 3, NULL, 2, '124', '2018-05-18', NULL, NULL, NULL, '123469', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (15, 'ambar', 'kr', 'singh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 2, '12345', '2018-05-18', NULL, NULL, NULL, '134567890', 'delhi', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (16, 'fhf', 'jf', 'fn', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 4, 'fhhf', '2018-05-18', NULL, NULL, NULL, '4', 'hhfhd', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (17, 'hfhf', 'fnf', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 4, 'hfhf', '2018-05-18', NULL, NULL, NULL, '444', 'fjhf', NULL, true, 1, '2018-05-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (19, 'ambar', 'srivastav', 'kumar', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'ghjj676', '2018-05-02', NULL, NULL, NULL, '7664776', 'ghj', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (20, 'dfg', 'fgh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgh', '2018-05-01', NULL, NULL, NULL, '664536', 'fhhd', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (21, 'ambar', 'kumar', 'srivastav', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fdgdf5', '2018-05-02', NULL, NULL, NULL, '46456', 'fgh', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (22, 'ghdj', 'dgj', 'gdhj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'dghj', '2018-05-02', NULL, NULL, NULL, '56373', 'dgf', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (23, 'bvxc', 'fgd', '`ryg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'jhgf', '2018-05-01', NULL, NULL, NULL, '456546', 'gfjhgfj', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (24, 'bvfxd', 'df', 'hdrgt', 2, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fdh', '2018-02-06', NULL, NULL, NULL, '56534', 'gfd', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (26, 'setdsfgt', 'fghgf', 'gfh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgdh', '2018-05-02', NULL, NULL, NULL, '5763', 'trytry', NULL, true, 1, '2018-05-24 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (27, 'ambar', 'kr', 'srivastava', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, '1234', '2018-05-25', NULL, NULL, NULL, '1234576890', 'delhi', NULL, true, 1, '2018-05-25 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (18, 'Himanshu', 'Kumar', 'Sharma', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 1, 3, NULL, 1, '23446484', '2018-05-01', NULL, NULL, NULL, '50', 'Delhi', NULL, true, 1, '2018-05-21 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (25, 'dasfg', 'gdfg', 'fg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'dfgad', '2018-05-01', NULL, NULL, NULL, '43534', 'dfsa', NULL, true, 1, '2018-05-28 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (28, 'dsfdsf', 'gdfg', 'fdg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'dfg', '2018-05-02', NULL, NULL, NULL, '3455', 'ret', NULL, true, 1, '2018-05-31 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (29, 'hd', 'hf', 'hd', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 4, 'hdhd', '2018-06-01', NULL, NULL, NULL, '545545', 'hdhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (31, 'occupant', 'hdhd', 'fhhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 4, 'fh', '2018-06-01', NULL, NULL, NULL, '5754', 'hdhfh', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (32, 'primary occupaant', 'fh', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 4, 'hf', '2018-06-01', NULL, NULL, NULL, '8757', 'hdhd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (33, 'occupant', 'hdhd', 'hdhd', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, NULL, 2, 2, NULL, 4, 'hf', '2018-06-01', NULL, NULL, NULL, '8754', 'qhdhd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (35, 'yfhf', 'f', 'chf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 4, 'hdhf', '2018-06-01', NULL, NULL, NULL, '5455454', 'hfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (36, 'fj', 'flfh', 'fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 1, 2, NULL, 5, 'ncnc', '2018-06-01', NULL, NULL, NULL, '548754', 'fjhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (37, 'fhhf', 'hfhf', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 4, 'hfhf', '2018-06-01', NULL, NULL, NULL, '54554', 'fhhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (38, 'yfhf', 'f', 'chf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 4, 'hdhf', '2018-06-01', NULL, NULL, NULL, '5455454', 'hfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (39, 'hfhf', 'fhhfhfy', 'fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 1, 2, NULL, 4, 'ucuf', '2018-06-01', NULL, NULL, NULL, '54', 'hchf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (42, 'yfhf', 'f', 'chf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 4, 'hdhf', '2018-06-01', NULL, NULL, NULL, '5455454', 'hfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (43, 'hfhf', 'fhhfhfy', 'fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 1, 2, NULL, 4, 'ucuf', '2018-06-01', NULL, NULL, NULL, '54', 'hchf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (44, 'yfhf', 'f', 'chf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 4, 'hdhf', '2018-06-01', NULL, NULL, NULL, '5455454', 'hfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (45, 'Hf', 'Fhhf', 'Fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 1, 4, NULL, 1, 'Fghf', '2018-06-01', NULL, NULL, NULL, '656', 'Gdgh', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (46, 'Jf', 'Hfjf', 'Gd', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 1, 2, NULL, 4, 'Hd Gd', '2018-06-01', NULL, NULL, NULL, '6565', 'Hfh Hd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (47, 'Hf Hd', 'H du f', 'Hff', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 1, 3, NULL, 4, 'Hf Hf', '2018-06-01', NULL, NULL, NULL, '5555', 'H db f', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (48, 'Hf', 'Fhhf', 'Fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 1, 4, NULL, 1, 'Fghf', '2018-06-01', NULL, NULL, NULL, '656', 'Gdgh', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (49, 'Hfhf', 'Fnnf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 2, 'J', '2018-06-01', NULL, NULL, NULL, '585', 'Hdhfn', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (52, 'Hf', 'Fhhf', 'Fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 1, 4, NULL, 1, 'Fghf', '2018-06-01', NULL, NULL, NULL, '656', 'Gdgh', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (41, 'occupant', 'hfhf', 'fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 3, 'h', '2018-06-01', NULL, NULL, NULL, '5', 'jfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (7, 'Krishnakanta', 'Kumar', 'Sharn', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, '97979', '2018-05-18', NULL, NULL, NULL, '979797', 'khkhk', NULL, true, 1, '2018-05-24 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (8, 'Ambar', 'kumar', 'Sharma', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, 1, '70707', '2018-05-18', NULL, NULL, NULL, '070707', 'Meerut', NULL, true, 1, '2018-05-24 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (50, 'Hchdgd', 'G', 'Hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 4, 'Dbhd', '2018-06-01', NULL, NULL, NULL, '675454', 'dgdh', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (30, 'priamary ocupant', 'dyhdhf', 'fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 2, NULL, 4, 'hfhf', '2018-06-01', NULL, NULL, NULL, '545484', 'hdhfhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (51, 'H db f', 'Hff', 'Jfhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 1, 3, NULL, 2, 'Hchf', '2018-06-01', NULL, NULL, NULL, '65', 'Hdgd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (53, 'Hfhf', 'Fnnf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 2, 'J', '2018-06-01', NULL, NULL, NULL, '585', 'Hdhfn', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (54, 'Hf', 'Fhf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Gfgd', '2018-06-01', NULL, NULL, NULL, '564', 'dhhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (57, 'Hf', 'Fhf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Gfgd', '2018-06-01', NULL, NULL, NULL, '564', 'dhhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (40, 'prrimary', 'hd', 'fn', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, NULL, 2, 2, NULL, 4, 'hdd', '2018-06-01', NULL, NULL, NULL, '57542', 'hdhd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (59, 'Primqry', 'Hd', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 4, 'H Fh f', '2018-06-01', NULL, NULL, NULL, '565', 'Hdhd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (60, 'Sec', 'Hff', 'Fhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 2, 'Hf', '2018-06-01', NULL, NULL, NULL, '684', 'Hdhd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (61, 'Primary', 'Dh', 'Dhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 3, 'Gfgd', '2018-06-01', NULL, NULL, NULL, '6454', 'H dbhf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (62, 'Hf', 'Fhfhf', 'Hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 3, 'ffgd', '2018-06-01', NULL, NULL, NULL, '646464', 'Dgd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (64, 'r', 't', 'y', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 1, '1234', '2018-06-01', NULL, NULL, NULL, '12345468', 'd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (65, 'q', 'c', 'c', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 1, '123', '2018-06-01', NULL, NULL, NULL, '2345778', 'delhi', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (66, 'r', 't', 'y', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 1, '1234', '2018-06-01', NULL, NULL, NULL, '12345468', 'd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (67, 's', 'v', 'x', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, NULL, 2, 4, NULL, 2, '1234', '2018-06-01', NULL, NULL, NULL, '123454', 'delhi', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (68, 'd', 'f', 'd', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 2, '123', '2018-06-01', NULL, NULL, NULL, '23467767', 'kddk', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (69, 'r', 't', 'y', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 1, '1234', '2018-06-01', NULL, NULL, NULL, '12345468', 'd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (70, 's', 'v', 'x', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, NULL, 2, 4, NULL, 2, '1234', '2018-06-01', NULL, NULL, NULL, '123454', 'delhi', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (71, 'r', 't', 'y', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 1, '1234', '2018-06-01', NULL, NULL, NULL, '12345468', 'd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (72, 'tuty', 'tyutu', 'tyu', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'tyu', '2018-05-02', NULL, NULL, NULL, '76756', 'utyu', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (73, 'ghj', 'ghj', 'ghj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'ghj', '2018-05-08', NULL, NULL, NULL, '6565', 'ghj', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (74, 'd', 'f', 'g', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 1, '1123', '2018-06-01', NULL, NULL, NULL, '64644', 'kfkf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (75, 'x', 'f', 'f', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 3, '123', '2018-06-01', NULL, NULL, NULL, '1334644', 'kdkd', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (76, 'uyi', 'uyi', 'uyi', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, 1, 'yui', '2018-05-02', NULL, NULL, NULL, '768678', 'yui', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (77, 'fgh', 'gjhg', 'ghj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'gdhj', '2018-05-02', NULL, NULL, NULL, '76884', 'ghj', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (78, 'tyut', 'tyu', 'tyu', 2, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'tyuygdhj', '2018-05-08', NULL, NULL, NULL, '75657', 'try', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (79, 's', 'g', 'f', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 1, 'c', '2018-06-01', NULL, NULL, NULL, '77', 'kffkf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (80, 'v', 'c', 'r', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 2, 2, NULL, 3, '11', '2018-06-01', NULL, NULL, NULL, '6476', 'jfkfkf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (81, 's', 'g', 'f', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 1, 'c', '2018-06-01', NULL, NULL, NULL, '77', 'kffkf', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (82, 'Raj', 'kr', 'sharm', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, '979', '2018-06-05', NULL, NULL, NULL, '969696', 'NOida', NULL, true, 1, '2018-06-05 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (83, 'Ambar', 'igig', 'gigi', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, '97979', '2018-06-05', NULL, NULL, NULL, '97979', 'noho', NULL, true, 1, '2018-06-05 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (84, 'A', 'B', 'C', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 1, 'jdjd', '2018-06-06', NULL, NULL, NULL, '9889498', 'Fjjfjf', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (85, 'E', 'F', 'G', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 2, '1234', '2018-06-06', NULL, NULL, NULL, '6446646', 'Jfjf', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (86, 'Hf', 'Fh', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'H vhf', '2018-06-06', NULL, NULL, NULL, '5654', 'H Fh d', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (87, 'Gh', 'Jj', 'Jj', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 1, 'Gy', '2018-06-06', NULL, NULL, NULL, '88', 'Gggg', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (88, 'Ff', 'F', 'Gg', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 1, 4, NULL, 2, 'dd', '2018-06-06', NULL, NULL, NULL, '8', 'D', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (89, 'Dd', 'd', 'F', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 1, 4, NULL, 2, 'Qww', '2018-06-06', NULL, NULL, NULL, '5', 'Fjjfjfj', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (90, 'bh', 'Nk', 'H', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 5, 'Hh', '2018-06-06', NULL, NULL, NULL, '88', 'Gh', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (91, 'Dd', 'F', 'G', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 1, '1234', '2018-06-06', NULL, NULL, NULL, '65655656', 'Jffjf', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (92, 'Jj', 'Jj', 'Jj', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 1, '44', '2018-06-06', NULL, NULL, NULL, '66', 'Ggh', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (93, 'Nf', 'Fj', 'Jf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 2, 'gfg', '2018-06-06', NULL, NULL, NULL, '9665', 'H checked f', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (94, 'Hfh', 'Fhf', 'Hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Hf Hf', '2018-06-06', NULL, NULL, NULL, '5565', 'H vhf', NULL, true, 1, '2018-06-06 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (95, 'Leasee', 'Kr', 'Sh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, '0707', '2018-06-07', NULL, NULL, NULL, '0707070707', 'noida', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (96, 'Lesee', 'Kr', 'Sharma', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, '0707', '2018-06-07', NULL, NULL, NULL, '0707070', 'NOida', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (97, 'R', 'T', 'U', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 3, '12345', '2018-06-07', NULL, NULL, NULL, '65', 'Lifif', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (98, 'Hf', 'Hf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 2, 'Hff', '2018-06-07', NULL, NULL, NULL, '95665', 'Hfhf', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (99, 'Gd', 'Hf', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 1, 'Hf', '2018-06-07', NULL, NULL, NULL, '65656', 'Gfg', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (100, 'Hd', 'Fj', 'Hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Yddg', '2018-06-07', NULL, NULL, NULL, '56565', 'Hfhf', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (101, 'Hf', 'Nf', 'F', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 1, 'Hff', '2018-06-07', NULL, NULL, NULL, '6565', 'Hfhd', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (102, 'Hdd', 'Jf', 'Jf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Hd', '2018-06-07', NULL, NULL, NULL, '6565', 'H db d', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (103, 'ery', 'rety', 'rety', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'rty', '2018-03-05', NULL, NULL, NULL, '54763', 'rty', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (104, 'abhay', 'pandey', 'kumar', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'ghsd346', '2018-05-02', NULL, NULL, NULL, '34657', 'fh', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (105, 'dfsg', 'fgs', 'dfsg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'sdfg', '2018-05-08', NULL, NULL, NULL, '45645', 'sdfg', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (55, 'Hd', 'Fhf', 'Hff', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 3, 'Fhhd', '2018-06-01', NULL, NULL, NULL, '6854', 'G ft f', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (106, 'abhay', 'gdsf', 'kamal', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, 1, 'fgh', '2018-02-06', NULL, NULL, NULL, '6557634', 'fsdg', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (107, 'abhayfuyity', 'rtytr', 'rtui', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'rui', '2018-05-02', NULL, NULL, NULL, '6557634', 'ri', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (108, 'yu', 'tyu', 'tyu', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'tyu', '2018-02-06', NULL, NULL, NULL, '567', 'ty', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (109, 'Hf', 'Fj', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 2, 'Dh he', '2018-06-07', NULL, NULL, NULL, '6564', 'Hf nd', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (110, 'Hf', 'Fn', 'Jf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 3, 'Gff', '2018-06-07', NULL, NULL, NULL, '6554', 'Hdhd', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (111, 'Hf', 'Nf', 'nf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, 'Hchd', '2018-06-07', NULL, NULL, NULL, '6767', 'Hfhf', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (112, 'Hf', 'Hf', 'Hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 2, 'Hfhf', '2018-06-07', NULL, NULL, NULL, '854', 'Hdhd', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (113, 'dgsdf', 'fgf', 'fd', 2, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'dfsgh', '2018-05-02', NULL, NULL, NULL, '45', 'sdgf', NULL, true, 1, '2018-06-07 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (114, 'gfh', 'fgh', 'fh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgdh', '2018-03-05', NULL, NULL, NULL, '5463', 'fgh', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (115, 'hfgh', 'fgh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'gfh', '2018-05-08', NULL, NULL, NULL, '456', 'fgh', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (116, 'dsfsdf', 'fsdaf', 'fdsaf', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'sdf', '2018-03-05', NULL, NULL, NULL, '34535', 'tdgf', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (120, 'fgh', 'gdh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'gfh', '2018-05-02', NULL, NULL, NULL, '6557634', 'bvn', NULL, true, 1, '2018-06-08 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (119, 'dfg', 'dfg', 'dfsg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'sdf45', '2018-05-02', NULL, NULL, NULL, '4563', 'fgh', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (121, 'sdf', 'sdf', 'fsdaf', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, NULL, NULL, 1, 'sdaf', '2018-06-06', NULL, NULL, NULL, '43513', 'sadf', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (122, 'jkyukt', 'sadf', 'sdaf', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'sdf', '2018-06-04', NULL, NULL, NULL, '43513', 'rthgsfd', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (123, 'asd', 'sadsa', 'dsads', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 3, 'asda', '2018-06-12', NULL, NULL, NULL, '43513', 'asdsa', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (124, 'sadsa', 'sadsa', 'dsadsa', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'sadsa', '2018-06-12', NULL, NULL, NULL, '43513', 'asdsa', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (125, 'sdf', 'dsfsf', 'sdfds', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, NULL, NULL, 1, 'sdfs', '2018-06-12', NULL, NULL, NULL, '43513', 'sdfsd', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (126, 'dfgfdg', 'dfgdg', 'fdgfdg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fdgdg', '2018-06-05', NULL, NULL, NULL, '43513', 'fdgdg', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (127, 'dfgdg', 'dfgf', 'dgfdg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fdgfd', '2018-06-04', NULL, NULL, NULL, '43513', 'dfgfd', NULL, true, 1, '2018-06-11 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (128, 'ghjj', 'ghj', 'gjj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgdh', '2018-03-05', NULL, NULL, NULL, '5673567', 'ghj', NULL, true, 1, '2018-06-12 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (58, 'Hd', 'Fh', 'Fh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 5, 'fh', '2018-06-01', NULL, NULL, NULL, '6565', 'Hf HTC', NULL, true, 1, '2018-06-01 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (130, 'fgh', 'gfh', 'hgfgh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 1, 1, NULL, 1, 'fghfdh', '2018-06-13', NULL, NULL, NULL, 'fghfgh', 'fdh', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (131, 'ghj', 'jghj', 'ghj', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, 1, 1, NULL, 1, 'ghj', '2018-06-13', NULL, NULL, NULL, 'hgj', 'ghj', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (132, 'a', 'b', 'c', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 2, '12345', '2018-06-13', NULL, NULL, NULL, '644', 'delhi', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (134, 'hfb', 'hfhf', 'hrhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 2, 2, NULL, 2, 'hdhf', '2018-06-14', NULL, NULL, NULL, '57245', 'hfhf', NULL, true, 1, '2018-06-14 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (135, 'a', 'b', 'c', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 3, NULL, 3, '144', '2018-06-15', NULL, NULL, NULL, '5464464', 'jfjfjf', NULL, true, 1, '2018-06-15 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (137, 'ghj', 'ghjk', 'ghk', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'gfk', '2018-05-02', NULL, NULL, NULL, '6788', 'fgk', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (144, 'cvbcv', 'cvb', 'cvb', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'cvb', '2018-05-02', NULL, NULL, NULL, '6557634', 'cvzb', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (138, 'sssssss', 'sfh', 'fh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'rty454', '2018-05-08', NULL, NULL, NULL, '4435', 'gh', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (136, 'abcdef', 'sdfhgsf', 'sg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'sgh', '2018-02-06', NULL, NULL, NULL, '546', 'sdhfh', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (147, 'fgh', 'gfh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgh', '2018-05-02', NULL, NULL, NULL, '456456', 'tryrt', NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (148, 'fgh', 'fgh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgh', '2018-05-02', NULL, NULL, NULL, '6557634', 'fgh', NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (139, 'uy8uio', 'truytru', 'rturu', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, 1, 'rtu', '2018-05-02', NULL, NULL, NULL, '7652', 'dfhsh', NULL, true, 1, '2018-06-18 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (140, 'ghjh', 'hgj', 'hgj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'ghjhgj', '2018-05-02', NULL, NULL, NULL, '7686', 'ghjghj', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (141, 'gfhfghrgytrhyrt', 'fgh', 'fgh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgh', '2018-05-01', NULL, NULL, NULL, '56735', 'rty', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (142, 'cvbfdhfghf', 'cvbcv', 'bcvxb', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'cvbcvb', '2018-03-05', NULL, NULL, NULL, '545', 'tdgf', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (143, 'xczb', 'xcvzb', 'bxcvzb', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'bz', '2018-05-02', NULL, NULL, NULL, '6557634', 'xczvxzc', NULL, true, 1, '2018-06-19 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (149, 'dsf', 'dfg', 'dfg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgdh', '2018-03-05', NULL, NULL, NULL, '5465546', 'dfgdfg', NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (150, 'tyu', 'dfg', 'dfg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'ghdj', '2018-03-05', NULL, NULL, NULL, '4435', 'hgj', NULL, true, 1, '2018-06-20 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (151, 'hfhf', 'hfhf', 'jfhf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, NULL, 2, 1, NULL, 2, 'gfhf', '2018-06-28', NULL, NULL, NULL, '4554', 'jfhf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 1, 1, 1, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (152, 'fdgdfg', 'fdsgd', 'fgdfg', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'dfg', '2018-06-28', NULL, NULL, NULL, 'dfgsfdg', 'sfdg', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (56, 'Hdhd', 'Fh', 'Fh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 2, NULL, 1, 2, NULL, 4, 'Hdhd', '2018-06-01', NULL, NULL, NULL, '599595', 'Hd heh d', NULL, false, 1, '2018-06-01 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (133, 'anuj', 'kr', 'sinhh', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 2, 4, NULL, 2, '123', '2018-06-13', NULL, NULL, NULL, '646464646', 'delji', NULL, true, 1, '2018-06-13 00:00:00', NULL, NULL, 1, 2, 2, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (153, 'fgh', 'fghfgh', 'fgdhfg', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fdhfdgh', '2018-06-28', NULL, NULL, NULL, 'fdghfgd', 'hfgdhfgh', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (154, 'gsfdgdg', 'ggfdsg', 'dgfsfdgsfd', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'sfdgsfdg', '2018-06-28', NULL, NULL, NULL, 'fdgdgd', 'gdfgdfg', NULL, false, 1, '2018-06-28 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (156, 'df', 'ff', 'g', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 2, '123', '2018-06-28', NULL, NULL, NULL, '4676776', 'jfjfjf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (157, 'r', 'f', 't', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 1, 4, NULL, 4, 'fff', '2018-06-28', NULL, NULL, NULL, '44464', 'jfjf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (158, 'hf', 'hf', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 3, 'fbbf', '2018-06-28', NULL, NULL, NULL, '7545', 'hdnf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (159, 'j', 'j', 'j', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 4, 'ffbf', '2018-06-28', NULL, NULL, NULL, '454', 'jfjf', NULL, true, 1, '2018-06-28 00:00:00', NULL, NULL, 1, 2, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (129, 'ghjghj', 'ghj', 'ghdj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, 3, 'dghj', '2018-05-02', NULL, NULL, NULL, '657357', 'tyeue', NULL, true, 1, '2018-08-03 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (155, 'hfgdhfgh', 'fghfgh', 'fghfgh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fdghfgdh', '2018-06-28', NULL, NULL, NULL, 'fghfgdh', 'fghfgdh', NULL, false, 1, '2018-06-28 00:00:00', NULL, NULL, 2, 1, 2, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (160, 'hf', 'jf', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 4, 'hf', '2018-06-29', NULL, NULL, NULL, '5454', 'hdhd', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, 1, 2, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (162, 'a', 'b', 'c', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 7, NULL, 2, 4, NULL, 2, '1234', '2018-06-29', NULL, NULL, NULL, '4944', 'jfmfmf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (163, 'jf', 'fm', 'mf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 2, NULL, 3, 'hfhff', '2018-06-29', NULL, NULL, NULL, '94545454', 'jfjf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (164, 'hf', 'n', 'ml', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 2, NULL, 3, '456gg', '2018-06-29', NULL, NULL, NULL, '54548', 'hdhd', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (165, 'uf', 'm', 'n', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 3, NULL, 3, 'hfjf', '2018-06-29', NULL, NULL, NULL, '464', 'hfhf', NULL, true, 1, '2018-06-29 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (166, 'sdf', 'sdf', 'sf', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'sdfsf', '2018-06-29', NULL, NULL, NULL, 'sfdsf', 'sf', NULL, false, 1, '2018-06-29 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (167, 'fghfg', 'fgh', 'fhfg', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fghfgh', '2018-07-02', NULL, NULL, NULL, 'fghfg', 'fgh', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (168, 'fgh', 'hfgdh', 'fgdj', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'ghjgh', '2018-07-02', NULL, NULL, NULL, 'ghjfgh', 'gjgj', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (169, 'tyuteu', 'yutyu', 'uytu', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'uturt', '2018-07-02', NULL, NULL, NULL, 'urturtur', 'ytuytuyt', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (170, 'tr', 'trtr', 'yrty', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'tryrty', '2018-07-02', NULL, NULL, NULL, 'rtyrt', 'yrty', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (171, 'rtyrtey', 'rtyrtyry', 'rteyrty', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'rtyrtey', '2018-07-02', NULL, NULL, NULL, 'rtyrte', 'rtyyyrt', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (172, 'rty', 'rteyyrt', 'yrtey', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'tryt', '2018-07-02', NULL, NULL, NULL, 'yreyrte', 'rtey', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (173, 'hgj', 'ghjghj', 'gjgj', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fghj', '2018-07-02', NULL, NULL, NULL, 'ghfjfghj', 'ghjfghj', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (174, 'fghfg', 'fgdhfgdh', 'fghfgd', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fgh', '2018-07-02', NULL, NULL, NULL, 'fghfgd', 'hfgdhfgdh', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (175, 'gsfh', 'fghgfh', 'fgh', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, NULL, 1, 1, NULL, 1, 'fgh', '2018-07-02', NULL, NULL, NULL, 'fgh', 'fgh', NULL, false, 1, '2018-07-02 00:00:00', NULL, NULL, 2, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (188, 'jf', 'fm', 'fn', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 2, 2, NULL, 3, 'hdhd', '2018-07-19', NULL, NULL, NULL, '5454', 'jfhf', NULL, true, 1, '2018-07-19 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (176, 'jff', 'fj', 'fjl', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 5, NULL, 2, 3, NULL, 3, 'dhhf', '2018-07-02', NULL, NULL, NULL, '57545', 'hhhfh', NULL, true, 1, '2018-07-02 00:00:00', NULL, NULL, 1, 1, 2, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (177, 'dgfd', 'fffg', 'fsfghf', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fgh', '2018-07-02', NULL, NULL, NULL, '435436', 'dfg', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (189, 'ambar', 'srivastava', 'kr', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 6, NULL, 2, 4, NULL, 2, '12345', '2018-07-20', NULL, NULL, NULL, '4949494', 'jfjfjf', NULL, true, 1, '2018-07-20 00:00:00', NULL, NULL, 1, 1, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (178, 'dfg', 'fdg', 'fdg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 1, 'fdg', '2018-07-02', NULL, NULL, NULL, '5464', 'fdh', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (179, 'vbn', 'vbnv', 'vbnvb', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'vbn', '2018-07-02', NULL, NULL, NULL, '78658', 'bhjbj', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (180, 'fghfgh', 'fgh', 'gfh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, 2, NULL, NULL, 2, 'gfhfg', '2018-07-03', NULL, NULL, NULL, '54675474', 'fghf', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (181, 'vbnvbnvbn', 'vbnvn', 'vnvbcn', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, 2, NULL, NULL, 1, 'vbnv', '2018-07-02', NULL, NULL, NULL, '56756756', 'bnmnbc', NULL, true, 1, '2018-07-17 00:00:00', NULL, NULL, 2, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (182, 'hfg', 'gfh', 'gfh', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, NULL, NULL, 2, 'gh', '2018-07-01', NULL, NULL, NULL, '57567', 'ghj', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (183, 'vcb', 'vcb', 'vcb', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, 1, 'vcbb', '2018-07-01', NULL, NULL, NULL, '565464', 'vcbnvcxn', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (184, 'yuiklui', 'uilui', 'uioui', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4, 2, NULL, NULL, 2, 'uiou', '2018-07-02', NULL, NULL, NULL, '79789', 'jkljk', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (185, 'ghj', 'ghj', 'ghj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 3, 2, NULL, NULL, 1, 'vcbb', '2018-07-01', NULL, NULL, NULL, '567', 'ghj', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (186, 'hf', 'jflnf.', 'hf', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, NULL, 2, 2, NULL, 3, 'hf', '2018-07-18', NULL, NULL, NULL, '455554', 'hdhf', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, 2, 1, 'Yes');
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (187, 'hghfg', 'hfgdh', 'fghfdg', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2, 2, NULL, NULL, 1, 'fghf', '2018-05-02', NULL, NULL, NULL, '6557634', 'fghfg', NULL, true, 1, '2018-07-18 00:00:00', NULL, NULL, 1, NULL, NULL, NULL);
-INSERT INTO la_party_person (personid, firstname, middlename, lastname, genderid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, occupationid, relationshiptypeid, maritalstatusid, educationlevelid, tenureclassid, identitytypeid, identityno, dateofbirth, fathername, husbandname, mothername, contactno, address, photo, isactive, createdby, createddate, modifiedby, modifieddate, ownertype, ethnicity, citizenship, resident) VALUES (190, 'ghjg', 'ghjgh', 'hgj', 1, 1, 1, 2, 2, 3, 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, 1, 'vbm', '2018-08-01', NULL, NULL, NULL, '56547', 'nvbc', NULL, true, 1, '2018-08-02 00:00:00', NULL, NULL, NULL, NULL, NULL, NULL);
+
 
 INSERT INTO la_partygroup_citizenship (citizenshipid, citizenship, citizenship_en, isactive) VALUES (1, 'Country 1', 'Country 1', true);
 INSERT INTO la_partygroup_citizenship (citizenshipid, citizenship, citizenship_en, isactive) VALUES (2, 'Country 2', 'Country 2', true);
 INSERT INTO la_partygroup_citizenship (citizenshipid, citizenship, citizenship_en, isactive) VALUES (3, 'Country 3', 'Country 3', true);
 INSERT INTO la_partygroup_citizenship (citizenshipid, citizenship, citizenship_en, isactive) VALUES (4, 'Country 4', 'Country 4', true);
+
+
 
 SELECT pg_catalog.setval('la_partygroup_citizenship_citizenshipid_seq', 4, true);
 
@@ -6861,13 +6137,21 @@ INSERT INTO la_partygroup_ethnicity (ethnicityid, ethnicity, ethnicity_en, isact
 INSERT INTO la_partygroup_ethnicity (ethnicityid, ethnicity, ethnicity_en, isactive) VALUES (3, 'Ethnicity 3', 'Ethnicity 3', true);
 INSERT INTO la_partygroup_ethnicity (ethnicityid, ethnicity, ethnicity_en, isactive) VALUES (4, 'Ethnicity 4', 'Ethnicity 4', true);
 
+
+
 SELECT pg_catalog.setval('la_partygroup_ethnicity_ethnicityid_seq', 4, true);
+
+
 
 INSERT INTO la_partygroup_gender (genderid, gender, gender_en, isactive) VALUES (1, 'Male', 'Male', true);
 INSERT INTO la_partygroup_gender (genderid, gender, gender_en, isactive) VALUES (2, 'Female', 'Female', true);
 INSERT INTO la_partygroup_gender (genderid, gender, gender_en, isactive) VALUES (3, 'Other', 'Other', false);
 
+
+
 SELECT pg_catalog.setval('la_partygroup_gender_genderid_seq', 3, true);
+
+
 
 
 INSERT INTO la_partygroup_identitytype (identitytypeid, identitytype, identitytype_en, isactive) VALUES (1, 'Voter ID', 'Voter ID', true);
@@ -6877,7 +6161,11 @@ INSERT INTO la_partygroup_identitytype (identitytypeid, identitytype, identityty
 INSERT INTO la_partygroup_identitytype (identitytypeid, identitytype, identitytype_en, isactive) VALUES (5, 'Other', 'Other', true);
 INSERT INTO la_partygroup_identitytype (identitytypeid, identitytype, identitytype_en, isactive) VALUES (6, 'None', 'None', true);
 
+
+
 SELECT pg_catalog.setval('la_partygroup_identitytype_identitytypeid_seq', 6, true);
+
+
 
 
 INSERT INTO la_partygroup_maritalstatus (maritalstatusid, maritalstatus, maritalstatus_en, isactive) VALUES (2, 'Married', 'Married', true);
@@ -6885,6 +6173,8 @@ INSERT INTO la_partygroup_maritalstatus (maritalstatusid, maritalstatus, marital
 INSERT INTO la_partygroup_maritalstatus (maritalstatusid, maritalstatus, maritalstatus_en, isactive) VALUES (4, 'Widow', 'Widow', true);
 INSERT INTO la_partygroup_maritalstatus (maritalstatusid, maritalstatus, maritalstatus_en, isactive) VALUES (5, 'Widower', 'Widower', true);
 INSERT INTO la_partygroup_maritalstatus (maritalstatusid, maritalstatus, maritalstatus_en, isactive) VALUES (1, 'un-married', 'un-married', true);
+
+
 
 
 SELECT pg_catalog.setval('la_partygroup_maritalstatus_maritalstatusid_seq', 5, true);
@@ -6898,7 +6188,11 @@ INSERT INTO la_partygroup_occupation (occupationid, occupation, occupation_en, i
 INSERT INTO la_partygroup_occupation (occupationid, occupation, occupation_en, isactive) VALUES (6, 'Public employee', 'Public employee', true);
 INSERT INTO la_partygroup_occupation (occupationid, occupation, occupation_en, isactive) VALUES (7, 'Homekeeper', 'Homekeeper', true);
 
+
+
 SELECT pg_catalog.setval('la_partygroup_occupation_occupationid_seq', 7, true);
+
+
 
 INSERT INTO la_partygroup_persontype (persontypeid, persontype, persontype_en, isactive) VALUES (1, 'Person (Natural)', 'Person (Natural)', true);
 INSERT INTO la_partygroup_persontype (persontypeid, persontype, persontype_en, isactive) VALUES (2, 'Organization (Non-Natural)', 'Organization (Non-Natural)', true);
@@ -6914,6 +6208,8 @@ INSERT INTO la_partygroup_persontype (persontypeid, persontype, persontype_en, i
 
 
 SELECT pg_catalog.setval('la_partygroup_persontype_persontypeid_seq', 10, true);
+
+
 
 INSERT INTO la_partygroup_relationshiptype (relationshiptypeid, relationshiptype, relationshiptype_en, isactive) VALUES (2, 'Son', 'Son', true);
 INSERT INTO la_partygroup_relationshiptype (relationshiptypeid, relationshiptype, relationshiptype_en, isactive) VALUES (3, 'Daughter', 'Daughter', true);
@@ -6937,13 +6233,21 @@ INSERT INTO la_partygroup_relationshiptype (relationshiptypeid, relationshiptype
 INSERT INTO la_partygroup_relationshiptype (relationshiptypeid, relationshiptype, relationshiptype_en, isactive) VALUES (20, 'Siblings', 'Siblings', false);
 
 
+
+
 SELECT pg_catalog.setval('la_partygroup_relationshiptype_relationshiptypeid_seq', 20, true);
+
+
 
 
 INSERT INTO la_partygroup_resident (residentid, resident, resident_en, isactive) VALUES (1, 'Yes', 'Yes', true);
 INSERT INTO la_partygroup_resident (residentid, resident, resident_en, isactive) VALUES (2, 'No', 'No', true);
 
+
+
 SELECT pg_catalog.setval('la_partygroup_resident_residentid_seq', 2, true);
+
+
 
 
 SELECT pg_catalog.setval('la_registrationsharetype_seq', 18, true);
@@ -6955,13 +6259,19 @@ INSERT INTO la_right_acquisitiontype (acquisitiontypeid, acquisitiontype, acquis
 INSERT INTO la_right_acquisitiontype (acquisitiontypeid, acquisitiontype, acquisitiontype_en, isactive) VALUES (4, 'Inheritance', 'Inheritance', true);
 INSERT INTO la_right_acquisitiontype (acquisitiontypeid, acquisitiontype, acquisitiontype_en, isactive) VALUES (5, 'Purchase', 'Purchase', true);
 
+
+
 SELECT pg_catalog.setval('la_right_acquisitiontype_acquisitiontypeid_seq', 5, true);
+
+
 
 INSERT INTO la_right_claimtype (claimtypeid, claimtype, claimtype_en, isactive) VALUES (4, 'Unclaimed', 'Unclaimed', true);
 INSERT INTO la_right_claimtype (claimtypeid, claimtype, claimtype_en, isactive) VALUES (2, 'Existing Claim or Right', 'Existing Claim or Right', true);
 INSERT INTO la_right_claimtype (claimtypeid, claimtype, claimtype_en, isactive) VALUES (3, 'Disputed Claim', 'Disputed Claim', true);
 INSERT INTO la_right_claimtype (claimtypeid, claimtype, claimtype_en, isactive) VALUES (5, 'No Claim', 'No Claim for resource', false);
 INSERT INTO la_right_claimtype (claimtypeid, claimtype, claimtype_en, isactive) VALUES (1, 'New claim', 'New claim', true);
+
+
 
 SELECT pg_catalog.setval('la_right_claimtype_claimtypeid_seq', 5, true);
 
@@ -6977,6 +6287,8 @@ INSERT INTO la_right_landsharetype (landsharetypeid, landsharetype, landsharetyp
 INSERT INTO la_right_landsharetype (landsharetypeid, landsharetype, landsharetype_en, isactive) VALUES (9, 'Collective Tenancy', 'Collective Tenancy', false);
 INSERT INTO la_right_landsharetype (landsharetypeid, landsharetype, landsharetype_en, isactive) VALUES (8, 'Common/Collective Tenancy', 'Common/Collective Tenancy', true);
 
+
+
 SELECT pg_catalog.setval('la_right_landsharetype_landsharetypeid_seq', 9, true);
 
 
@@ -6989,10 +6301,16 @@ INSERT INTO la_right_tenureclass (tenureclassid, tenureclass, tenureclass_en, is
 INSERT INTO la_right_tenureclass (tenureclassid, tenureclass, tenureclass_en, isactive) VALUES (3, 'Right to Ownership ', 'Cerificate of Occupany', true);
 INSERT INTO la_right_tenureclass (tenureclassid, tenureclass, tenureclass_en, isactive) VALUES (9999, 'Dummy', 'Dummy', false);
 
+
+
 SELECT pg_catalog.setval('la_right_tenureclass_tenureclassid_seq', 7, true);
 
 
+
+
 SELECT pg_catalog.setval('la_rrr_rrrid_seq', 1, false);
+
+
 
 INSERT INTO la_spatialsource_layer (layerid, layername, projectionid, unitid, documentformatid, layertypeid, minresolution, maxresolution, zoomlevelextent, minextent, maxextent, minscale, maxscale, location, geometrytype, buffer, displayname, filter, version, displayinlayermanager, displayoutsidemaxextent, editable, exportable, isbaselayer, queryable, selectable, sphericalmercator, tiled, isactive, createdby, createddate, modifiedby, modifieddate, name) VALUES (32, 'pyramid', 1, 2, 2, 2, NULL, NULL, 10, '35.739998,-7.900000999970367,35.83000249996666,-7.82', '35.739998,-7.900000999970367,35.83000249996666,-7.82', 10, 10, 'http://localhost:8080/geoserver/wfs?', NULL, 0, 'pyramid', NULL, NULL, true, false, false, false, false, false, false, NULL, true, true, 2, '2017-12-11 17:08:16.943', 2, '2017-12-11 17:08:16.943', 'Mast:pyramids');
 INSERT INTO la_spatialsource_layer (layerid, layername, projectionid, unitid, documentformatid, layertypeid, minresolution, maxresolution, zoomlevelextent, minextent, maxextent, minscale, maxscale, location, geometrytype, buffer, displayname, filter, version, displayinlayermanager, displayoutsidemaxextent, editable, exportable, isbaselayer, queryable, selectable, sphericalmercator, tiled, isactive, createdby, createddate, modifiedby, modifieddate, name) VALUES (33, 'AOI', 1, 4, 3, 1, NULL, NULL, NULL, '34.9862284585834,-8.3416087407727,37.6789802312851,-5.61527110433126', '34.9862284585834,-8.3416087407727,37.6789802312851,-5.61527110433126', 2, 10, 'http://localhost:8080/geoserver/wfs?', NULL, 0, 'LA_SPATIALUNIT_AOI', NULL, NULL, true, false, false, false, false, false, false, NULL, true, true, 1, '2018-01-04 12:17:45.898', NULL, NULL, 'Mast:la_spatialunit_aoi');
@@ -7018,279 +6336,48 @@ INSERT INTO la_spatialsource_projectname (projectnameid, projectname, projection
 INSERT INTO la_spatialsource_projectname (projectnameid, projectname, projectionid, unitid, documentformatid, minresolution, maxresolution, zoomlevelextent, minextent, maxextent, activelayer, overlaymap, disclaimer, description, isactive, createdby, createddate, modifiedby, modifieddate, workflowdefid) VALUES (1, 'Planet Lab', 1, 4, 1, 11, 12, 2, '-11.485694999999907,4.3529159999999365,-7.365112999999894,8.55179000000004', '-11.485694999999907,4.3529159999999365,-7.365112999999894,8.5517900000000446,-102.9870415,132.060846', 'spatialUnitLand', 'spatialUnitLand', 'abc', 'Planet Lab', true, 1, '2018-08-02 00:00:00', 1, '2012-02-20 00:00:00', NULL);
 
 
+
+
 SELECT pg_catalog.setval('la_spatialsource_projectname_projectnameid_seq', 36, true);
+
+
 
 INSERT INTO la_spatialunit_aoi (geometry, ogc_fid, aoiid, userid, projectnameid, applicationstatusid, createdby, createddate, modifiedby, modifieddate, aoiname, isactive) VALUES ('0103000020E6100000010000000500000022247CA7B2D127C0860ED7279968204022247CA7324228C00C1DAE4FB2F81E4022247CA7B2F026C00C1DAE4FF2A91E4022247CA792A726C0860ED727993B204022247CA7B2D127C0860ED72799682040', NULL, 6, 1, 2, 1, 1, '2018-06-20 20:02:25', 1, '2018-06-20 20:02:25', NULL, true);
 
 
 SELECT pg_catalog.setval('la_spatialunit_aoi_aoiid_seq', 6, true);
 
+
+
 SELECT pg_catalog.setval('la_spatialunit_aoi_id_seq1', 6, true);
+
+
 
 
 SELECT pg_catalog.setval('la_spatialunit_aoiid_seq', 26, true);
 
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', NULL, 6, '20', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL,
-  1, 1758188050.8299999, 'est', 'west', 'north', 'south', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, 123, 12345, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', NULL, 1, '1', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 
- 1, 1753524048.74, 'ddf', 'ff', 'fff', 'ff', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 5, 6, 44, 44, 1, NULL, 'BFABDUNAY1', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', NULL, 12, '12', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 6, NULL
- , 1, 826896513.57000005, 'east', 'west', 'north', 'south', '2018-05-25', 'Polygon', 1, '2018-05-25 00:00:00', 1, '2018-05-25 00:00:00', 1, 1, 44, 1234, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000FBBF9780670A21C09F49CDE4BC0F1A40B0DB2DEA0FC01FC0B382D715D05B1E401C9B575448E021C0C3BB1AA8A5A41D40FBBF9780670A21C09F49CDE4BC0F1A40', NULL, 16, '4', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, 2, NULL, 1, 1, 8, 4, NULL, 1, 5974929423.25, 'hr', 'hr', '
- hr', 'hf', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 54, 544, 8, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000001421C623C0099D0B6DF21319400000C0A17F1A23C0266BFCCD5D8719400000C0A17F1A23C0BC504794065718400000C01D240824C0506ACFB34ADE17400000001421C623C0099D0B6DF2131940', NULL, 11, '26', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL
- , 1, 1384445429.96, 's', 'h', 'j', 'u', '2018-05-21', 'Polygon', 1, '2018-05-21 00:00:00', 1, '2018-05-21 00:00:00', 2, 4, 14, 1233, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', NULL, 10, '25', 2, 1, 1, 2, 
- 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 2, 7, 4, NULL, 1, 5838097089.1300001, 'hfhf', 'hfhf', 'nfhf', 'fggd', '2018-05-14', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 4, 2, 554, 54554, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', NULL, 7, '22', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 2, 7, 4, NULL, 1, 92226297.019999996, 'east', 
- 'west', 'north', 'soutj', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 2, 4, 1234, 987, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000070000009F6E24F93F1419C0F1BA3CA5842B23402744A78413E115C0931A1C1D26B72340C8BE3B64F00317C0C60C9E53C24F2240AE7EF0CA23B017C046C3D62AB17822406BB676CB03C117C0E264D12AD1EE224004B510CB636F18C01BA8C62A11CD22409F6E24F93F1419C0F1BA3CA5842B2340', NULL, 105, '75', 2, 1, 1, 2,
-  2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 738803.48917631491, 'Hfh', 'Hf', 'jf', 'hf', '2018-06-04', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 5, 6, 2, 844, 2, 86, 'BFABDUNAY105', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', NULL, 18, '18', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 1, 1, 7, 6, NULL, 1, 1303444366.5699999, 'hfhf',
-  'hff', 'fjhf', 'fnnf', '2018-05-30', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 21, 4334, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', NULL, 23, '19', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 4, NULL, 1, 5798305713.3999996, 'nfjf',
-  'jfhf', 'fnnflfnfjFnnf', 'jfhf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 424, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', NULL, 25, '1', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 6, NULL, 1, 2787226822.4699998, 'Hf', 'H
- rr', 'Hr', 'H eh', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 454, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000065F6FDC4764624C0E8C5A24C937F2240BEAF1DCED4AF22C01D97CC0CF2C5224005268117A72623C058E04CC85AB9214065F6FDC4764624C0E8C5A24C937F2240', NULL, 21, '20', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 3, NULL, 2, 1, 7, 1, NULL, 1, 2354550655.3299999, 'rhhf',
-  'fjf', 'fj', 'hfhf', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 2, 4, 23, 2424, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', NULL, 3, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 8, 1, NULL, 
- 1, 999469468.89999998, 'east', 'west', 'north', 'south', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 4, 3, 44, 123, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', NULL, 8, '23', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, NULL, 3, 9999, 9999, NULL, 1, 2091982599.76, 'eas
- t', 'west', 'norty', 'soutj', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, NULL, 12369, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', NULL, 9, '24', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 9999, 9999, NULL, NULL, 4, 99
- 99, 9999, NULL, 1, 2132745879.8800001, 'a', 'b', 'c', 'd', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, NULL, 122, 9999, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', NULL, 4, '4', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 1, 2, 6, 6, NULL, 
- 1, 2549246081.9200001, 'est', 'west', 'north', 'south', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, 123, 1234567, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', NULL, 20, '19', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 4, NULL, 1, 1449752.0413281228, 'nfjf',
-  'jfhf', 'fnnflfnfjFnnf', 'jfhf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 424, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', NULL, 5, '19', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 8, 2, NULL,
-  1, 669542.55000000005, 'east', 'wse', 'north', 'south', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, 16, 123, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000007000000D4A4EBF4490B20C0613575A24DBF1940459DDA956D921EC05C70278DA8FB19400D5AC48744D71EC098FCAAB7615F194040592E1BDDE31EC060FDF49FD7D3184040592E1B5D541FC060FDF49F17B218403ADBCCB60DBA1FC0BDE844E5D3291940D4A4EBF4490B20C0613575A24DBF1940', NULL, 14, '2', 2, 1, 1, 2, 2
- , 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 7, 1, NULL, 1, 209135.85000000001, 'jfjf', 'fj', 'fhf', 'jf', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 23, 5454, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000800000003EDCC0C343624C0E4377D24C2BE1B40243EDADCEFC723C09D59351546091C40BE10FC319EB223C037744E0C24A31B40BE10FC315ABA23C037744E0C140E1B40BE10FC319EDF23C037744E0C949D1A40F8B8E3DEE8EA23C0EAFFBF2969941A402C42F331063B24C0F66B800CFCF81A4003EDCC0C343624C0E4377D24C2BE1B4
- 0', NULL, 15, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, 2, NULL, 1, 1, 8, 1, NULL, 1, 214885.03702139267, 'bfhf', 'fhf', 'fhf', 'hf', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 42, 55, 8, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000A000000FD7E18BE114F13C06695257CE7361440CAA9F81ADD1C13C0FA2A75A0B98C1440230F5267B80013C0026CC868B8A814403C90EE2D92F911C09EC67488CD6A14403C90EE2DB28E11C09EC67488EDE014403C90EE2D921811C09EC674880DEF134064B8A45D5D0311C0EDA9D878B263134052E8821BA50A12C04F6331A0CD4C134
- 0817E3A79EC0A13C0B85CBBBC52F91340FD7E18BE114F13C06695257CE7361440', NULL, 51, '49', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 408925.03000000003, 'dd', 'ff', 'g', 'g', '2018-05-17', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 44, 44, 2, NULL, 'BFABDUNAY51', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', NULL, 27, '1', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 6, NULL, 1, 2787226822.4699998, 'Hf', 'H
- rr', 'Hr', 'H eh', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 454, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', NULL, 42, '41', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 1063621859.86, 'd', 'dd', '
- d', 'd', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 44, 11, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', NULL, 43, '42', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL
- , 1, 1962215361.4100001, 'd', 'd', 'd', 'f', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 4, 77, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', NULL, 48, '44', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL
- , 1, 2612647579.5, 'd', 'f', 'f', 'ff', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 44, 447, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', NULL, 30, '1', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 6, NULL, 1, 2787226822.4699998, 'Hf', 'H
- rr', 'Hr', 'H eh', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 454, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', NULL, 31, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 3906924281.4099998, 'Hfhr', 
- 'Fhjf', 'Fhjf', 'Hf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 23, 6554, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', NULL, 32, '32', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 3511652118.6199999, 'Fj', '
- Fj', 'Fjf', 'Jf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 65, 565, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', NULL, 33, '33', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 3, NULL, 1, 1, 7, 6, NULL, 1, 1557731608.1500001, 'Hfhf',
-  'Hfhf', 'Hfhf', 'Hfhf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 45, 21, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', NULL, 34, '32', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 3511652118.6199999, 'Fj', '
- Fj', 'Fjf', 'Jf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 65, 565, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000075F086131CF321C07AC3E00E92C11D400A0044B0608F20C0D0D1CBA45D071E40E2D5849262DA1EC0F2145CB4892C1C40C1314FD7A85B21C0D269824D424A1A4075F086131CF321C07AC3E00E92C11D40', NULL, 29, '4', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 1, 1, 7, 4, NULL,
-  1, 3822782378.9000001, 'Jf Hf', 'Hf', 'Hf', 'Nf', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-07-17 18:59:44.118', 5, 6, 22, 5454, 2, NULL, 'BFABDUNAY29', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', NULL, 40, '40', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL
- , 1, 3862234896.6999998, 't', 't', 'f', 'v', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 11, 12, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000000087C6CE20C052D283C7977B22400000002AC7A41EC03D4092112BB3224000000096F1FD1FC0AE697DB08EA7214000000087C6CE20C052D283C7977B2240', NULL, 36, '36', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 3, NULL, 1, 1, 7, 4, NULL, 1, 2151060396.54, 'Hf', 'Jf', 
- 'Hf', 'Fh', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 23, 644, 4, NULL, 'BFABDUNAY36', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000E9623675DC6A22C05CA736DD578E1C403AE513AA82A420C07B359B221B5B1E40756D14FEB11121C017BD11E524B31A40E9623675DC6A22C05CA736DD578E1C40', NULL, 38, '38', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 1, 1, 8, 4, NULL, 1, 4396785010.9700003, 'hf', '
- Nf', 'Fn', 'Dj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-07-17 18:28:42.204', 5, 6, 56, 67, 10, NULL, 'BFABDUNAY38', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', NULL, 50, '50', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 1, NULL, 1, 1458722808.95, 'ddd', 'fff'
- , 'ff', 'ff', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 44, 77, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', NULL, 28, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 3906924281.4099998, 'Hfhr', 
- 'Fhjf', 'Fhjf', 'Hf', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 2, 4, 23, 6554, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', NULL, 123, '78', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 1, NUL
- L, 1, 160736.98999999999, 'u', 'j', 'j', 'j', '2018-06-15', 'Polygon', 1, '2018-06-15 00:00:00', 1, '2018-06-15 00:00:00', 5, 6, 14, 123, 1, NULL, 'BFABDUNAY123', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', NULL, 47, '43', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL, 1, 324688401.18000001, 'f', 'f
- ', 'g', 'g', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 44, 44, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000060000004573CF806BCA1BC00106F656A4481B406CB498AFCD7F1BC03EC6E42645351C40B3740D4CA1431AC0C137B0C9502A1C406F57F9AF8D8519C09B90F726D56A1A4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', NULL, 44, '39', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NU
- LL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 833981004.74000001, 'rr', 'r', 'd', 'f', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 44, 123, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', NULL, 45, '41', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 1063621859.86, 'd', 'dd', '
- d', 'd', '2018-06-01', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 44, 11, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', NULL, 120, '75', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL, 1, 410414.25, 'e', 'd', 'f', 
- 'g', '2018-06-13', 'Polygon', 1, '2018-06-13 00:00:00', 1, '2018-06-13 00:00:00', 1, 1, 44, 123, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000C000000D8F7FABDC16510C0DA65097C8F701440A622DB1A8D3310C06FFB58A061C6144076129536EA5B0FC0773448A0454B15408C5E2ACBBBE50FC0EC11D00156CE164014A31951FBB10DC02224E2188FA71540154EFB7B63770CC00237207C076F1640ACB229366A1E09C0FC760AA0B58E1640BC7D6F36CAB007C042E2E49F95CF134
- 09553F135BAF90AC0C77EDC9F075E13405CC2CA36AA420EC0C43315A0758613405DF71C799C2110C02C2D9FBCFA321440D8F7FABDC16510C0DA65097C8F701440', NULL, 49, '49', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 2005453.7935370854, 'dd', 'ff', 'g', 'g', '2018-05-17', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 4, 3, 44, 44, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', NULL, 121, '76', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 1, 1, 6, 2, NUL
- L, 1, 807506.53000000003, 'f', 'f', 'f', 'v', '2018-06-13', 'Polygon', 1, '2018-06-13 00:00:00', 1, '2018-06-13 00:00:00', 1, 1, 46, 44, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', NULL, 26, '2', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NUL
- L, 3, 3, NULL, 1, 1, 7, 1, NULL, 1, 3547712106.1900001, 'Hfhf', 'Hrhf', 'Hfhflfh db', 'Jf nd', '2018-05-30', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 21, 664, 6, NULL, 'BFABDUNAY26', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', NULL, 2, '2', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 7, 1, NULL, 
- 1, 1930787730.51, 'east', 'west', 'nkrth', 'south', '2018-05-18', 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 2, 4, 74, 147, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000080000002C3EEC22D83020C05D05E7429B9A16409FB9361FF3B91EC0C90F0F34BFAA1640A5560C15EB711EC03D7CBA362B051540CBB9567367DB1DC023190F42825A164092122F0DCBD81EC0EDDE8253BC39164050D189EBB5E01EC05E7D7E10B03B16405C55387AE33720C09B58013AA3CC14402C3EEC22D83020C05D05E7429B9A164
- 0', NULL, 63, '65', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 4, NULL, 1, 242613.12, 'Ddg', 'Gg', 'Gh', 'Jk', '2018-05-31', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 44, 44, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000060000004573CF806BCA1BC00106F656A4481B406CB498AFCD7F1BC03EC6E42645351C40B3740D4CA1431AC0C137B0C9502A1C406F57F9AF8D8519C09B90F726D56A1A4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', NULL, 46, '39', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NU
- LL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 833981004.74000001, 'rr', 'r', 'd', 'f', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 44, 123, 2, NULL, 'BFABDUNAY46', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', NULL, 54, '54', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 6, 4, NULL, 1, 893273.5, 'Fn', 'Hf', 'Hf',
-  'Hf', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 21, 555, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', NULL, 13, '1', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 3, NULL, 2, 1, 6, 6, NULL, 1, 4116568821.7600002, 'hfhf', 
- 'fkf', 'fkf', 'fj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 22, 555, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', NULL, 17, '17', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 4934140056.46, 'fhf', 'hfnf
- lhf', 'fj', 'fj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 4554, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', NULL, 22, '17', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 4934140056.46, 'fhf', 'hfnf
- lhf', 'fj', 'fj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 4554, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', NULL, 19, '17', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 4934140056.46, 'fhf', 'hfnf
- lhf', 'fj', 'fj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 4554, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', NULL, 24, '17', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 2, 1, 6, 1, NULL, 1, 4934140056.46, 'fhf', 'hfnf
- lhf', 'fj', 'fj', '2018-05-31', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 21, 4554, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', NULL, 52, '52', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL
- , 1, 2772615984.1100001, 'F', 'G', 'H', 'J', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 21, 123, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', NULL, 53, '53', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 1783159705.27, 'F', 'G', 'H
- ', 'J', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 55, 74, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', NULL, 55, '57', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 4, NULL, 1, 820893.28000000003, 'Gh', '
- j', 'Hh', 'Hh', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 89, 55, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', NULL, 56, '60', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 2, NULL, 1, 756719.67000000004, 'Ff', '
- Ffg', 'H', 'Ff', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 55, 1234, 8, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', NULL, 57, '59', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 503491.70000000001, 'Cf', '
- Fff', 'Ff', 'Ff', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 44, 77, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080D7942E22C04889B509F2B31A40000040EEADC621C0476C4A5D423A1940000080B7C11123C0B307344FD1481840000080D7942E22C04889B509F2B31A40', NULL, 58, '58', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 435451.39000000001, 'Yh', '
- I', 'Gg', 'Gh', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 99, 88, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', NULL, 59, '62', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 129112.10000000001, 'Dd', '
- Ff', 'Ff', 'Ff', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 44, 777, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', NULL, 60, '61', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 504279.96999999997, 'Bb', '
- Nn', 'Jj', 'Jj', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 66, 5588, 4, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', NULL, 61, '63', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 2, NULL, 1, 1250466.6299999999, 'Hf', '
- Jf', 'Jf', 'Nf', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 84, 544, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', NULL, 62, '123', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 1068523.0600000001, 'Hfhf'
- , 'Fhf', 'Hf', 'Fh', '2018-06-06', 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, 22, 444, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', NULL, 64, '66', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 9, NULL, 2, 1, 6, 4, NULL, 1, 347477.69, 'Ht', 'Jf', 'fj'
- , 'Fh', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 21, 555, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', NULL, 65, '67', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 765613.88, 'H db f', 'Fhf',
-  'Hf', 'Hd', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 21, 67, 3, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040B3890425C03DDD36F5A0492140000040DD7ACD22C0A832914C14A42140000080D40BD822C04DE571A6A28D2040000040B3890425C03DDD36F5A0492140', NULL, 66, '68', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 906202.63, 'Nf', 'Hf', 'Nf'
- , 'Hhf', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 22, 584, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000500000079CC6173E5E423C0C2AC2725CA5D2940E380F52C5EE026C0BAE4C453EB162840BCFF854EF95627C01132D24C1B8F2840B9C8E87D378127C0F02A8FF6AC11294079CC6173E5E423C0C2AC2725CA5D2940', NULL, 117, '35', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 6, 2, NUL
- L, 1, 1486009.0054846127, 'Hf', 'Fj', 'Fj', 'Jf', '2018-05-18', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 22, 54, 2, 108, 'BFABDUNAY108', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000070000004573CF806BCA1BC00106F656A4481B404F1432A163A01BC06CAEBBF5E9601B40E8F58A1B45611BC0C0EAE99F2F3D1B4006904E1BADDB1AC0CD12CF9FCF151B40CF3B466019BE1AC032A0281A2D161B4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', NULL, 41, '39', 2, 1, 1, 2, 
- 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 833981004.74000001, 'rr', 'r', 'd', 'f', '2018-05-28', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 44, 123, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000090000001D01DC2C5EE026C00591A053EB1628406E1147C326B326C05B0583F6265B2640722A638DC42B28C061B77CE2088927405B9C4A69AAAF28C09B42DFC42DBC2740EF32AAA9B88F29C0971DC111CD1528406E1147C306C129C05B0583F6A6F5294096A8C57D378127C025A398F6AC11294075FD8A4EF95627C0C886E24C1B8F284
- 01D01DC2C5EE026C00591A053EB162840', NULL, 108, '35', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 6, 2, NULL, 1, 3960961.6186949699, 'Hf', 'Fj', 'Fj', 'Jf', '2018-05-17', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 22, 54, 2, 35, 'BFABDUNAY108', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000009000000802BB8A3285923C051B52792F9391B401C9D610CDF6523C057992D9050AD1A40ADACA4ABF97323C0D4CFD6F44CB11A40ADACA4AB45A023C0D4CFD6F49CCA1A40C9BF8684AAC723C00FDD10C6E2E51A40139725325ABA23C0F07E260C140E1B4058C85C1954B723C08ACBD0FC5A481B40E0CC5C9ED69623C0EB5C8BF591441B4
- 0802BB8A3285923C051B52792F9391B40', NULL, 138, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, 2, NULL, 1, 1, 8, 1, NULL, 1, 70256.179724548711, 'bfhf', 'fhf', 'fhf', 'hf', '2018-05-27', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 42, 55, 8, 102, 'BFABDUNAY102', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', NULL, 82, '72', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 4, NULL, 1, 3443327.7599999998, 'Hf', '
- Hf', 'Hf', 'Hf', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 54, 55, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000800000043071195C8D127C096F5F163E1472140661EF11239CA27C01E65ED84D1492140999448C3A5A827C07F75C9F629162140BE11FEC1975827C0F7E4A3BDA8CC20407E6E89D837B227C05AC6D9B620862040FF135F70E51D28C08E7953B8AABA204043071195C8D127C0162EC8D82908214043071195C8D127C096F5F163E147214
- 0', NULL, 83, '71', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 5, NULL, 2, 1, 6, 1, NULL, 1, 759738.52000000002, 'J th f', 'Hf', 'Gd', 'Hdd', '2018-06-04', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 21, 5555, 2, 68, 'BFABDUNAY68', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000060000004573CF806BCA1BC00106F656A4481B406CB498AFCD7F1BC03EC6E42645351C40B3740D4CA1431AC0C137B0C9502A1C406F57F9AF8D8519C09B90F726D56A1A4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', NULL, 39, '39', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NU
- LL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 833981004.74000001, 'rr', 'r', 'd', 'f', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 44, 123, 2, NULL, 'BFABDUNAY39', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', NULL, 84, '73', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 843929.31000000006, 'Fb', '
- Fj', 'Jf', 'Nf', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 21, 55555, 1, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', NULL, 85, '74', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 1, NULL, 1, 1088244.8200000001, 'Hf', '
- Nf', 'Nf', 'Bf', '2018-06-07', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 21, 65, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000A59F70766BC128C08F8A4158740A214043071195C8D127C096F5F163E147214043071195C8D127C0162EC8D829082140FF135F70E51D28C08E7953B8AABA2040A59F70766BC128C08F8A4158740A2140', NULL, 68, '71', 1, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 5, NULL, 2, 1, 7, 1, NULL
- , 1, 759738.52000000002, 'J th f', 'Hf', 'Gd', 'Hdd', '2018-06-04', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 5, 6, 21, 5555, 2, NULL, 'BFABDUNAY68', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', NULL, 122, '156', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 2286951.7599999998, 'bf',
-  'hf', 'hf', 'fb', '2018-06-14', 'Polygon', 1, '2018-06-14 00:00:00', 1, '2018-06-14 00:00:00', 4, 2, 22, 515484, 5, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000007000000168D9FC280DF23C077638CA0FA2B24405F94E7CD74A721C01D204E64B8322540160A2DAD16FE22C0F6199D9141E028407895D741F5BA25C080A75DCEA3D127402437FE50D33923C087F72B1A5E372640A94870F630AC25C0CCB603680FC02540168D9FC280DF23C077638CA0FA2B2440', NULL, 67, '70', 2, 1, 1, 2, 
- 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 1, 1, 6, 2, NULL, 1, 7665274.2338815024, 'Uff', 'Hf', 'Fj', 'Fj', '2018-06-06', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 5, 6, 21, 4455, 2, NULL, 'BFABDUNAY67', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000060000000D5AC48704CC1EC098FCAAB761F7174045F91FEC16381FC0F5F608B10A0217403ADBCCB6CDAE1FC0BDE844E5D3C1174043D98449EB391FC09C85A017ACE0174075888749DB2B1FC011568417541A18400D5AC48704CC1EC098FCAAB761F71740', NULL, 95, '2', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NUL
- L, 3, 1, NULL, 1, 1, 7, 1, NULL, 1, 82649.919999999998, 'jfjf', 'fj', 'fhf', 'jf', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 23, 5454, 3, 14, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000008000000026C381370CB26C0A062C53E3B832340A96C974476A726C0F8D929DD88EB234012A93CFA526226C03AFCA4CFF6DE234012A93CFA72CA25C03AFCA4CFC6E1234080706D7B2EBA25C031AD69EDBB3E24403B56A5042F6425C0E412682C713B2440E345D397AD0226C0CCE39B33C3D82240026C381370CB26C0A062C53E3B83234
- 0', NULL, 37, '37', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 2, NULL, 1, 1, 8, 1, NULL, 1, 666968.52710291138, 'Jf', 'Hf', 'Fh', 'Fh', '2018-05-29', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 32, 8888, 8, NULL, 'BFABDUNAY37', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000080000001C9D610CDF6523C057992D9050AD1A407E81ACE9727523C0BFC9C219F4001A403631D1DEE8EA23C0DC1E102A69941A40F1B404329EDF23C07FF83B0C949D1A40C9BF8684AAC723C00FDD10C6E2E51A40ADACA4AB45A023C0D4CFD6F49CCA1A40ADACA4ABF97323C0D4CFD6F44CB11A401C9D610CDF6523C057992D9050AD1A4
- 0', NULL, 102, '3', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, 2, NULL, 1, 1, 8, 1, NULL, 1, 91370.129469964595, 'bfhf', 'fhf', 'fhf', 'hf', '2018-05-27', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 42, 55, 8, 15, 'BFABDUNAY102', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000007000000722A638DC42B28C061B77CE2088927406185BE684DF729C05DBA517D4AC42640D4AC5C3D61C229C0182B83CDADA42740EF32AAA9B88F29C0971DC111CD152840E9D710EB03A629C0F86B8990F44227405B9C4A69AAAF28C09B42DFC42DBC2740722A638DC42B28C061B77CE208892740', NULL, 35, '35', 2, 1, 1, 2, 
- 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 6, 2, NULL, 1, 528554.62, 'Hf', 'Fj', 'Fj', 'Jf', '2018-05-18', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 22, 54, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000060000003D01CA091FAB12C0AD463071DEFD14406010681B459712C0036464A09D11154023EB78E5DD4913C00D8BB401966017404188CD30786F11C0B04B92CCA74216403C90EECD402312C02DF7F272DD0115403D01CA091FAB12C0AD463071DEFD1440', NULL, 119, '49', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, N
- ULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 397068.38, 'dd', 'ff', 'g', 'g', '2018-05-18', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 1, 1, 44, 44, 2, 51, 'BFABDUNAY51', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000C000000E8FB88E3E9C221C04403EB1770D727408276C1BF8C561AC0933398AF604729400A1325A5C9D020C070D3D9A8D29F2B40E8FB88E3E9C221C04403EB1770D7274014F57ADE2AF121C06D045E3D59E52740CE927CFC100F22C05E95763083C327409188422EE52822C030898AA338A02740AD11878D2E2022C0891823D0683C274
- 01E98718DAE8221C05DABFBCFB3B62540E5547C8D6E4A21C088C60BD0532427403C592E1BDDE61BC0B07EFACFA3A82540E8FB88E3E9C221C04403EB1770D72740', NULL, 109, '1', 1, 1, 1, 1, 1, 1, 1, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 1, NULL, NULL, NULL, 1, 7513709.8700000001, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-11 00:00:00', 1, NULL, NULL, NULL, NULL, 1, 1, 20, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000C000000230F5267B80013C0026CC868B8A814400876DB091FAB12C0E20B0F71DEFD1440206926CE402312C09B57B772DD011540FE2BE930786F11C0FD29B8CCA7421640412D060FD3EE10C0AF5E24381EF515400DD3AD8D67CA10C042BB5C27A21D154085A1C49DC16D10C0985575E2B470134064B8A45D5D0311C0EDA9D878B263134
- 03C90EE2D921811C09EC674880DEF13403C90EE2DB28E11C09EC67488EDE014403C90EE2D92F911C09EC67488CD6A1440230F5267B80013C0026CC868B8A81440', NULL, 139, '49', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 515153.10999999999, 'dd', 'ff', 'g', 'g', '2018-05-17', 'Polygon', 1, '2018-06-01 00:00:00', 1, '2018-06-01 00:00:00', 5, 6, 44, 44, 2, 51, 'BFABDUNAY51', true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000403A399620C0994DDF75480421400000809A34831EC05DD8BA89CA572140FFFFBFD19A2C20C0EB1DBF607D7B1F400000403A399620C0994DDF7548042140', NULL, 153, '94', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NULL, 1, 693423.18000000005, 'jf', 
- 'jf', 'mg', 'nf', '2018-07-19', 'Polygon', 1, '2018-07-19 00:00:00', 1, '2018-07-19 00:00:00', 1, 1, 22, 213, 4, NULL, NULL, true, 'hf');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C065565421C044320D7C323B2040000080F16EFF1FC04E3F0C473BF72040000080E2FCAD20C0C6B25E822F371E400000C065565421C044320D7C323B2040', NULL, 150, '91', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 4, 7, NULL, 4, 1, 6, 2, NULL, 1, 747300.56000000006, 'hfgfj
- fgj', 'jffghf', 'jffgj', 'nfgjfj', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 5, 6, 28, 554, 8, NULL, 'BFABDUNAY150', true, 'hffdgdfbnvv');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000000AC2E4F22C0B78C493B874C1840000040E2A63421C030E8E5F6A84D19400000C0AD818621C0CCDDDDA57EE71640000000AC2E4F22C0B78C493B874C1840', NULL, 154, '176', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 2, NULL, 1, 442766.89000000001, 'east
- ', 'west', 'north', 'south', '2018-07-20', 'Polygon', 1, '2018-07-20 00:00:00', 1, '2018-07-20 00:00:00', 1, 1, 1234, 1234, 2, NULL, NULL, true, 'us3');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000E0000004260408A957C16C00C2AC31B467B214098365708037A16C0AC0439143D7C2140DF752E73575214C0107989B9BD5D20400A174DC2E00116C0B6659F4B61D31F40B04D117DCA0B17C0239BB35782292040A12623FCC5CF17C0A316D6CF93DB20404260408A957C16C00C2AC31B467B21404260408A957C16C00C2AC31B467B214
- 068E32DFC854B18C07167D3CFA343214012AD0DFC454018C0BA750ED043D02140750B13FC257017C03190EBCF132D2240D6C6B7FB45CA15C0CE31E6CF33EF214064208D120D1917C0AEB9A3FFE5D421404260408A957C16C00C2AC31B467B2140', NULL, 86, '75', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 1545883.23, 'Hfh', 'Hf', 'jf', 'hf', '2018-05-27', 'Polygon', 1, '2018-06-07 00:00:00', 1, '2018-06-07 00:00:00', 1, 1, 2, 844, 2, NULL, NULL, true, NULL);
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000000BC957E21C053E3B5A2E406214001000000D9701FC0E7E912B1D4A0214000008026DD9820C065BBF466A8511F40000000BC957E21C053E3B5A2E4062140', NULL, 140, '81', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 1122603.9299999999, 'east'
- , 'wst', 'nrth', 'south', '2018-06-28', 'Polygon', 1, '2018-06-28 00:00:00', 1, '2018-06-28 00:00:00', 1, 1, 22, 5454, 2, NULL, NULL, true, 'other');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080F10BF821C0B170185B2E2E194000008041EE4E20C04D11063C01001A4000000066ACCD20C02FE4EF6445361740000080F10BF821C0B170185B2E2E1940', NULL, 141, '83', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 2, NULL, 1, 803541.23999999999, 'ffff'
- , 'ff', 'gg', 'gg', '2018-06-28', 'Polygon', 1, '2018-06-28 00:00:00', 1, '2018-06-28 00:00:00', 1, 1, 77, 74, 2, NULL, NULL, true, 'f');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000040D84D7921C00732B1C402F22040FFFFFFB3E57320C008FBCEC44233214000004067531221C0B554A313E8CE1E40000040D84D7921C00732B1C402F22040', NULL, 143, '84', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 1, NULL, 1, 634642.44999999995, 'fbhf'
- , 'fhhf', 'nfnf', 'jf', '2018-06-28', 'Polygon', 1, '2018-06-28 00:00:00', 1, '2018-06-28 00:00:00', 1, 1, 22, 5454646, 4, NULL, NULL, true, 'nfhf');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000C06FAF0F21C0725D50FFF3311E40000000C73F0522C05C0BDE4F86551C400000808A6A4C21C04D11063C01001A400000C06FAF0F21C0725D50FFF3311E40', NULL, 144, '85', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 1, NULL, 1, 679712.51000000001, 'hf', 
- 'jf', 'j', 'j', '2018-06-28', 'Polygon', 1, '2018-06-28 00:00:00', 1, '2018-06-28 00:00:00', 1, 1, 23, 44, 7, NULL, NULL, true, 'f');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000004004172A21C0C9565138AEFB1A40000000B29FCA1FC0F0A55A5C0C4B1C40000040E1556920C03D84D5597CCA184000004004172A21C0C9565138AEFB1A40', NULL, 145, '87', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 2, 1, 6, 4, NULL, 1, 716052.54000000004, 'hfhf'
- , 'fn', 'fn', 'nf', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 1, 1, 22, 55, 3, NULL, NULL, true, 'bff');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000404C425C21C0A583A13BAC01214001008013DFF41FC0E4F75312621E2140000040AE2D7920C0F8F3682824CF1F400000404C425C21C0A583A13BAC012140', NULL, 146, '86', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 1, 1, 8, 1, NULL, 1, 614227.21999999997, 'g', '
- j', 'k', 'j', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 1, 1, 22, 585, 3, NULL, NULL, true, 'hh');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000005000000FFFFFF5CA4DD21C0099D0B6DF2131940000080B633FD20C0305CA8223A1A1A40000000D047F520C0F71DA3B708701740000000C73F0522C043AC7B6C7CD21640FFFFFF5CA4DD21C0099D0B6DF2131940', NULL, 147, '88', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 2, NULL, 2, 1, 6, 4, NUL
- L, 1, 888269.16000000003, 'd', 'f', 'gh', 'h', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 1, 1, 77, 77, 2, NULL, NULL, true, 'dc');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E6100000010000000400000000004018C9A020C04375BFDBB23D2140000000148BE71EC03E915F5F5B89214000004066024720C006335956D71B204000004018C9A020C04375BFDBB23D2140', NULL, 148, '89', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 543065.45999999996, 'jf', 
- 'mf', 'k', 'k', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 1, 1, 21, 4, 3, NULL, NULL, true, 'jf');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000080BEE30722C0E19122A45C1D1F4000008038E65E21C08FCFBAC923211C400000009CCE3920C0428CE7C266912040000080BEE30722C0E19122A45C1D1F40', NULL, 149, '90', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 1, 1, 6, 4, NULL, 1, 1274776.9199999999, 'jf', 
- 'j', 'j', 'm', '2018-06-29', 'Polygon', 1, '2018-06-29 00:00:00', 1, '2018-06-29 00:00:00', 5, 6, 22, 545, 3, NULL, 'BFABDUNAY149', true, 'hr');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000000AA8CB820C083C2EEC1D9CA20400000001785631EC02DB16143CA932140000000F5B16620C08791D3EC27F31D40000000AA8CB820C083C2EEC1D9CA2040', NULL, 151, '92', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 4, NULL, 2, 1, 6, 4, NULL, 1, 1145613.6599999999, 'hfh',
-  'mf', 'mf', 'mf', '2018-07-02', 'Polygon', 1, '2018-07-02 00:00:00', 1, '2018-07-02 00:00:00', 5, 6, 22, 2311, 9, NULL, 'BFABDUNAY151', true, 'fhfhbf');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E610000001000000040000000000009D2C4321C08388D0AEDCC71840000000E25DF921C085E737A77EB518400000802A351E21C0305CA8223A1A1A400000009D2C4321C08388D0AEDCC71840', NULL, 142, '82', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 1, 1, NULL, 2, 1, 6, 4, NULL, 1, 177006.95000000001, 'f', '
- f', 'g', 'g', '2018-06-28', 'Polygon', 1, '2018-06-28 00:00:00', 1, '2018-06-28 00:00:00', 1, 1, 4, 1, 2, NULL, NULL, true, '');
-INSERT INTO la_spatialunit_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, occupancylength, claimno, proposedused, oldlandid, udparcelno, isactive, other_use) VALUES ('0103000020E61000000100000004000000000000C6EE3921C0B412DC4B98601D400000809A34831EC068E00F27AB851E400000405CA98B20C024825D0FB7241A40000000C6EE3921C0B412DC4B98601D40', NULL, 152, '93', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, 3, 1, NULL, 3, 1, 6, 4, NULL, 1, 1357223.71, 'bd', 'fn', 'n
- flnf.', 'nff', '2018-07-18', 'Polygon', 1, '2018-07-18 00:00:00', 1, '2018-07-18 12:21:54.609', 5, 6, 22, 54, 3, NULL, 'BFABDUNAY152', true, 'other');
+
+
+
 
 SELECT pg_catalog.setval('la_spatialunit_land_landid_seq', 156, true);
 
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000806500DB21C032BE59DA2D441A40000080A57B0221C0BC5047940657184000008026DD9820C01231EE4DFCD61A400000806500DB21C032BE59DA2D441A40', NULL, 13, '10', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 2238324880.3699999, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-05-18 0
- 0:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000060000000000C02F34E821C02DDA0AF5E84916400000C02784DD20C0A3936E28C83C1840000040780B0D21C0F6066F5202921540000000896D8E21C0A5E7148448CA1440000000896D8E21C0A5E7148448CA14400000C02F34E821C02DDA0AF5E8491640', NULL, 14, '15', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 2657572832.86
- 00001, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000050000000000C04A459E21C090C105D82A4319400000C0911F0521C04AB02510E9531A400000C0FBBA2C21C0973F8DA1038118400000401620F021C0503D1A930AAF17400000C04A459E21C090C105D82A431940', NULL, 16, '17', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1438669596.3099999, NULL, NULL, NULL, NULL, N
- ULL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000C04A459E21C059D5979DAB59164001008015259E20C04E96A8CC849C15400000001579AB21C0BC8F18EF328B14400000C04A459E21C059D5979DAB591640', NULL, 17, '18', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1422578754.9300001, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-05-18 0
- 0:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000005000000000040C6876F21C07CD3200243991540000080B2732A21C01DB3599ECD891640000080EBF21721C0DFDE94BB2DD415400000C090C37021C086E55BF84CF21440000040C6876F21C07CD3200243991540', NULL, 20, '13', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 371170742.86000001, NULL, NULL, NULL, NULL, N
- ULL, 'Polygon', 1, '2018-05-25 00:00:00', 1, '2018-05-25 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000006000000FFFF7F287F2F22C00AA32CC8898F1740FFFF7F287F2F22C00AA32CC8898F17400000C0CFF17B21C0E0D111DDC91218400000009A258921C0C66D3C19B59816400100804AEF2422C03719AFCC6A541640FFFF7F287F2F22C00AA32CC8898F1740', NULL, 8, '5', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1363253311.72, 
- NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E6100000010000000500000000008076B8D521C02CA537FC43211740000040569B1721C00145D405C47B18400000806E08CB20C055C20D5240F716400000C0BE398121C03AA19AF8D8F5154000008076B8D521C02CA537FC43211740', NULL, 9, '6', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 2077574486.5, NULL, NULL, NULL, NULL, NULL, 'Po
- lygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000005000000000040A22B0D22C02408BAA20AEE17400000C0760E4F21C0B77B97EC3CC51840000080ACDA4121C0C6477189031C1740FFFF7F287F2F22C074DE7B5022251640000040A22B0D22C02408BAA20AEE1740', NULL, 10, '7', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 2160189813.9499998, NULL, NULL, NULL, NULL, NU
- LL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000050000000000805BA71F22C0C646EA95BAC21640000000B5363F21C0B971A0FC890D1840000080ACDA4121C08B3F0BC78EC61540000000BDE64922C03B26B0D9683315400000805BA71F22C0C646EA95BAC21640', NULL, 12, '9', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 2695270639.79, NULL, NULL, NULL, NULL, NULL, '
- Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000004C42AA22C01308380A5BC5204000004071507421C025C6D538DE1F214000000025FADD21C03A6BB7E4622C1F400000004C42AA22C01308380A5BC52040', NULL, 21, '124', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 649775.93999999994, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-06 
- 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E6100000010000000400000000004071507421C0B5D4BE52AB86204000008053C22C20C0DEABA30C770E2140000000DED1D520C0F630155848481F4000004071507421C0B5D4BE52AB862040', NULL, 24, '64', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 553277.91000000003, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-06 0
- 0:00:00', 1, '2018-06-06 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000C0036B3722C0B2478935897A17400000406EB25121C09DF2854AC29018400000C0CFF17B21C07DF10728B28316400000C0036B3722C0B2478935897A1740', NULL, 25, '77', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 316248.40000000002, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-13 0
- 0:00:00', 1, '2018-06-13 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000005000000B3379D291FD225C0AC0B1AADACD31740D3280BFC34AC23C0CEB9E3661B2019409621D091430B24C0CD8BFAC14C951640A10D2331FF3225C0D6390664AF971440B3379D291FD225C0AC0B1AADACD31740', NULL, 15, '16', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1904720.861862811, NULL, NULL, NULL, NULL, NU
- LL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000009B765422C0288150A8EF57204000004029819B20C04375BFDBB23D2140000040F35E2F21C0725D50FFF3311E400000009B765422C0288150A8EF572040', NULL, 27, '78', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1202451.3300000001, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-14 0
- 0:00:00', 1, '2018-06-14 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000004000000000040FABD6E21C0B9084439CAEC20400000000C71BB22C0A0EE5C902D9A1D400000002F327C23C057D555BD817C2040000040FABD6E21C0B9084439CAEC2040', NULL, 28, '79', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1434625.1699999999, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-06-14 0
- 0:00:00', 1, '2018-06-14 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000005000000000080FCB57E22C0A099B7BC0AC41740000040FABD6E21C0232A261DB9E4184000008038E65E21C088073906AF6E1640000000AC2E4F22C05F175C94BB771540000080FCB57E22C0A099B7BC0AC41740', NULL, 29, '79', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 955683.92000000004, NULL, NULL, NULL, NULL, N
- ULL, 'Polygon', 1, '2018-06-15 00:00:00', 1, '2018-06-15 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000050000006F28DFE0293321C0E289494D35F51340CB5D5339B05A20C0AE8239F603A01440D4E263E27C6A20C00E9AE12F3BE91240EE3F74396C8F20C00B4D4CF6933D14406F28DFE0293321C0E289494D35F51340', NULL, 26, '78', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 98954.676843985595, NULL, NULL, NULL, NULL, N
- ULL, 'Polygon', 1, '2018-06-13 00:00:00', 1, '2018-06-13 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000403131A621C027F08CF3F5F81F400000804B470A20C027F08CF3F5F81F40000000A47E4421C07B87A4A26E8E1B400000403131A621C027F08CF3F5F81F40', NULL, 30, '93', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1346715.1399999999, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-07-02 0
- 0:00:00', 1, '2018-07-02 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000050000007AAE6B8BC15A24C08EE36EAD0AF417408ABE8AA5CF2423C03DCF658BA82A1A4076B8258B824423C0AD548AFC061417407E72F311450D24C05AF3E32FB53715407AAE6B8BC15A24C08EE36EAD0AF41740', NULL, 23, '63', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1181530.0961534244, NULL, NULL, NULL, NULL, N
- ULL, 'Polygon', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E61000000100000006000000B3379D291F4B25C0AC0B1AADCCC2174047EE9F5D74D623C060A183ECC42E1840E3D7D50538EE23C051A64DACBE0C1640E3D7D50538EE23C051A64DACBE0C1640B3379D29BFC924C0AC0B1AAD2C391440B3379D291F4B25C0AC0B1AADCCC21740', NULL, 11, '8', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1343964.194424
- 9226, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_land (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0103000020E610000001000000040000000000C06CB59321C058255A39F6B52040000080C7EBF720C09B45290AC1D31D400000006EBFDF1FC04E813D0A10FF20400000C06CB59321C058255A39F6B52040', NULL, 31, '95', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 1182002.52, NULL, NULL, NULL, NULL, NULL, 'Polygon', 1, '2018-07-19 00:00:00'
- , 1, '2018-07-19 00:00:00', 1, 1, true);
+
+
 
 
 SELECT pg_catalog.setval('la_spatialunit_resource_land_landid_seq', 31, true);
 
 
-INSERT INTO la_spatialunit_resource_point (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0101000020E6100000695721E527545340934A8B0DF0933C40', NULL, 18, '12', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, NULL, 'Point', 1, '2018-05-24 00:00:00', 1, '2018-05-24 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_point (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0101000020E6100000CC9717601F545340C6BAB88D06943C40', NULL, 19, '13', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, NULL, 'Point', 1, '2018-05-24 00:00:00', 1, '2018-05-24 00:00:00', 1, 1, true);
-INSERT INTO la_spatialunit_resource_point (geometry, ogc_fid, landid, landno, projectnameid, spatialunitgroupid1, hierarchyid1, spatialunitgroupid2, hierarchyid2, spatialunitgroupid3, hierarchyid3, spatialunitgroupid4, hierarchyid4, spatialunitgroupid5, hierarchyid5, spatialunitgroupid6, hierarchyid6, landtypeid, landusetypeid, landsoilqualityid, acquisitiontypeid, claimtypeid, landsharetypeid, tenureclassid, slopevalueid, unitid, area, neighbor_east, neighbor_west, neighbor_north, neighbor_south, surveydate, geometrytype, createdby, createddate, modifiedby, modifieddate, applicationstatusid, workflowstatusid, isactive) VALUES ('0101000020E610000000000057039421C05EC9D5856C781940', NULL, 22, '125', 2, 1, 1, 2, 2, 3, 7, 4, 42, 5, 298, NULL, NULL, NULL, NULL, NULL, NULL, 5, NULL, NULL, NULL, 1, 0, NULL, NULL, NULL, NULL, NULL, 'Point', 1, '2018-06-06 00:00:00', 1, '2018-06-06 00:00:00', 1, 1, true);
+
 
 INSERT INTO la_spatialunitgroup (spatialunitgroupid, hierarchy, hierarchy_en, isactive) VALUES (1, 'Country', 'Country', true);
 INSERT INTO la_spatialunitgroup (spatialunitgroupid, hierarchy, hierarchy_en, isactive) VALUES (2, 'Region', 'Region', true);
 INSERT INTO la_spatialunitgroup (spatialunitgroupid, hierarchy, hierarchy_en, isactive) VALUES (3, 'Province', 'Province', true);
 INSERT INTO la_spatialunitgroup (spatialunitgroupid, hierarchy, hierarchy_en, isactive) VALUES (4, 'Commune', 'Commune', true);
 INSERT INTO la_spatialunitgroup (spatialunitgroupid, hierarchy, hierarchy_en, isactive) VALUES (5, 'Place', 'Place', true);
+
+
 
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (56, 'Assio', 'Assio', 5, 9, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (57, 'Bagassi', 'Bagassi', 5, 9, true, NULL);
@@ -7315,7 +6402,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (76, 'Nanou    ', 'Nanou    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (77, 'Ouahabou    ', 'Ouahabou    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (78, 'Ouroubono    ', 'Ouroubono    ', 5, 11, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (79, 'Petit BalÃ©    ', 'Petit BalÃ©    ', 5, 11, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (79, 'Petit Balé    ', 'Petit Balé    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (80, 'Virou ', 'Virou ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (81, 'Bilatio', 'Bilatio', 5, 12, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (82, 'Bouzourou', 'Bouzourou', 5, 12, true, NULL);
@@ -7340,25 +6427,25 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (33, 'Nouna', 'Nouna', 4, 5, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (34, 'Sono', 'Sono', 4, 5, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (35, 'Bondoukui', 'Bondoukui', 4, 6, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (36, 'DÃ©dougou', 'DÃ©dougou', 4, 6, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (36, 'Dédougou', 'Dédougou', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (37, 'Douroula', 'Douroula', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (38, 'Kona', 'Kona', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (39, 'Ouarkoye', 'Ouarkoye', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (40, 'Safane', 'Safane', 4, 6, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (41, 'TchÃ©riba', 'TchÃ©riba', 4, 6, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (41, 'Tchériba', 'Tchériba', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (42, 'Gassan', 'Gassan', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (43, 'Gossina', 'Gossina', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (44, 'Kougny', 'Kougny', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (45, 'Toma', 'Toma', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (46, 'Yaba', 'Yaba', 4, 7, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (47, 'YÃ©', 'YÃ©', 4, 7, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (47, 'Yé', 'Yé', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (48, 'Di', 'Di', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (49, 'Gomboro', 'Gomboro', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (50, 'Kassoum', 'Kassoum', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (51, 'KiÃ©mbara', 'KiÃ©mbara', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (52, 'LanfiÃ©ra', 'LanfiÃ©ra', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (53, 'LankouÃ©', 'LankouÃ©', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (54, 'ToÃ©ni', 'ToÃ©ni', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (51, 'Kiémbara', 'Kiémbara', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (52, 'Lanfiéra', 'Lanfiéra', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (53, 'Lankoué', 'Lankoué', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (54, 'Toéni', 'Toéni', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (55, 'Tougan', 'Tougan', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (99, 'Voho', 'Voho', 5, 14, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (100, 'Konkoliko', 'Konkoliko', 5, 15, true, NULL);
@@ -7373,7 +6460,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (109, 'Mamou', 'Mamou', 5, 18, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (110, 'Maoula', 'Maoula', 5, 18, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (111, 'Yaho', 'Yaho', 5, 18, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (112, 'BalawÃ©', 'BalawÃ©', 5, 19, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (112, 'Balawé', 'Balawé', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (113, 'Tangouna', 'Tangouna', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (114, 'Yasso', 'Yasso', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (115, 'Diontala', 'Diontala', 5, 20, true, NULL);
@@ -7392,7 +6479,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (128, 'Ouarakuy', 'Ouarakuy', 5, 22, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (129, 'Pekuy', 'Pekuy', 5, 22, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (130, 'Sanaba', 'Sanaba', 5, 22, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (131, 'BÃ©na', 'BÃ©na', 5, 23, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (131, 'Béna', 'Béna', 5, 23, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (3, 'Province Test', 'Province Test', 3, 2, true, 'BAL');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (4, 'MAST Community', 'MAST Community', 3, 2, true, 'BAN');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (6, 'Mouhoun', 'Mouhoun', 3, 2, true, 'MOU');
@@ -7624,7 +6711,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (334, 'Niempourou', 'Niempourou', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (335, 'Saoura', 'Saoura', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (336, 'Touri', 'Touri', 5, 47, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (337, 'YÃ©', 'YÃ©', 5, 47, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (337, 'Yé', 'Yé', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (338, 'Debe', 'Debe', 5, 48, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (339, 'Di', 'Di', 5, 48, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (340, 'Donon', 'Donon', 5, 48, true, NULL);
@@ -7659,7 +6746,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (369, 'Lanfiera', 'Lanfiera', 5, 52, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (370, 'Toumani', 'Toumani', 5, 52, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (371, 'Unknown', 'Unknown', 5, 52, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (372, 'LankouÃ©', 'LankouÃ©', 5, 53, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (372, 'Lankoué', 'Lankoué', 5, 53, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (373, 'Dagale', 'Dagale', 5, 54, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (374, 'Domoni', 'Domoni', 5, 54, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (375, 'Dounkou', 'Dounkou', 5, 54, true, NULL);
@@ -7686,41 +6773,40 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (396, 'Tougan', 'Tougan', 5, 55, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (397, 'Toungare', 'Toungare', 5, 55, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (9, 'Bagassi', 'Bagassi', 4, 3, true, 'BAG');
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (19, 'BalavÃ©', 'BalavÃ©', 4, 4, true, 'BAL');
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (19, 'Balavé', 'Balavé', 4, 4, true, 'BAL');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (26, 'Bomborokui', 'Bomborokui', 4, 5, true, 'BOM');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (1, 'Mast Country', 'Mast Country', 1, NULL, true, 'BFA');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (5, 'MAST Community', 'MAST Community', 3, 2, true, 'KOS');
 
+
+
 SELECT pg_catalog.setval('la_spatialunitgroup_hierarchy_hierarchyid_seq', 1, false);
+
+
 
 SELECT pg_catalog.setval('la_spatialunitgroup_spatialunitgroupid_seq', 5, true);
 
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (6, 2, 1, 2343, true, 1, '2018-05-25 00:00:00', NULL, NULL, 26, 1, 8, '2018-05-01 00:00:00', '2018-05-31 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (7, 2, 1, 2434234, true, 1, '2018-06-01 00:00:00', NULL, NULL, 73, 36, 72, '2018-05-01 00:00:00', '2018-05-31 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (8, 3, 9, 1200000, true, 1, '2018-06-07 00:00:00', NULL, NULL, 96, 26, 82, '2018-06-01 00:00:00', '2018-06-29 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (9, 3, 9, 1200000, true, 1, '2018-06-07 00:00:00', NULL, NULL, 95, 1, 2, '2018-03-01 00:00:00', '2018-06-30 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (10, 2, 1, 45636, true, 1, '2018-06-07 00:00:00', NULL, NULL, 103, 1, 2, '2018-05-01 00:00:00', '2018-05-31 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (11, 2, 1, 34535, true, 1, '2018-06-07 00:00:00', NULL, NULL, 105, 68, 104, '2018-05-01 00:00:00', '2018-09-28 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (12, 2, 1, 2434234, true, 1, '2018-06-08 00:00:00', NULL, NULL, 115, 1, 28, '2018-05-01 00:00:00', '2018-05-31 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (13, 2, 1, 2434234, true, 1, '2018-06-15 00:00:00', NULL, NULL, 128, 51, 81, '2018-04-04 00:00:00', '2018-03-24 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (14, 2, 1, 2434234, true, 1, '2018-06-18 00:00:00', NULL, NULL, 138, 39, 136, '2018-04-04 00:00:00', '2018-09-28 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (15, 2, 1, 2434234, true, 1, '2018-06-19 00:00:00', NULL, NULL, 142, 37, 141, '2018-05-01 00:00:00', '2018-06-14 00:00:00', NULL);
-INSERT INTO la_surrenderlease (leaseid, leaseyear, monthid, leaseamount, isactive, createdby, createddate, modifiedby, modifieddate, personid, landid, ownerid, leasestartdate, leaseenddate, surrenderreason) VALUES (16, 2, 1, 2434234, true, 1, '2018-07-02 00:00:00', NULL, NULL, 128, 51, 129, '2018-04-04 00:00:00', '2018-03-24 00:00:00', NULL);
+
+
+
 
 SELECT pg_catalog.setval('la_surrenderlease_leaseid_seq', 16, true);
 
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (3, 1, '2018-05-01', '2018-05-31', 34256456, true, 1, '2018-05-25 00:00:00', NULL, NULL, 1, 8, 'approved');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (4, 1, '2018-06-06', '2018-03-21', 5454, true, 1, '2018-06-01 00:00:00', NULL, NULL, 36, 72, 'completed');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (5, 1, '2018-06-01', '2018-06-30', 56456546, true, 1, '2018-06-07 00:00:00', NULL, NULL, 26, 82, 'Payment done');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (6, 2, '2018-03-23', '2018-10-31', 456546, true, 1, '2018-06-07 00:00:00', NULL, NULL, 1, 2, 'completed');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (7, 2, '2018-03-23', '2018-10-31', 55000, true, 1, '2018-06-07 00:00:00', NULL, NULL, 68, 104, 'completed');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (8, 2, '2018-03-23', '2018-06-06', 55000, true, 1, '2018-06-08 00:00:00', NULL, NULL, 1, 28, 'completed');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (9, 1, '2018-03-23', '2018-10-31', 34256456, true, 1, '2018-06-19 00:00:00', NULL, NULL, 37, 141, 'completed');
-INSERT INTO la_surrendermortgage (mortgageid, financialagencyid, mortgagefrom, mortgageto, mortgageamount, isactive, createdby, createddate, modifiedby, modifieddate, landid, ownerid, surrenderreason) VALUES (10, 1, '2018-03-23', '2018-03-21', 600000, true, 1, '2018-07-02 00:00:00', NULL, NULL, 51, 129, 'completed');
+
+
+
 
 SELECT pg_catalog.setval('la_surrendermortgage_mortgageid_seq', 10, true);
 
+
+
 SELECT pg_catalog.setval('la_transactionhistory_seq', 45, true);
+
+
+
+
+
+
 
 INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2557, '0103000020E6100000010000000C000000E8FB88E3E9C221C04403EB1770D727408276C1BF8C561AC0933398AF604729400A1325A5C9D020C070D3D9A8D29F2B40E8FB88E3E9C221C04403EB1770D7274014F57ADE2AF121C06D045E3D59E52740CE927CFC100F22C05E95763083C327409188422EE52822C030898AA338A02740AD11878D2E2022C0891823D0683C2740AABB113DAEC721C0BFB40FCCC8E12640D91565FC1CA921C04B7E9B30278927402CF9AFDE6EBC21C06B5F613DC5A62740E8FB88E3E9C221C04403EB1770D72740', 'invalid geometry', 'la_spatialunit_land', 109, '2018-06-26 11:26:57.79198', NULL, 'n');
 INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2558, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
@@ -8547,6 +7633,8 @@ INSERT INTO vertexlabel (gid, the_geom) VALUES (3, '0101000020E61000005896BFAD81
 INSERT INTO vertexlabel (gid, the_geom) VALUES (4, '0101000020E6100000B8F5E4AB2E4F22C0AF1D733B874C1840');
 
 
+
+
 ALTER TABLE ONLY topology_checks_error_log
     ADD CONSTRAINT error_log_pkey PRIMARY KEY (id);
 
@@ -8554,24 +7642,38 @@ ALTER TABLE ONLY topology_checks_error_log
 ALTER TABLE ONLY la_ext_resource_custom_attribute
     ADD CONSTRAINT la_ext_resource_custom_attribute_pkey PRIMARY KEY (customattributeid);
 
+
+
 ALTER TABLE ONLY la_ext_resource_custom_attributevalue
     ADD CONSTRAINT la_ext_resource_custom_attributevalue_pkey PRIMARY KEY (customattributevalueid);
+
+
 
 ALTER TABLE ONLY la_ext_resource_documentdetails
     ADD CONSTRAINT la_ext_resource_documentdetails_pkey PRIMARY KEY (documentid);
 
+
+
 ALTER TABLE ONLY la_ext_resourceattributevalue
     ADD CONSTRAINT la_ext_resourceattributevalue_pkey PRIMARY KEY (attributevalueid);
 
+
+
 ALTER TABLE ONLY la_ext_resourcelandclassificationmapping
     ADD CONSTRAINT la_ext_resourcelandclassificationmapping_pkey PRIMARY KEY (landclassmappingid);
+
+
 
 ALTER TABLE ONLY la_ext_resourcepoiattributevalue
     ADD CONSTRAINT la_ext_resourcepoiattributevalue_pkey PRIMARY KEY (poiattributevalueid);
 
 
+
+
 ALTER TABLE ONLY la_ext_workflowdef
     ADD CONSTRAINT la_ext_workflowdef_pkey PRIMARY KEY (workflowdefid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_aoi
     ADD CONSTRAINT la_spatialunit_aoi_pkey PRIMARY KEY (aoiid);
@@ -8579,6 +7681,8 @@ ALTER TABLE ONLY la_spatialunit_aoi
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT la_spatialunit_land_pkey PRIMARY KEY (landid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT la_spatialunit_resource_land_pkey PRIMARY KEY (landid);
@@ -8588,16 +7692,24 @@ ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT la_spatialunit_resource_line_pkey PRIMARY KEY (landid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT la_spatialunit_resource_point_pkey PRIMARY KEY (landid);
+
+
 
 
 ALTER TABLE ONLY la_ext_parcelsplitland
     ADD CONSTRAINT parcelsplitidpk PRIMARY KEY (parcelsplitid);
 
 
+
+
 ALTER TABLE ONLY la_baunit_landsoilquality
     ADD CONSTRAINT pk_la_baunit_landsoilquality PRIMARY KEY (landsoilqualityid);
+
+
 
 ALTER TABLE ONLY la_baunit_landtype
     ADD CONSTRAINT pk_la_baunit_landtype PRIMARY KEY (landtypeid);
@@ -8611,8 +7723,12 @@ ALTER TABLE ONLY la_ext_applicationstatus
     ADD CONSTRAINT pk_la_ext_applicationstatus PRIMARY KEY (applicationstatusid);
 
 
+
+
 ALTER TABLE ONLY la_ext_attribute
     ADD CONSTRAINT pk_la_ext_attribute PRIMARY KEY (attributeid);
+
+
 
 ALTER TABLE ONLY la_ext_attributecategory
     ADD CONSTRAINT pk_la_ext_attributecategory PRIMARY KEY (attributecategoryid);
@@ -8621,25 +7737,39 @@ ALTER TABLE ONLY la_ext_attributecategory
 ALTER TABLE ONLY la_ext_attributedatatype
     ADD CONSTRAINT pk_la_ext_attributedatatype PRIMARY KEY (datatypemasterid);
 
+
+
 ALTER TABLE ONLY la_ext_attributemaster
     ADD CONSTRAINT pk_la_ext_attributemaster PRIMARY KEY (attributemasterid);
+
+
 
 ALTER TABLE ONLY la_ext_attributeoptions
     ADD CONSTRAINT pk_la_ext_attributeoptions PRIMARY KEY (attributeoptionsid);
 
+
+
 ALTER TABLE ONLY la_ext_baselayer
     ADD CONSTRAINT pk_la_ext_baselayer PRIMARY KEY (baselayerid);
+
+
 
 
 ALTER TABLE ONLY la_ext_bookmark
     ADD CONSTRAINT pk_la_ext_bookmark PRIMARY KEY (bookmarkid);
 
 
+
+
 ALTER TABLE ONLY la_ext_categorytype
     ADD CONSTRAINT pk_la_ext_categorytype PRIMARY KEY (categorytypeid);
 
+
+
 ALTER TABLE ONLY la_ext_customattributeoptions
     ADD CONSTRAINT pk_la_ext_customattributeoptions PRIMARY KEY (attributeoptionsid);
+
+
 
 
 ALTER TABLE ONLY la_ext_dispute
@@ -8653,11 +7783,17 @@ ALTER TABLE ONLY la_ext_disputelandmapping
 ALTER TABLE ONLY la_ext_disputestatus
     ADD CONSTRAINT pk_la_ext_disputestatus PRIMARY KEY (disputestatusid);
 
+
+
 ALTER TABLE ONLY la_ext_disputetype
     ADD CONSTRAINT pk_la_ext_disputetype PRIMARY KEY (disputetypeid);
 
+
+
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT pk_la_ext_documentdetails PRIMARY KEY (documentid);
+
+
 
 
 ALTER TABLE ONLY la_ext_documentformat
@@ -8668,6 +7804,8 @@ ALTER TABLE ONLY la_ext_documenttype
     ADD CONSTRAINT pk_la_ext_documenttype PRIMARY KEY (documenttypeid);
 
 
+
+
 ALTER TABLE ONLY la_ext_existingclaim_documentdetails
     ADD CONSTRAINT pk_la_ext_existingclaim_documentdetails PRIMARY KEY (claimdocumentid);
 
@@ -8676,12 +7814,18 @@ ALTER TABLE ONLY la_ext_financialagency
     ADD CONSTRAINT pk_la_ext_financialagency PRIMARY KEY (financialagencyid);
 
 
+
+
 ALTER TABLE ONLY la_ext_geometrytype
     ADD CONSTRAINT pk_la_ext_geometrytype PRIMARY KEY (geometrytypeid);
 
 
+
+
 ALTER TABLE ONLY la_ext_grouptype
     ADD CONSTRAINT pk_la_ext_grouptype PRIMARY KEY (grouptypeid);
+
+
 
 
 ALTER TABLE ONLY la_ext_landworkflowhistory
@@ -8698,8 +7842,12 @@ ALTER TABLE ONLY la_ext_layerfield
 ALTER TABLE ONLY la_ext_layergroup
     ADD CONSTRAINT pk_la_ext_layergroup PRIMARY KEY (layergroupid);
 
+
+
 ALTER TABLE ONLY la_ext_layertype
     ADD CONSTRAINT pk_la_ext_layertype PRIMARY KEY (layertypeid);
+
+
 
 
 ALTER TABLE ONLY la_ext_module
@@ -8721,6 +7869,8 @@ ALTER TABLE ONLY la_ext_process
 ALTER TABLE ONLY la_ext_projectadjudicator
     ADD CONSTRAINT pk_la_ext_projectadjudicator PRIMARY KEY (projectadjudicatorid);
 
+
+
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT pk_la_ext_projectarea PRIMARY KEY (projectareaid);
 
@@ -8729,37 +7879,59 @@ ALTER TABLE ONLY la_ext_projectbaselayermapping
     ADD CONSTRAINT pk_la_ext_projectbaselayermapping PRIMARY KEY (projectbaselayerid);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectfile
     ADD CONSTRAINT pk_la_ext_projectfile PRIMARY KEY (projectfileid);
+
+
 
 ALTER TABLE ONLY la_ext_projecthamlet
     ADD CONSTRAINT pk_la_ext_projecthamlet PRIMARY KEY (projecthamletid);
 
+
+
 ALTER TABLE ONLY la_ext_projection
     ADD CONSTRAINT pk_la_ext_projection PRIMARY KEY (projectionid);
 
+
+
 ALTER TABLE ONLY la_ext_projectlayergroupmapping
     ADD CONSTRAINT pk_la_ext_projectlayergroupmapping PRIMARY KEY (projectlayergroupid);
+
+
 
 ALTER TABLE ONLY la_ext_resourceclassification
     ADD CONSTRAINT pk_la_ext_resourceclassification PRIMARY KEY (classificationid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourcepoiattributemaster
     ADD CONSTRAINT pk_la_ext_resourcepoiattributemaster PRIMARY KEY (poiattributemasterid);
 
+
+
 ALTER TABLE ONLY la_ext_resourcesubclassification
     ADD CONSTRAINT pk_la_ext_resourcesubclassification PRIMARY KEY (subclassificationid);
+
+
 
 ALTER TABLE ONLY la_ext_role
     ADD CONSTRAINT pk_la_ext_role PRIMARY KEY (roleid);
 
 
+
+
 ALTER TABLE ONLY la_ext_rolemodulemapping
     ADD CONSTRAINT pk_la_ext_rolemodulemapping PRIMARY KEY (rolemoduleid);
 
+
+
 ALTER TABLE ONLY la_ext_slopevalue
     ADD CONSTRAINT pk_la_ext_slopevalue PRIMARY KEY (slopevalueid);
+
+
 
 
 ALTER TABLE ONLY la_ext_surveyprojectattributes
@@ -8773,24 +7945,38 @@ ALTER TABLE ONLY la_ext_transactiondetails
 ALTER TABLE ONLY la_ext_unit
     ADD CONSTRAINT pk_la_ext_unit PRIMARY KEY (unitid);
 
+
+
 ALTER TABLE ONLY la_ext_user
     ADD CONSTRAINT pk_la_ext_user PRIMARY KEY (userid);
+
+
 
 
 ALTER TABLE ONLY la_ext_userprojectmapping
     ADD CONSTRAINT pk_la_ext_userprojectmapping PRIMARY KEY (userprojectid);
 
+
+
 ALTER TABLE ONLY la_ext_userrolemapping
     ADD CONSTRAINT pk_la_ext_userrolemapping PRIMARY KEY (userroleid);
+
+
 
 ALTER TABLE ONLY la_ext_workflow
     ADD CONSTRAINT pk_la_ext_workflow PRIMARY KEY (workflowid);
 
+
+
 ALTER TABLE ONLY la_ext_workflowactionmapping
     ADD CONSTRAINT pk_la_ext_workflowactionmapping PRIMARY KEY (workflowactionid);
 
+
+
 ALTER TABLE ONLY la_lease
     ADD CONSTRAINT pk_la_lease PRIMARY KEY (leaseid);
+
+
 
 
 ALTER TABLE ONLY la_mortgage
@@ -8799,23 +7985,35 @@ ALTER TABLE ONLY la_mortgage
 ALTER TABLE ONLY la_party
     ADD CONSTRAINT pk_la_party PRIMARY KEY (partyid);
 
+
+
 ALTER TABLE ONLY la_party_deceasedperson
     ADD CONSTRAINT pk_la_party_deceasedperson PRIMARY KEY (partyid);
+
+
 
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT pk_la_party_organization PRIMARY KEY (organizationid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT pk_la_party_person PRIMARY KEY (personid);
+
+
 
 
 ALTER TABLE ONLY la_partygroup_citizenship
     ADD CONSTRAINT pk_la_partygroup_citizenship PRIMARY KEY (citizenshipid);
 
 
+
+
 ALTER TABLE ONLY la_partygroup_educationlevel
     ADD CONSTRAINT pk_la_partygroup_educationlevel PRIMARY KEY (educationlevelid);
+
+
 
 ALTER TABLE ONLY la_partygroup_ethnicity
     ADD CONSTRAINT pk_la_partygroup_ethnicity PRIMARY KEY (ethnicityid);
@@ -8825,15 +8023,23 @@ ALTER TABLE ONLY la_partygroup_gender
     ADD CONSTRAINT pk_la_partygroup_gender PRIMARY KEY (genderid);
 
 
+
+
 ALTER TABLE ONLY la_partygroup_identitytype
     ADD CONSTRAINT pk_la_partygroup_identitytype PRIMARY KEY (identitytypeid);
+
+
 
 
 ALTER TABLE ONLY la_partygroup_maritalstatus
     ADD CONSTRAINT pk_la_partygroup_maritalstatus PRIMARY KEY (maritalstatusid);
 
+
+
 ALTER TABLE ONLY la_partygroup_occupation
     ADD CONSTRAINT pk_la_partygroup_occupation PRIMARY KEY (occupationid);
+
+
 
 ALTER TABLE ONLY la_partygroup_persontype
     ADD CONSTRAINT pk_la_partygroup_persontype PRIMARY KEY (persontypeid);
@@ -8842,8 +8048,12 @@ ALTER TABLE ONLY la_partygroup_persontype
 ALTER TABLE ONLY la_partygroup_relationshiptype
     ADD CONSTRAINT pk_la_partygroup_relationshiptype PRIMARY KEY (relationshiptypeid);
 
+
+
 ALTER TABLE ONLY la_partygroup_resident
     ADD CONSTRAINT pk_la_partygroup_resident PRIMARY KEY (residentid);
+
+
 
 ALTER TABLE ONLY la_right_acquisitiontype
     ADD CONSTRAINT pk_la_right_acquisitiontype PRIMARY KEY (acquisitiontypeid);
@@ -8852,43 +8062,67 @@ ALTER TABLE ONLY la_right_acquisitiontype
 ALTER TABLE ONLY la_right_claimtype
     ADD CONSTRAINT pk_la_right_claimtype PRIMARY KEY (claimtypeid);
 
+
+
 ALTER TABLE ONLY la_right_landsharetype
     ADD CONSTRAINT pk_la_right_landsharetype PRIMARY KEY (landsharetypeid);
+
+
 
 
 ALTER TABLE ONLY la_right_tenureclass
     ADD CONSTRAINT pk_la_right_tenureclass PRIMARY KEY (tenureclassid);
 
+
+
 ALTER TABLE ONLY la_rrr
     ADD CONSTRAINT pk_la_rrr PRIMARY KEY (rrrid);
+
+
 
 
 ALTER TABLE ONLY la_spatialsource_layer
     ADD CONSTRAINT pk_la_spatialsource_layer PRIMARY KEY (layerid);
 
+
+
 ALTER TABLE ONLY la_spatialsource_projectname
     ADD CONSTRAINT pk_la_spatialsource_projectname PRIMARY KEY (projectnameid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunitgroup
     ADD CONSTRAINT pk_la_spatialunitgroup PRIMARY KEY (spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunitgroup_hierarchy
     ADD CONSTRAINT pk_la_spatialunitgroup_hierarchy PRIMARY KEY (hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_surrenderlease
     ADD CONSTRAINT pk_la_surrenderlease PRIMARY KEY (leaseid);
 
+
+
 ALTER TABLE ONLY la_layer
     ADD CONSTRAINT pk_layer PRIMARY KEY (alias);
+
+
 
 
 ALTER TABLE ONLY vertexlabel
     ADD CONSTRAINT primary_key PRIMARY KEY (gid);
 
+
+
 ALTER TABLE ONLY la_ext_registrationsharetype
     ADD CONSTRAINT registrationsharetypepk PRIMARY KEY (registrationsharetypeid);
+
+
 
 
 ALTER TABLE ONLY la_ext_spatialunit_personwithinterest
@@ -8899,35 +8133,53 @@ CREATE UNIQUE INDEX "PK_Layer" ON la_layer USING btree (alias);
 
 ALTER TABLE la_layer CLUSTER ON "PK_Layer";
 
+
+
 CREATE TRIGGER client_update_trigger BEFORE UPDATE ON la_spatialunit_land FOR EACH ROW EXECUTE PROCEDURE check_id_change();
 
 
 CREATE TRIGGER update_area AFTER INSERT ON la_spatialunit_land FOR EACH ROW EXECUTE PROCEDURE update_area();
 
+
+
 CREATE TRIGGER update_geometryarea AFTER UPDATE ON la_spatialunit_land FOR EACH ROW EXECUTE PROCEDURE updatearea();
 
 
+
+
 CREATE TRIGGER update_geometryarea_resourceland AFTER UPDATE ON la_spatialunit_resource_land FOR EACH ROW EXECUTE PROCEDURE updatearea_resourceland();
+
+
 
 
 ALTER TABLE ONLY la_ext_attribute
     ADD CONSTRAINT fk_la_ext_attribute_attributemasterid FOREIGN KEY (attributemasterid) REFERENCES la_ext_attributemaster(attributemasterid);
 
 
+
+
 ALTER TABLE ONLY la_ext_attributecategory
     ADD CONSTRAINT fk_la_ext_attributecategory_categorytypeid FOREIGN KEY (categorytypeid) REFERENCES la_ext_categorytype(categorytypeid);
+
+
 
 
 ALTER TABLE ONLY la_ext_attributemaster
     ADD CONSTRAINT fk_la_ext_attributemaster_attributecategoryid FOREIGN KEY (attributecategoryid) REFERENCES la_ext_attributecategory(attributecategoryid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourceattributevalue
     ADD CONSTRAINT fk_la_ext_attributemaster_attributemasterid FOREIGN KEY (attributemasterid) REFERENCES la_ext_attributemaster(attributemasterid);
 
 
+
+
 ALTER TABLE ONLY la_ext_attributemaster
     ADD CONSTRAINT fk_la_ext_attributemaster_datatypemasterid FOREIGN KEY (datatypemasterid) REFERENCES la_ext_attributedatatype(datatypemasterid);
+
+
 
 
 ALTER TABLE ONLY la_ext_attributeoptions
@@ -8937,12 +8189,18 @@ ALTER TABLE ONLY la_ext_attributeoptions
 ALTER TABLE ONLY la_ext_bookmark
     ADD CONSTRAINT fk_la_ext_bookmark_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
+
+
 ALTER TABLE ONLY la_ext_customattributeoptions
     ADD CONSTRAINT fk_la_ext_customattributeoptions_customattributeid FOREIGN KEY (customattributeid) REFERENCES la_ext_resource_custom_attribute(customattributeid);
 
 
+
+
 ALTER TABLE ONLY la_ext_disputelandmapping
     ADD CONSTRAINT fk_la_ext_disputeid FOREIGN KEY (disputeid) REFERENCES la_ext_dispute(disputeid);
+
+
 
 ALTER TABLE ONLY la_ext_dispute
     ADD CONSTRAINT fk_la_ext_disputelandmapping_disputetypeid FOREIGN KEY (disputetypeid) REFERENCES la_ext_disputetype(disputetypeid);
@@ -8951,63 +8209,99 @@ ALTER TABLE ONLY la_ext_dispute
 ALTER TABLE ONLY la_ext_spatialunit_personwithinterest
     ADD CONSTRAINT fk_la_ext_disputelandmapping_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
 
+
+
 ALTER TABLE ONLY la_ext_dispute
     ADD CONSTRAINT fk_la_ext_disputelandmapping_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
 
 
+
+
 ALTER TABLE ONLY la_ext_disputelandmapping
     ADD CONSTRAINT fk_la_ext_disputelandmapping_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
+
+
 
 ALTER TABLE ONLY la_ext_disputelandmapping
     ADD CONSTRAINT fk_la_ext_disputelandmapping_partyid FOREIGN KEY (partyid) REFERENCES la_party(partyid);
 
+
+
 ALTER TABLE ONLY la_ext_disputelandmapping
     ADD CONSTRAINT fk_la_ext_disputelandmapping_persontypeid FOREIGN KEY (persontypeid) REFERENCES la_partygroup_persontype(persontypeid);
+
+
 
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT fk_la_ext_documentdetails_documentformatid FOREIGN KEY (documentformatid) REFERENCES la_ext_documentformat(documentformatid);
 
+
+
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT fk_la_ext_documentdetails_documenttypeid FOREIGN KEY (documenttypeid) REFERENCES la_ext_documenttype(documenttypeid);
+
+
 
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT fk_la_ext_documentdetails_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
 
 
+
+
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT fk_la_ext_documentdetails_partyid FOREIGN KEY (partyid) REFERENCES la_party(partyid);
 
+
+
 ALTER TABLE ONLY la_ext_documentdetails
     ADD CONSTRAINT fk_la_ext_documentdetails_transactionid FOREIGN KEY (transactionid) REFERENCES la_ext_transactiondetails(transactionid);
+
+
 
 
 ALTER TABLE ONLY la_ext_existingclaim_documentdetails
     ADD CONSTRAINT fk_la_ext_existingclaim_documentdetails_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
 
 
+
+
 ALTER TABLE ONLY la_ext_dispute
     ADD CONSTRAINT fk_la_ext_la_ext_disputestatus FOREIGN KEY (disputestatusid) REFERENCES la_ext_disputestatus(disputestatusid);
+
+
 
 
 ALTER TABLE ONLY la_ext_landworkflowhistory
     ADD CONSTRAINT fk_la_ext_landworkflowhistory_applicationstatusid FOREIGN KEY (applicationstatusid) REFERENCES la_ext_applicationstatus(applicationstatusid);
 
 
+
+
 ALTER TABLE ONLY la_ext_landworkflowhistory
     ADD CONSTRAINT fk_la_ext_landworkflowhistory_land FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
+
+
 
 
 ALTER TABLE ONLY la_ext_layer_layergroup
     ADD CONSTRAINT fk_la_ext_layer_layergroup_layergroupid FOREIGN KEY (layergroupid) REFERENCES la_ext_layergroup(layergroupid);
 
+
+
 ALTER TABLE ONLY la_ext_layer_layergroup
     ADD CONSTRAINT fk_la_ext_layer_layergroup_layerid FOREIGN KEY (layerid) REFERENCES la_spatialsource_layer(layerid);
+
+
 
 ALTER TABLE ONLY la_ext_layerfield
     ADD CONSTRAINT fk_la_ext_layerfield_layerid FOREIGN KEY (layerid) REFERENCES la_spatialsource_layer(layerid);
 
+
+
 ALTER TABLE ONLY la_ext_personlandmapping
     ADD CONSTRAINT fk_la_ext_personlandmapping_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
+
+
 
 ALTER TABLE ONLY la_ext_personlandmapping
     ADD CONSTRAINT fk_la_ext_personlandmapping_partyid FOREIGN KEY (partyid) REFERENCES la_party(partyid);
@@ -9017,23 +8311,35 @@ ALTER TABLE ONLY la_ext_personlandmapping
     ADD CONSTRAINT fk_la_ext_personlandmapping_persontypeid FOREIGN KEY (persontypeid) REFERENCES la_partygroup_persontype(persontypeid);
 
 
+
+
 ALTER TABLE ONLY la_ext_personlandmapping
     ADD CONSTRAINT fk_la_ext_personlandmapping_transactionid FOREIGN KEY (transactionid) REFERENCES la_ext_transactiondetails(transactionid);
+
+
 
 
 ALTER TABLE ONLY la_ext_disputelandmapping
     ADD CONSTRAINT fk_la_ext_personlandmapping_transactionid FOREIGN KEY (transactionid) REFERENCES la_ext_transactiondetails(transactionid);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_ext_projectarea
@@ -9047,8 +8353,12 @@ ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectfile
     ADD CONSTRAINT fk_la_ext_projectarea_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9058,8 +8368,12 @@ ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_spatialunitgroupid4 FOREIGN KEY (spatialunitgroupid4) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9069,18 +8383,28 @@ ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_ext_projectarea_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_ext_projectbaselayermapping
     ADD CONSTRAINT fk_la_ext_projectbaselayermapping_baselayerid FOREIGN KEY (baselayerid) REFERENCES la_ext_baselayer(baselayerid);
+
+
 
 
 ALTER TABLE ONLY la_ext_projectbaselayermapping
     ADD CONSTRAINT fk_la_ext_projectbaselayermapping_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
+
+
 ALTER TABLE ONLY la_ext_projectfile
     ADD CONSTRAINT fk_la_ext_projectfile_documentformatid FOREIGN KEY (documentformatid) REFERENCES la_ext_documentformat(documentformatid);
 
+
+
 ALTER TABLE ONLY la_ext_projectlayergroupmapping
     ADD CONSTRAINT fk_la_ext_projectlayergroupmapping_layergroupid FOREIGN KEY (layergroupid) REFERENCES la_ext_layergroup(layergroupid);
+
+
 
 
 ALTER TABLE ONLY la_ext_projectlayergroupmapping
@@ -9091,8 +8415,12 @@ ALTER TABLE ONLY la_ext_resource_custom_attribute
     ADD CONSTRAINT fk_la_ext_resource_custom_attribute_attributecategoryid FOREIGN KEY (attributecategoryid) REFERENCES la_ext_attributecategory(attributecategoryid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resource_custom_attributevalue
     ADD CONSTRAINT fk_la_ext_resource_custom_attribute_customattributeid FOREIGN KEY (customattributeid) REFERENCES la_ext_resource_custom_attribute(customattributeid);
+
+
 
 
 ALTER TABLE ONLY la_ext_resource_custom_attribute
@@ -9102,53 +8430,83 @@ ALTER TABLE ONLY la_ext_resource_custom_attribute
 ALTER TABLE ONLY la_ext_resource_custom_attribute
     ADD CONSTRAINT fk_la_ext_resource_custom_attribute_projectid FOREIGN KEY (projectid) REFERENCES la_spatialsource_projectname(projectnameid);
 
+
+
 ALTER TABLE ONLY la_ext_resource_custom_attributevalue
     ADD CONSTRAINT fk_la_ext_resource_custom_attributevalue_projectid FOREIGN KEY (projectid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 ALTER TABLE ONLY la_ext_resourcelandclassificationmapping
     ADD CONSTRAINT fk_la_ext_resourcelandclassificationmapping_classificationid FOREIGN KEY (classificationid) REFERENCES la_ext_resourceclassification(classificationid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourcelandclassificationmapping
     ADD CONSTRAINT fk_la_ext_resourcelandclassificationmapping_landclassmappingid FOREIGN KEY (projectid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 ALTER TABLE ONLY la_ext_resourcelandclassificationmapping
     ADD CONSTRAINT fk_la_ext_resourcelandclassificationmapping_subclassificationid FOREIGN KEY (subclassificationid) REFERENCES la_ext_resourcesubclassification(subclassificationid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourcepoiattributemaster
     ADD CONSTRAINT fk_la_ext_resourcepoiattributemaster_datatypemasterid FOREIGN KEY (datatypemasterid) REFERENCES la_ext_attributedatatype(datatypemasterid);
 
+
+
 ALTER TABLE ONLY la_ext_resourcepoiattributevalue
     ADD CONSTRAINT fk_la_ext_resourcepoiattributevalue_attributemasterid FOREIGN KEY (attributemasterid) REFERENCES la_ext_resourcepoiattributemaster(poiattributemasterid);
+
+
 
 ALTER TABLE ONLY la_ext_resourcepoiattributevalue
     ADD CONSTRAINT fk_la_ext_resourcepoiattributevalue_projectid FOREIGN KEY (projectid) REFERENCES la_spatialsource_projectname(projectnameid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourcesubclassification
     ADD CONSTRAINT fk_la_ext_resourcesubclassification_classificationid FOREIGN KEY (classificationid) REFERENCES la_ext_resourceclassification(classificationid);
+
+
 
 ALTER TABLE ONLY la_ext_resourcesubclassification
     ADD CONSTRAINT fk_la_ext_resourcesubclassification_geometrytypeid FOREIGN KEY (geometrytypeid) REFERENCES la_ext_geometrytype(geometrytypeid);
 
 
+
+
 ALTER TABLE ONLY la_ext_rolemodulemapping
     ADD CONSTRAINT fk_la_ext_rolemodulemapping_moduleid FOREIGN KEY (moduleid) REFERENCES la_ext_module(moduleid);
+
+
 
 ALTER TABLE ONLY la_ext_rolemodulemapping
     ADD CONSTRAINT fk_la_ext_rolemodulemapping_roleid FOREIGN KEY (roleid) REFERENCES la_ext_role(roleid);
 
+
+
 ALTER TABLE ONLY la_ext_surveyprojectattributes
     ADD CONSTRAINT fk_la_ext_surveyprojectattributes_attributecategoryid FOREIGN KEY (attributecategoryid) REFERENCES la_ext_attributecategory(attributecategoryid);
+
+
 
 
 ALTER TABLE ONLY la_ext_surveyprojectattributes
     ADD CONSTRAINT fk_la_ext_surveyprojectattributes_attributemasterid FOREIGN KEY (attributemasterid) REFERENCES la_ext_attributemaster(attributemasterid);
 
 
+
+
 ALTER TABLE ONLY la_ext_surveyprojectattributes
     ADD CONSTRAINT fk_la_ext_surveyprojectattributes_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 ALTER TABLE ONLY la_ext_transactiondetails
     ADD CONSTRAINT fk_la_ext_transactiondetails_applicationstatusid FOREIGN KEY (applicationstatusid) REFERENCES la_ext_applicationstatus(applicationstatusid);
@@ -9161,84 +8519,130 @@ ALTER TABLE ONLY la_ext_transactiondetails
 ALTER TABLE ONLY la_ext_user
     ADD CONSTRAINT fk_la_ext_user_genderid FOREIGN KEY (genderid) REFERENCES la_partygroup_gender(genderid);
 
+
+
 ALTER TABLE ONLY la_ext_userprojectmapping
     ADD CONSTRAINT fk_la_ext_userprojectmapping_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
+
+
 ALTER TABLE ONLY la_ext_userprojectmapping
     ADD CONSTRAINT fk_la_ext_userprojectmapping_userid FOREIGN KEY (userid) REFERENCES la_ext_user(userid);
+
+
 
 
 ALTER TABLE ONLY la_ext_userrolemapping
     ADD CONSTRAINT fk_la_ext_userrolemapping_roleid FOREIGN KEY (roleid) REFERENCES la_ext_role(roleid);
 
 
+
+
 ALTER TABLE ONLY la_ext_userrolemapping
     ADD CONSTRAINT fk_la_ext_userrolemapping_userid FOREIGN KEY (userid) REFERENCES la_ext_user(userid);
+
+
 
 ALTER TABLE ONLY la_ext_workflowactionmapping
     ADD CONSTRAINT fk_la_ext_workflow FOREIGN KEY (workflowid) REFERENCES la_ext_workflow(workflowid);
 
 
+
+
 ALTER TABLE ONLY la_ext_workflow
     ADD CONSTRAINT fk_la_ext_workflow_workflowdefid FOREIGN KEY (workflowdefid) REFERENCES la_ext_workflowdef(workflowdefid);
 
+
+
 ALTER TABLE ONLY la_ext_workflowactionmapping
     ADD CONSTRAINT fk_la_ext_workflowactionmapping_workflowid FOREIGN KEY (workflowid) REFERENCES la_ext_workflow(workflowid);
+
+
 
 
 ALTER TABLE ONLY la_lease
     ADD CONSTRAINT fk_la_lease_monthid FOREIGN KEY (monthid) REFERENCES la_ext_month(monthid);
 
 
+
+
 ALTER TABLE ONLY la_surrenderlease
     ADD CONSTRAINT fk_la_lease_monthid FOREIGN KEY (monthid) REFERENCES la_ext_month(monthid);
+
+
 
 
 ALTER TABLE ONLY la_mortgage
     ADD CONSTRAINT fk_la_mortgage_mortgageid FOREIGN KEY (financialagencyid) REFERENCES la_ext_financialagency(financialagencyid);
 
 
+
+
 ALTER TABLE ONLY la_party_deceasedperson
     ADD CONSTRAINT fk_la_party_deceasedperson_landid FOREIGN KEY (landid) REFERENCES la_spatialunit_land(landid);
+
+
 
 
 ALTER TABLE ONLY la_party_deceasedperson
     ADD CONSTRAINT fk_la_party_deceasedperson_partyid FOREIGN KEY (partyid) REFERENCES la_party(partyid);
 
+
+
 ALTER TABLE ONLY la_party_deceasedperson
     ADD CONSTRAINT fk_la_party_deceasedperson_persontypeid FOREIGN KEY (persontypeid) REFERENCES la_partygroup_persontype(persontypeid);
+
+
 
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_grouptypeid FOREIGN KEY (grouptypeid) REFERENCES la_ext_grouptype(grouptypeid);
 
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_hierarchyid5 FOREIGN KEY (hierarchyid5) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_identitytypeid FOREIGN KEY (identitytypeid) REFERENCES la_partygroup_identitytype(identitytypeid);
+
+
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_organizationid FOREIGN KEY (organizationid) REFERENCES la_party(partyid);
 
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9247,8 +8651,12 @@ ALTER TABLE ONLY la_party_organization
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_spatialunitgroupid4 FOREIGN KEY (spatialunitgroupid4) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_party_organization_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9257,31 +8665,49 @@ ALTER TABLE ONLY la_party_organization
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_educationlevelid FOREIGN KEY (educationlevelid) REFERENCES la_partygroup_educationlevel(educationlevelid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_hierarchyid5 FOREIGN KEY (hierarchyid5) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_identitytypeid FOREIGN KEY (identitytypeid) REFERENCES la_partygroup_identitytype(identitytypeid);
+
+
 
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_maritalstatusid FOREIGN KEY (maritalstatusid) REFERENCES la_partygroup_maritalstatus(maritalstatusid);
 
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_occupationid FOREIGN KEY (occupationid) REFERENCES la_partygroup_occupation(occupationid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_personid FOREIGN KEY (personid) REFERENCES la_party(partyid);
@@ -9290,48 +8716,76 @@ ALTER TABLE ONLY la_party_person
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_relationshiptypeid FOREIGN KEY (relationshiptypeid) REFERENCES la_partygroup_relationshiptype(relationshiptypeid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_spatialunitgroupid4 FOREIGN KEY (spatialunitgroupid4) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_party_person_tenureclassid FOREIGN KEY (tenureclassid) REFERENCES la_right_tenureclass(tenureclassid);
 
 
+
+
 ALTER TABLE ONLY la_party
     ADD CONSTRAINT fk_la_partygroup_persontype_persontypeid FOREIGN KEY (persontypeid) REFERENCES la_partygroup_persontype(persontypeid);
+
+
 
 ALTER TABLE ONLY la_spatialsource_layer
     ADD CONSTRAINT fk_la_spatialsource_layer_documentformatid FOREIGN KEY (documentformatid) REFERENCES la_ext_documentformat(documentformatid);
 
+
+
 ALTER TABLE ONLY la_spatialsource_layer
     ADD CONSTRAINT fk_la_spatialsource_layer_layertypeid FOREIGN KEY (layertypeid) REFERENCES la_ext_layertype(layertypeid);
+
+
 
 ALTER TABLE ONLY la_spatialsource_layer
     ADD CONSTRAINT fk_la_spatialsource_layer_projectionid FOREIGN KEY (projectionid) REFERENCES la_ext_projection(projectionid);
 
 
+
+
 ALTER TABLE ONLY la_spatialsource_layer
     ADD CONSTRAINT fk_la_spatialsource_layer_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
+
+
 
 ALTER TABLE ONLY la_spatialsource_projectname
     ADD CONSTRAINT fk_la_spatialsource_projectname_documentformatid FOREIGN KEY (documentformatid) REFERENCES la_ext_documentformat(documentformatid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resourceattributevalue
     ADD CONSTRAINT fk_la_spatialsource_projectname_projectid FOREIGN KEY (projectid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 
 ALTER TABLE ONLY la_spatialsource_projectname
@@ -9341,52 +8795,80 @@ ALTER TABLE ONLY la_spatialsource_projectname
 ALTER TABLE ONLY la_spatialsource_projectname
     ADD CONSTRAINT fk_la_spatialsource_projectname_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_acquisitiontypeid FOREIGN KEY (acquisitiontypeid) REFERENCES la_right_acquisitiontype(acquisitiontypeid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_acquisitiontypeid FOREIGN KEY (acquisitiontypeid) REFERENCES la_right_acquisitiontype(acquisitiontypeid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_acquisitiontypeid FOREIGN KEY (acquisitiontypeid) REFERENCES la_right_acquisitiontype(acquisitiontypeid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_acquisitiontypeid FOREIGN KEY (acquisitiontypeid) REFERENCES la_right_acquisitiontype(acquisitiontypeid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_claimtypeid FOREIGN KEY (claimtypeid) REFERENCES la_right_claimtype(claimtypeid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_claimtypeid FOREIGN KEY (claimtypeid) REFERENCES la_right_claimtype(claimtypeid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_claimtypeid FOREIGN KEY (claimtypeid) REFERENCES la_right_claimtype(claimtypeid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_claimtypeid FOREIGN KEY (claimtypeid) REFERENCES la_right_claimtype(claimtypeid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid1 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
@@ -9394,27 +8876,41 @@ ALTER TABLE ONLY la_spatialunit_resource_line
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid2 FOREIGN KEY (hierarchyid2) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid3 FOREIGN KEY (hierarchyid3) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
@@ -9422,8 +8918,12 @@ ALTER TABLE ONLY la_spatialunit_resource_line
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid4 FOREIGN KEY (hierarchyid4) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
@@ -9433,8 +8933,12 @@ ALTER TABLE ONLY la_spatialunit_resource_land
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid5 FOREIGN KEY (hierarchyid5) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid5 FOREIGN KEY (hierarchyid5) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid5 FOREIGN KEY (hierarchyid5) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
@@ -9442,6 +8946,8 @@ ALTER TABLE ONLY la_spatialunit_land
 
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_party_organization
@@ -9452,22 +8958,32 @@ ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_hierarchyid6 FOREIGN KEY (hierarchyid1) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_landsharetypeid FOREIGN KEY (landsharetypeid) REFERENCES la_right_landsharetype(landsharetypeid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_line
@@ -9481,12 +8997,18 @@ ALTER TABLE ONLY la_spatialunit_resource_point
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_landsharetypeid FOREIGN KEY (landsharetypeid) REFERENCES la_right_landsharetype(landsharetypeid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_landsoilqualityid FOREIGN KEY (landsoilqualityid) REFERENCES la_baunit_landsoilquality(landsoilqualityid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_landsoilqualityid FOREIGN KEY (landsoilqualityid) REFERENCES la_baunit_landsoilquality(landsoilqualityid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_point
@@ -9499,6 +9021,8 @@ ALTER TABLE ONLY la_spatialunit_land
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_landtypeid FOREIGN KEY (landtypeid) REFERENCES la_baunit_landtype(landtypeid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_landtypeid FOREIGN KEY (landtypeid) REFERENCES la_baunit_landtype(landtypeid);
@@ -9518,45 +9042,71 @@ ALTER TABLE ONLY la_spatialunit_resource_land
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_landusetypeid FOREIGN KEY (landusetypeid) REFERENCES la_baunit_landusetype(landusetypeid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_landusetypeid FOREIGN KEY (landusetypeid) REFERENCES la_baunit_landusetype(landusetypeid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_landusetypeid FOREIGN KEY (landusetypeid) REFERENCES la_baunit_landusetype(landusetypeid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_projectnameid FOREIGN KEY (projectnameid) REFERENCES la_spatialsource_projectname(projectnameid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_proposedused FOREIGN KEY (proposedused) REFERENCES la_baunit_landusetype(landusetypeid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_slopevalueid FOREIGN KEY (slopevalueid) REFERENCES la_ext_slopevalue(slopevalueid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_slopevalueid FOREIGN KEY (slopevalueid) REFERENCES la_ext_slopevalue(slopevalueid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_slopevalueid FOREIGN KEY (slopevalueid) REFERENCES la_ext_slopevalue(slopevalueid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_slopevalueid FOREIGN KEY (slopevalueid) REFERENCES la_ext_slopevalue(slopevalueid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9564,35 +9114,55 @@ ALTER TABLE ONLY la_spatialunit_resource_line
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid1 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid2 FOREIGN KEY (spatialunitgroupid2) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid3 FOREIGN KEY (spatialunitgroupid3) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid4 FOREIGN KEY (spatialunitgroupid4) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9608,17 +9178,25 @@ ALTER TABLE ONLY la_spatialunit_resource_point
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid4 FOREIGN KEY (spatialunitgroupid4) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid5 FOREIGN KEY (spatialunitgroupid5) REFERENCES la_spatialunitgroup(spatialunitgroupid);
@@ -9627,77 +9205,111 @@ ALTER TABLE ONLY la_spatialunit_land
 ALTER TABLE ONLY la_ext_projectarea
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_party_organization
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_party_person
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_spatialunitgroupid6 FOREIGN KEY (spatialunitgroupid1) REFERENCES la_spatialunitgroup(spatialunitgroupid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_tenureclassid FOREIGN KEY (tenureclassid) REFERENCES la_right_tenureclass(tenureclassid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_tenureclassid FOREIGN KEY (tenureclassid) REFERENCES la_right_tenureclass(tenureclassid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_tenureclassid FOREIGN KEY (tenureclassid) REFERENCES la_right_tenureclass(tenureclassid);
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_tenureclassid FOREIGN KEY (tenureclassid) REFERENCES la_right_tenureclass(tenureclassid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_land
     ADD CONSTRAINT fk_la_spatialunit_land_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_resource_line
     ADD CONSTRAINT fk_la_spatialunit_land_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
+
+
 
 ALTER TABLE ONLY la_spatialunit_resource_point
     ADD CONSTRAINT fk_la_spatialunit_land_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
 
 
+
+
 ALTER TABLE ONLY la_spatialunit_land
     ADD CONSTRAINT fk_la_spatialunit_land_unitid FOREIGN KEY (unitid) REFERENCES la_ext_unit(unitid);
+
+
 
 
 ALTER TABLE ONLY la_spatialunitgroup_hierarchy
     ADD CONSTRAINT fk_la_spatialunitgroup_hierarchy_spatialunitgroupid FOREIGN KEY (spatialunitgroupid) REFERENCES la_spatialunitgroup(spatialunitgroupid);
 
 
+
+
 ALTER TABLE ONLY la_ext_resource_documentdetails
     ADD CONSTRAINT la_ext_resource_documentdetails_documentformatid_fkey FOREIGN KEY (documentformatid) REFERENCES la_ext_documentformat(documentformatid);
+
+
 
 ALTER TABLE ONLY la_ext_resource_documentdetails
     ADD CONSTRAINT la_ext_resource_documentdetails_documenttypeid_fkey FOREIGN KEY (documenttypeid) REFERENCES la_ext_documenttype(documenttypeid);
 
+
+
 ALTER TABLE ONLY la_spatialunitgroup_hierarchy
     ADD CONSTRAINT la_spatialunitgroup_hierarchy_uperhierarchy FOREIGN KEY (hierarchyid) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE ALL ON SCHEMA public FROM postgres;
 GRANT ALL ON SCHEMA public TO postgres;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
+
+
 REVOKE ALL(landsharetypeid) ON TABLE la_spatialunit_land FROM PUBLIC;
 REVOKE ALL(landsharetypeid) ON TABLE la_spatialunit_land FROM postgres;
 GRANT UPDATE(landsharetypeid) ON TABLE la_spatialunit_land TO postgres;
 
-
--- Completed on 2018-08-03 15:00:22
-
---
--- PostgreSQL database dump complete
---

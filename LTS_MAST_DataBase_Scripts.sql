@@ -1,16 +1,5 @@
-
+ï»¿
 CREATE EXTENSION postgis;
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SET check_function_bodies = false;
-SET client_min_messages = warning;
-SET row_security = off;
-
-SET search_path = public, pg_catalog;
-
 
 CREATE FUNCTION check_id_change() RETURNS trigger
     LANGUAGE plpgsql
@@ -21,7 +10,7 @@ inner Join la_ext_applicationstatus la on la.applicationstatusid = LD.applicatio
 where Lw.workflowid=6  and la.applicationstatusid=5 
 and LD.isactive = true and landid not in(select landid from la_ext_parcelSplitLand) order by LD.landid)) 
          THEN
-            RAISE EXCEPTION 'Can’t modify the Approved/Registered Parcel.';
+            RAISE EXCEPTION 'Canâ€™t modify the Approved/Registered Parcel.';
             
              END IF;
         RETURN NEW;
@@ -29,7 +18,6 @@ and LD.isactive = true and landid not in(select landid from la_ext_parcelSplitLa
     $$;
 
 
-ALTER FUNCTION public.check_id_change() OWNER TO postgres;
 
 
 
@@ -59,7 +47,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.fn_triggerall(doenable boolean) OWNER TO postgres;
+
 
 
 
@@ -85,8 +73,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.ins_toplology_error() OWNER TO postgres;
-
 
 
 CREATE FUNCTION update_area() RETURNS trigger
@@ -108,8 +94,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_area() OWNER TO postgres;
-
 
 CREATE FUNCTION updatearea() RETURNS trigger
     LANGUAGE plpgsql
@@ -128,8 +112,6 @@ RETURN NEW;
 END;
 $$;
 
-
-ALTER FUNCTION public.updatearea() OWNER TO postgres;
 
 
 CREATE FUNCTION updatearea_resourceland() RETURNS trigger
@@ -151,8 +133,6 @@ END;
 $$;
 
 
-ALTER FUNCTION public.updatearea_resourceland() OWNER TO postgres;
-
 
 CREATE SEQUENCE error_log_seq
     START WITH 1242
@@ -162,7 +142,6 @@ CREATE SEQUENCE error_log_seq
     CACHE 1;
 
 
-ALTER TABLE error_log_seq OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -177,8 +156,6 @@ CREATE TABLE la_baunit_landsoilquality (
 );
 
 
-ALTER TABLE la_baunit_landsoilquality OWNER TO postgres;
-
 
 CREATE SEQUENCE la_baunit_landsoilquality_landsoilqualityid_seq
     START WITH 1
@@ -187,8 +164,6 @@ CREATE SEQUENCE la_baunit_landsoilquality_landsoilqualityid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_baunit_landsoilquality_landsoilqualityid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_baunit_landsoilquality_landsoilqualityid_seq OWNED BY la_baunit_landsoilquality.landsoilqualityid;
@@ -204,7 +179,6 @@ CREATE TABLE la_baunit_landtype (
 );
 
 
-ALTER TABLE la_baunit_landtype OWNER TO postgres;
 
 
 
@@ -216,7 +190,6 @@ CREATE SEQUENCE la_baunit_landtype_landtypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_baunit_landtype_landtypeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_baunit_landtype_landtypeid_seq OWNED BY la_baunit_landtype.landtypeid;
@@ -231,9 +204,6 @@ CREATE TABLE la_baunit_landusetype (
 );
 
 
-ALTER TABLE la_baunit_landusetype OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_baunit_landusetype_landusetypeid_seq
     START WITH 1
@@ -242,8 +212,6 @@ CREATE SEQUENCE la_baunit_landusetype_landusetypeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_baunit_landusetype_landusetypeid_seq OWNER TO postgres;
 
 
 
@@ -259,7 +227,6 @@ CREATE TABLE la_ext_applicationstatus (
 );
 
 
-ALTER TABLE la_ext_applicationstatus OWNER TO postgres;
 
 
 
@@ -270,8 +237,6 @@ CREATE SEQUENCE la_ext_applicationstatus_applicationstatusid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_applicationstatus_applicationstatusid_seq OWNER TO postgres;
 
 
 
@@ -288,9 +253,6 @@ CREATE TABLE la_ext_attribute (
 );
 
 
-ALTER TABLE la_ext_attribute OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_ext_attribute_attributeid_seq
     START WITH 300
@@ -298,9 +260,6 @@ CREATE SEQUENCE la_ext_attribute_attributeid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_attribute_attributeid_seq OWNER TO postgres;
 
 
 
@@ -317,9 +276,6 @@ CREATE TABLE la_ext_attributecategory (
 );
 
 
-ALTER TABLE la_ext_attributecategory OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_ext_attributecategory_attributecategoryid_seq
     START WITH 1
@@ -328,8 +284,6 @@ CREATE SEQUENCE la_ext_attributecategory_attributecategoryid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_attributecategory_attributecategoryid_seq OWNER TO postgres;
 
 
 
@@ -344,8 +298,6 @@ CREATE TABLE la_ext_attributedatatype (
 );
 
 
-ALTER TABLE la_ext_attributedatatype OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_attributedatatype_datatypemasterid_seq
     START WITH 1
@@ -354,8 +306,6 @@ CREATE SEQUENCE la_ext_attributedatatype_datatypemasterid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_attributedatatype_datatypemasterid_seq OWNER TO postgres;
 
 
 
@@ -377,9 +327,6 @@ CREATE TABLE la_ext_attributemaster (
 );
 
 
-ALTER TABLE la_ext_attributemaster OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_ext_attributemaster_attributemasterid_seq
     START WITH 1
@@ -388,8 +335,6 @@ CREATE SEQUENCE la_ext_attributemaster_attributemasterid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_attributemaster_attributemasterid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_attributemaster_attributemasterid_seq OWNED BY la_ext_attributemaster.attributemasterid;
@@ -404,7 +349,6 @@ CREATE TABLE la_ext_attributeoptions (
 );
 
 
-ALTER TABLE la_ext_attributeoptions OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_attributeoptions_attributeoptionsid_seq
@@ -414,8 +358,6 @@ CREATE SEQUENCE la_ext_attributeoptions_attributeoptionsid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_attributeoptions_attributeoptionsid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_attributeoptions_attributeoptionsid_seq OWNED BY la_ext_attributeoptions.attributeoptionsid;
@@ -430,8 +372,6 @@ CREATE TABLE la_ext_baselayer (
 );
 
 
-ALTER TABLE la_ext_baselayer OWNER TO postgres;
-
 CREATE SEQUENCE la_ext_baselayer_baselayerid_seq
     START WITH 1
     INCREMENT BY 1
@@ -439,8 +379,6 @@ CREATE SEQUENCE la_ext_baselayer_baselayerid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_baselayer_baselayerid_seq OWNER TO postgres;
 
 
 
@@ -464,7 +402,6 @@ CREATE TABLE la_ext_bookmark (
 );
 
 
-ALTER TABLE la_ext_bookmark OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_bookmark_bookmarkid_seq
@@ -475,7 +412,6 @@ CREATE SEQUENCE la_ext_bookmark_bookmarkid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_bookmark_bookmarkid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_ext_bookmark_bookmarkid_seq OWNED BY la_ext_bookmark.bookmarkid;
 
@@ -489,7 +425,6 @@ CREATE TABLE la_ext_categorytype (
 );
 
 
-ALTER TABLE la_ext_categorytype OWNER TO postgres;
 
 
 
@@ -501,7 +436,6 @@ CREATE SEQUENCE la_ext_categorytype_categorytypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_categorytype_categorytypeid_seq OWNER TO postgres;
 
 
 
@@ -518,7 +452,6 @@ CREATE SEQUENCE la_ext_customattributeoptionsid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_customattributeoptionsid_seq OWNER TO postgres;
 
 
 
@@ -529,8 +462,6 @@ CREATE TABLE la_ext_customattributeoptions (
     parentid integer
 );
 
-
-ALTER TABLE la_ext_customattributeoptions OWNER TO postgres;
 
 
 CREATE TABLE la_ext_dispute (
@@ -547,7 +478,6 @@ CREATE TABLE la_ext_dispute (
 );
 
 
-ALTER TABLE la_ext_dispute OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_dispute_seq
@@ -557,8 +487,6 @@ CREATE SEQUENCE la_ext_dispute_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_dispute_seq OWNER TO postgres;
 
 
 
@@ -579,8 +507,6 @@ CREATE TABLE la_ext_disputelandmapping (
 );
 
 
-ALTER TABLE la_ext_disputelandmapping OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_disputelandmapping_disputelandid_seq
     START WITH 1
@@ -589,8 +515,6 @@ CREATE SEQUENCE la_ext_disputelandmapping_disputelandid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_disputelandmapping_disputelandid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_disputelandmapping_disputelandid_seq OWNED BY la_ext_disputelandmapping.disputelandid;
@@ -606,8 +530,6 @@ CREATE TABLE la_ext_disputestatus (
 );
 
 
-ALTER TABLE la_ext_disputestatus OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_disputestatus_disputestatusid_seq
@@ -617,8 +539,6 @@ CREATE SEQUENCE la_ext_disputestatus_disputestatusid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_disputestatus_disputestatusid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_disputestatus_disputestatusid_seq OWNED BY la_ext_disputestatus.disputestatusid;
@@ -634,8 +554,6 @@ CREATE TABLE la_ext_disputetype (
 );
 
 
-ALTER TABLE la_ext_disputetype OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_disputetype_disputetypeid_seq
     START WITH 1
@@ -644,8 +562,6 @@ CREATE SEQUENCE la_ext_disputetype_disputetypeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_disputetype_disputetypeid_seq OWNER TO postgres;
 
 
 
@@ -673,8 +589,6 @@ CREATE TABLE la_ext_documentdetails (
 );
 
 
-ALTER TABLE la_ext_documentdetails OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_documentdetails_documentid_seq
     START WITH 1
@@ -683,8 +597,6 @@ CREATE SEQUENCE la_ext_documentdetails_documentid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_documentdetails_documentid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_documentdetails_documentid_seq OWNED BY la_ext_documentdetails.documentid;
@@ -700,8 +612,6 @@ CREATE TABLE la_ext_documentformat (
 );
 
 
-ALTER TABLE la_ext_documentformat OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_documentformat_documentformatid_seq
@@ -712,7 +622,6 @@ CREATE SEQUENCE la_ext_documentformat_documentformatid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_documentformat_documentformatid_seq OWNER TO postgres;
 
 
 
@@ -729,8 +638,6 @@ CREATE TABLE la_ext_documenttype (
 );
 
 
-ALTER TABLE la_ext_documenttype OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_documenttype_documenttypeid_seq
     START WITH 1
@@ -739,8 +646,6 @@ CREATE SEQUENCE la_ext_documenttype_documenttypeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_documenttype_documenttypeid_seq OWNER TO postgres;
 
 
 
@@ -764,8 +669,6 @@ CREATE TABLE la_ext_existingclaim_documentdetails (
 );
 
 
-ALTER TABLE la_ext_existingclaim_documentdetails OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_existingclaim_documentid_seq
@@ -776,8 +679,6 @@ CREATE SEQUENCE la_ext_existingclaim_documentid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_existingclaim_documentid_seq OWNER TO postgres;
-
 
 CREATE TABLE la_ext_financialagency (
     financialagencyid integer NOT NULL,
@@ -787,8 +688,6 @@ CREATE TABLE la_ext_financialagency (
 );
 
 
-ALTER TABLE la_ext_financialagency OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_financialagency_financialagencyid_seq
     START WITH 1
@@ -797,8 +696,6 @@ CREATE SEQUENCE la_ext_financialagency_financialagencyid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_financialagency_financialagencyid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_financialagency_financialagencyid_seq OWNED BY la_ext_financialagency.financialagencyid;
@@ -811,7 +708,6 @@ CREATE TABLE la_ext_geometrytype (
 );
 
 
-ALTER TABLE la_ext_geometrytype OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_geometrytype_geometryid_seq
@@ -822,7 +718,6 @@ CREATE SEQUENCE la_ext_geometrytype_geometryid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_geometrytype_geometryid_seq OWNER TO postgres;
 
 
 
@@ -839,7 +734,6 @@ CREATE TABLE la_ext_grouptype (
 );
 
 
-ALTER TABLE la_ext_grouptype OWNER TO postgres;
 
 
 
@@ -850,8 +744,6 @@ CREATE SEQUENCE la_ext_grouptype_grouptypeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_grouptype_grouptypeid_seq OWNER TO postgres;
 
 
 
@@ -874,7 +766,6 @@ CREATE TABLE la_ext_landworkflowhistory (
 );
 
 
-ALTER TABLE la_ext_landworkflowhistory OWNER TO postgres;
 
 
 
@@ -885,8 +776,6 @@ CREATE SEQUENCE la_ext_landworkflowhistory_landworkflowhistoryid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_landworkflowhistory_landworkflowhistoryid_seq OWNER TO postgres;
 
 
 
@@ -908,8 +797,6 @@ CREATE TABLE la_ext_layer_layergroup (
 );
 
 
-ALTER TABLE la_ext_layer_layergroup OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_layer_layergroup_layer_layergroupid_seq
@@ -919,8 +806,6 @@ CREATE SEQUENCE la_ext_layer_layergroup_layer_layergroupid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_layer_layergroup_layer_layergroupid_seq OWNER TO postgres;
 
 
 
@@ -939,7 +824,6 @@ CREATE TABLE la_ext_layerfield (
 );
 
 
-ALTER TABLE la_ext_layerfield OWNER TO postgres;
 
 
 
@@ -951,7 +835,6 @@ CREATE SEQUENCE la_ext_layerfield_layerfieldid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_layerfield_layerfieldid_seq OWNER TO postgres;
 
 
 
@@ -972,8 +855,6 @@ CREATE TABLE la_ext_layergroup (
 );
 
 
-ALTER TABLE la_ext_layergroup OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_layergroup_layergroupid_seq
@@ -984,7 +865,6 @@ CREATE SEQUENCE la_ext_layergroup_layergroupid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_layergroup_layergroupid_seq OWNER TO postgres;
 
 
 
@@ -1000,8 +880,6 @@ CREATE TABLE la_ext_layertype (
 );
 
 
-ALTER TABLE la_ext_layertype OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_layertype_layertypeid_seq
     START WITH 1
@@ -1010,8 +888,6 @@ CREATE SEQUENCE la_ext_layertype_layertypeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_layertype_layertypeid_seq OWNER TO postgres;
 
 
 
@@ -1029,8 +905,6 @@ CREATE TABLE la_ext_module (
 );
 
 
-ALTER TABLE la_ext_module OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_module_moduleid_seq
@@ -1040,8 +914,6 @@ CREATE SEQUENCE la_ext_module_moduleid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_module_moduleid_seq OWNER TO postgres;
 
 
 
@@ -1057,8 +929,6 @@ CREATE TABLE la_ext_month (
 );
 
 
-ALTER TABLE la_ext_month OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_month_monthid_seq
     START WITH 1
@@ -1067,8 +937,6 @@ CREATE SEQUENCE la_ext_month_monthid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_month_monthid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_month_monthid_seq OWNED BY la_ext_month.monthid;
@@ -1083,7 +951,6 @@ CREATE SEQUENCE la_ext_parcelsplitland_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_parcelsplitland_seq OWNER TO postgres;
 
 
 CREATE TABLE la_ext_parcelsplitland (
@@ -1097,7 +964,6 @@ CREATE TABLE la_ext_parcelsplitland (
 );
 
 
-ALTER TABLE la_ext_parcelsplitland OWNER TO postgres;
 
 
 
@@ -1118,7 +984,6 @@ CREATE TABLE la_ext_personlandmapping (
 );
 
 
-ALTER TABLE la_ext_personlandmapping OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_personlandmapping_personlandid_seq
@@ -1128,8 +993,6 @@ CREATE SEQUENCE la_ext_personlandmapping_personlandid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_personlandmapping_personlandid_seq OWNER TO postgres;
 
 
 
@@ -1145,8 +1008,6 @@ CREATE TABLE la_ext_process (
 );
 
 
-ALTER TABLE la_ext_process OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_process_processid_seq
@@ -1156,8 +1017,6 @@ CREATE SEQUENCE la_ext_process_processid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_process_processid_seq OWNER TO postgres;
 
 
 
@@ -1180,7 +1039,6 @@ CREATE TABLE la_ext_projectadjudicator (
 );
 
 
-ALTER TABLE la_ext_projectadjudicator OWNER TO postgres;
 
 CREATE SEQUENCE la_ext_projectadjudicator_projectadjudicatorid_seq
     START WITH 1
@@ -1188,9 +1046,6 @@ CREATE SEQUENCE la_ext_projectadjudicator_projectadjudicatorid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_projectadjudicator_projectadjudicatorid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_projectadjudicator_projectadjudicatorid_seq OWNED BY la_ext_projectadjudicator.projectadjudicatorid;
@@ -1231,7 +1086,6 @@ CREATE TABLE la_ext_projectarea (
 );
 
 
-ALTER TABLE la_ext_projectarea OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_projectarea_projectareaid_seq
@@ -1242,7 +1096,6 @@ CREATE SEQUENCE la_ext_projectarea_projectareaid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_projectarea_projectareaid_seq OWNER TO postgres;
 
 
 
@@ -1263,8 +1116,6 @@ CREATE TABLE la_ext_projectbaselayermapping (
 );
 
 
-ALTER TABLE la_ext_projectbaselayermapping OWNER TO postgres;
-
 CREATE SEQUENCE la_ext_projectbaselayermapping_projectbaselayerid_seq
     START WITH 1
     INCREMENT BY 1
@@ -1273,7 +1124,6 @@ CREATE SEQUENCE la_ext_projectbaselayermapping_projectbaselayerid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_projectbaselayermapping_projectbaselayerid_seq OWNER TO postgres;
 
 
 
@@ -1296,8 +1146,6 @@ CREATE TABLE la_ext_projectfile (
 );
 
 
-ALTER TABLE la_ext_projectfile OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_projectfile_projectfileid_seq
     START WITH 1
@@ -1306,8 +1154,6 @@ CREATE SEQUENCE la_ext_projectfile_projectfileid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_projectfile_projectfileid_seq OWNER TO postgres;
 
 
 
@@ -1331,8 +1177,6 @@ CREATE TABLE la_ext_projecthamlet (
 );
 
 
-ALTER TABLE la_ext_projecthamlet OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_projecthamlet_projecthamletid_seq
     START WITH 1
@@ -1342,7 +1186,6 @@ CREATE SEQUENCE la_ext_projecthamlet_projecthamletid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_projecthamlet_projecthamletid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_projecthamlet_projecthamletid_seq OWNED BY la_ext_projecthamlet.projecthamletid;
@@ -1357,8 +1200,6 @@ CREATE TABLE la_ext_projection (
 );
 
 
-ALTER TABLE la_ext_projection OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_projection_projectionid_seq
     START WITH 1
@@ -1367,8 +1208,6 @@ CREATE SEQUENCE la_ext_projection_projectionid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_projection_projectionid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_projection_projectionid_seq OWNED BY la_ext_projection.projectionid;
@@ -1389,8 +1228,6 @@ CREATE TABLE la_ext_projectlayergroupmapping (
 );
 
 
-ALTER TABLE la_ext_projectlayergroupmapping OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_projectlayergroupmapping_projectlayergroupid_seq
@@ -1399,10 +1236,6 @@ CREATE SEQUENCE la_ext_projectlayergroupmapping_projectlayergroupid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_projectlayergroupmapping_projectlayergroupid_seq OWNER TO postgres;
-
 
 
 ALTER SEQUENCE la_ext_projectlayergroupmapping_projectlayergroupid_seq OWNED BY la_ext_projectlayergroupmapping.projectlayergroupid;
@@ -1418,9 +1251,6 @@ CREATE SEQUENCE la_registrationsharetype_seq
     CACHE 1;
 
 
-ALTER TABLE la_registrationsharetype_seq OWNER TO postgres;
-
-
 
 CREATE TABLE la_ext_registrationsharetype (
     registrationsharetypeid integer DEFAULT nextval('la_registrationsharetype_seq'::regclass) NOT NULL,
@@ -1432,9 +1262,6 @@ CREATE TABLE la_ext_registrationsharetype (
     modifiedby integer,
     modifieddate timestamp without time zone
 );
-
-
-ALTER TABLE la_ext_registrationsharetype OWNER TO postgres;
 
 
 CREATE TABLE la_ext_resource_custom_attribute (
@@ -1454,8 +1281,6 @@ CREATE TABLE la_ext_resource_custom_attribute (
 );
 
 
-ALTER TABLE la_ext_resource_custom_attribute OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_resource_custom_attribute_customattributeid_seq
@@ -1465,8 +1290,6 @@ CREATE SEQUENCE la_ext_resource_custom_attribute_customattributeid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_resource_custom_attribute_customattributeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_resource_custom_attribute_customattributeid_seq OWNED BY la_ext_resource_custom_attribute.customattributeid;
@@ -1482,8 +1305,6 @@ CREATE SEQUENCE la_ext_resourcecustomattributevalue_customattributevalueid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_resourcecustomattributevalue_customattributevalueid_seq OWNER TO postgres;
-
 
 
 CREATE TABLE la_ext_resource_custom_attributevalue (
@@ -1497,8 +1318,6 @@ CREATE TABLE la_ext_resource_custom_attributevalue (
     attributeoptionsid integer
 );
 
-
-ALTER TABLE la_ext_resource_custom_attributevalue OWNER TO postgres;
 
 
 
@@ -1521,8 +1340,6 @@ CREATE TABLE la_ext_resource_documentdetails (
 );
 
 
-ALTER TABLE la_ext_resource_documentdetails OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_resource_documentdetails_documentid_seq
     START WITH 300
@@ -1532,8 +1349,6 @@ CREATE SEQUENCE la_ext_resource_documentdetails_documentid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_resource_documentdetails_documentid_seq OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_resourceattributevalue_attributevalueid_seq
@@ -1542,10 +1357,6 @@ CREATE SEQUENCE la_ext_resourceattributevalue_attributevalueid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_resourceattributevalue_attributevalueid_seq OWNER TO postgres;
-
 
 
 CREATE TABLE la_ext_resourceattributevalue (
@@ -1559,18 +1370,12 @@ CREATE TABLE la_ext_resourceattributevalue (
 );
 
 
-ALTER TABLE la_ext_resourceattributevalue OWNER TO postgres;
-
-
 
 CREATE TABLE la_ext_resourceclassification (
     classificationid integer NOT NULL,
     classificationname character varying(100) NOT NULL,
     isactive boolean DEFAULT true NOT NULL
 );
-
-
-ALTER TABLE la_ext_resourceclassification OWNER TO postgres;
 
 
 
@@ -1580,9 +1385,6 @@ CREATE SEQUENCE la_ext_resourceclassification_classificationid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_resourceclassification_classificationid_seq OWNER TO postgres;
 
 
 
@@ -1597,8 +1399,6 @@ CREATE SEQUENCE la_ext_resourcelandclassificationmapping_landclassmappingid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_resourcelandclassificationmapping_landclassmappingid_seq OWNER TO postgres;
-
 CREATE TABLE la_ext_resourcelandclassificationmapping (
     landclassmappingid integer DEFAULT nextval('la_ext_resourcelandclassificationmapping_landclassmappingid_seq'::regclass) NOT NULL,
     projectid integer NOT NULL,
@@ -1610,8 +1410,6 @@ CREATE TABLE la_ext_resourcelandclassificationmapping (
 );
 
 
-ALTER TABLE la_ext_resourcelandclassificationmapping OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_resourcepoiattributemasterid_seq
     START WITH 1
@@ -1620,8 +1418,6 @@ CREATE SEQUENCE la_ext_resourcepoiattributemasterid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_resourcepoiattributemasterid_seq OWNER TO postgres;
 
 
 CREATE TABLE la_ext_resourcepoiattributemaster (
@@ -1639,8 +1435,6 @@ CREATE TABLE la_ext_resourcepoiattributemaster (
 );
 
 
-ALTER TABLE la_ext_resourcepoiattributemaster OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_resourcepoiattributevalue_attributevalueid_seq
     START WITH 1
@@ -1648,9 +1442,6 @@ CREATE SEQUENCE la_ext_resourcepoiattributevalue_attributevalueid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_resourcepoiattributevalue_attributevalueid_seq OWNER TO postgres;
 
 
 
@@ -1665,9 +1456,6 @@ CREATE TABLE la_ext_resourcepoiattributevalue (
 );
 
 
-ALTER TABLE la_ext_resourcepoiattributevalue OWNER TO postgres;
-
-
 
 CREATE TABLE la_ext_resourcesubclassification (
     subclassificationid integer NOT NULL,
@@ -1678,8 +1466,6 @@ CREATE TABLE la_ext_resourcesubclassification (
 );
 
 
-ALTER TABLE la_ext_resourcesubclassification OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_resourcesubclassification_subclassificationid_seq
     START WITH 1
@@ -1687,9 +1473,6 @@ CREATE SEQUENCE la_ext_resourcesubclassification_subclassificationid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_resourcesubclassification_subclassificationid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_resourcesubclassification_subclassificationid_seq OWNED BY la_ext_resourcesubclassification.subclassificationid;
@@ -1705,8 +1488,6 @@ CREATE TABLE la_ext_role (
 );
 
 
-ALTER TABLE la_ext_role OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_role_roleid_seq
@@ -1716,8 +1497,6 @@ CREATE SEQUENCE la_ext_role_roleid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_role_roleid_seq OWNER TO postgres;
 
 
 
@@ -1737,8 +1516,6 @@ CREATE TABLE la_ext_rolemodulemapping (
 );
 
 
-ALTER TABLE la_ext_rolemodulemapping OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_rolemodulemapping_rolemoduleid_seq
@@ -1748,8 +1525,6 @@ CREATE SEQUENCE la_ext_rolemodulemapping_rolemoduleid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_rolemodulemapping_rolemoduleid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_rolemodulemapping_rolemoduleid_seq OWNED BY la_ext_rolemodulemapping.rolemoduleid;
@@ -1763,7 +1538,6 @@ CREATE TABLE la_ext_slopevalue (
 );
 
 
-ALTER TABLE la_ext_slopevalue OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_slopevalue_slopevalueid_seq
@@ -1773,8 +1547,6 @@ CREATE SEQUENCE la_ext_slopevalue_slopevalueid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_slopevalue_slopevalueid_seq OWNER TO postgres;
 
 
 
@@ -1802,9 +1574,6 @@ CREATE TABLE la_ext_spatialunit_personwithinterest (
 );
 
 
-ALTER TABLE la_ext_spatialunit_personwithinterest OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_ext_spatialunit_personwithinterest_id_seq
     START WITH 4
@@ -1812,9 +1581,6 @@ CREATE SEQUENCE la_ext_spatialunit_personwithinterest_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_spatialunit_personwithinterest_id_seq OWNER TO postgres;
 
 
 
@@ -1832,9 +1598,6 @@ CREATE TABLE la_ext_surveyprojectattributes (
 );
 
 
-ALTER TABLE la_ext_surveyprojectattributes OWNER TO postgres;
-
-
 
 CREATE SEQUENCE la_ext_surveyprojectattributes_surveyprojectattributesid_seq
     START WITH 1
@@ -1843,8 +1606,6 @@ CREATE SEQUENCE la_ext_surveyprojectattributes_surveyprojectattributesid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_surveyprojectattributes_surveyprojectattributesid_seq OWNER TO postgres;
 
 
 
@@ -1864,8 +1625,6 @@ CREATE TABLE la_ext_transactiondetails (
 );
 
 
-ALTER TABLE la_ext_transactiondetails OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_transactiondetails_transactionid_seq
     START WITH 1
@@ -1874,8 +1633,6 @@ CREATE SEQUENCE la_ext_transactiondetails_transactionid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_transactiondetails_transactionid_seq OWNER TO postgres;
 
 
 
@@ -1891,8 +1648,6 @@ CREATE SEQUENCE la_transactionhistory_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_transactionhistory_seq OWNER TO postgres;
 
 
 
@@ -1910,8 +1665,6 @@ CREATE TABLE la_ext_transactionhistory (
 );
 
 
-ALTER TABLE la_ext_transactionhistory OWNER TO postgres;
-
 
 CREATE TABLE la_ext_unit (
     unitid integer NOT NULL,
@@ -1920,8 +1673,6 @@ CREATE TABLE la_ext_unit (
     isactive boolean DEFAULT true NOT NULL
 );
 
-
-ALTER TABLE la_ext_unit OWNER TO postgres;
 
 
 
@@ -1932,8 +1683,6 @@ CREATE SEQUENCE la_ext_unit_unitid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_unit_unitid_seq OWNER TO postgres;
 
 
 
@@ -1963,8 +1712,6 @@ CREATE TABLE la_ext_user (
 );
 
 
-ALTER TABLE la_ext_user OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_user_userid_seq
@@ -1973,9 +1720,6 @@ CREATE SEQUENCE la_ext_user_userid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_ext_user_userid_seq OWNER TO postgres;
 
 
 
@@ -1995,8 +1739,6 @@ CREATE TABLE la_ext_userprojectmapping (
 );
 
 
-ALTER TABLE la_ext_userprojectmapping OWNER TO postgres;
-
 
 CREATE SEQUENCE la_ext_userprojectmapping_userprojectid_seq
     START WITH 1
@@ -2005,8 +1747,6 @@ CREATE SEQUENCE la_ext_userprojectmapping_userprojectid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_userprojectmapping_userprojectid_seq OWNER TO postgres;
 
 
 
@@ -2026,8 +1766,6 @@ CREATE TABLE la_ext_userrolemapping (
 );
 
 
-ALTER TABLE la_ext_userrolemapping OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_userrolemapping_userroleid_seq
@@ -2037,8 +1775,6 @@ CREATE SEQUENCE la_ext_userrolemapping_userroleid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_userrolemapping_userroleid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_userrolemapping_userroleid_seq OWNED BY la_ext_userrolemapping.userroleid;
@@ -2054,8 +1790,6 @@ CREATE TABLE la_ext_workflow (
 );
 
 
-ALTER TABLE la_ext_workflow OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_ext_workflow_workflowid_seq
@@ -2065,8 +1799,6 @@ CREATE SEQUENCE la_ext_workflow_workflowid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_workflow_workflowid_seq OWNER TO postgres;
 
 
 
@@ -2083,8 +1815,6 @@ CREATE SEQUENCE la_ext_workflowactionmapping_workflowactionid_seq
     CACHE 1;
 
 
-ALTER TABLE la_ext_workflowactionmapping_workflowactionid_seq OWNER TO postgres;
-
 
 CREATE TABLE la_ext_workflowactionmapping (
     workflowactionid integer DEFAULT nextval('la_ext_workflowactionmapping_workflowactionid_seq'::regclass) NOT NULL,
@@ -2098,8 +1828,6 @@ CREATE TABLE la_ext_workflowactionmapping (
 );
 
 
-ALTER TABLE la_ext_workflowactionmapping OWNER TO postgres;
-
 
 CREATE TABLE la_ext_workflowdef (
     workflowdefid integer NOT NULL,
@@ -2107,8 +1835,6 @@ CREATE TABLE la_ext_workflowdef (
     type integer
 );
 
-
-ALTER TABLE la_ext_workflowdef OWNER TO postgres;
 
 
 CREATE SEQUENCE la_ext_workflowdef_workflowdefid_seq
@@ -2118,8 +1844,6 @@ CREATE SEQUENCE la_ext_workflowdef_workflowdefid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_ext_workflowdef_workflowdefid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_ext_workflowdef_workflowdefid_seq OWNED BY la_ext_workflowdef.workflowdefid;
@@ -2170,9 +1894,6 @@ CREATE TABLE la_layer (
 );
 
 
-ALTER TABLE la_layer OWNER TO postgres;
-
-
 
 CREATE TABLE la_lease (
     leaseid integer NOT NULL,
@@ -2192,9 +1913,6 @@ CREATE TABLE la_lease (
 );
 
 
-ALTER TABLE la_lease OWNER TO postgres;
-
-
 CREATE SEQUENCE la_lease_leaseid_seq
     START WITH 1
     INCREMENT BY 1
@@ -2202,8 +1920,6 @@ CREATE SEQUENCE la_lease_leaseid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_lease_leaseid_seq OWNER TO postgres;
 
 ALTER SEQUENCE la_lease_leaseid_seq OWNED BY la_lease.leaseid;
 
@@ -2226,8 +1942,6 @@ CREATE TABLE la_mortgage (
 );
 
 
-ALTER TABLE la_mortgage OWNER TO postgres;
-
 
 
 CREATE SEQUENCE la_mortgage_mortgageid_seq
@@ -2237,8 +1951,6 @@ CREATE SEQUENCE la_mortgage_mortgageid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_mortgage_mortgageid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_mortgage_mortgageid_seq OWNED BY la_mortgage.mortgageid;
@@ -2252,8 +1964,6 @@ CREATE TABLE la_party (
     createddate timestamp without time zone NOT NULL
 );
 
-
-ALTER TABLE la_party OWNER TO postgres;
 
 
 
@@ -2271,8 +1981,6 @@ CREATE TABLE la_party_deceasedperson (
     modifieddate timestamp without time zone
 );
 
-
-ALTER TABLE la_party_deceasedperson OWNER TO postgres;
 
 
 CREATE TABLE la_party_organization (
@@ -2309,8 +2017,6 @@ CREATE TABLE la_party_organization (
 );
 
 
-ALTER TABLE la_party_organization OWNER TO postgres;
-
 
 CREATE SEQUENCE la_party_partyid_seq
     START WITH 1
@@ -2319,8 +2025,6 @@ CREATE SEQUENCE la_party_partyid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_party_partyid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_party_partyid_seq OWNED BY la_party.partyid;
@@ -2371,8 +2075,6 @@ CREATE TABLE la_party_person (
 );
 
 
-ALTER TABLE la_party_person OWNER TO postgres;
-
 CREATE SEQUENCE la_partygroup_citizenship_citizenshipid_seq
     START WITH 1
     INCREMENT BY 1
@@ -2381,7 +2083,6 @@ CREATE SEQUENCE la_partygroup_citizenship_citizenshipid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_citizenship_citizenshipid_seq OWNER TO postgres;
 
 
 CREATE TABLE la_partygroup_citizenship (
@@ -2392,9 +2093,6 @@ CREATE TABLE la_partygroup_citizenship (
 );
 
 
-ALTER TABLE la_partygroup_citizenship OWNER TO postgres;
-
-
 CREATE TABLE la_partygroup_educationlevel (
     educationlevelid integer NOT NULL,
     educationlevel character varying(50) NOT NULL,
@@ -2402,8 +2100,6 @@ CREATE TABLE la_partygroup_educationlevel (
     isactive boolean DEFAULT true NOT NULL
 );
 
-
-ALTER TABLE la_partygroup_educationlevel OWNER TO postgres;
 
 
 
@@ -2413,9 +2109,6 @@ CREATE SEQUENCE la_partygroup_educationlevel_educationlevelid_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-
-
-ALTER TABLE la_partygroup_educationlevel_educationlevelid_seq OWNER TO postgres;
 
 
 
@@ -2429,9 +2122,6 @@ CREATE SEQUENCE la_partygroup_ethnicity_ethnicityid_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER TABLE la_partygroup_ethnicity_ethnicityid_seq OWNER TO postgres;
-
 CREATE TABLE la_partygroup_ethnicity (
     ethnicityid integer DEFAULT nextval('la_partygroup_ethnicity_ethnicityid_seq'::regclass) NOT NULL,
     ethnicity character varying(50) NOT NULL,
@@ -2439,8 +2129,6 @@ CREATE TABLE la_partygroup_ethnicity (
     isactive boolean DEFAULT true NOT NULL
 );
 
-
-ALTER TABLE la_partygroup_ethnicity OWNER TO postgres;
 
 
 CREATE TABLE la_partygroup_gender (
@@ -2451,7 +2139,6 @@ CREATE TABLE la_partygroup_gender (
 );
 
 
-ALTER TABLE la_partygroup_gender OWNER TO postgres;
 
 
 
@@ -2463,7 +2150,6 @@ CREATE SEQUENCE la_partygroup_gender_genderid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_gender_genderid_seq OWNER TO postgres;
 
 
 
@@ -2479,7 +2165,6 @@ CREATE TABLE la_partygroup_identitytype (
 );
 
 
-ALTER TABLE la_partygroup_identitytype OWNER TO postgres;
 
 
 CREATE SEQUENCE la_partygroup_identitytype_identitytypeid_seq
@@ -2490,7 +2175,6 @@ CREATE SEQUENCE la_partygroup_identitytype_identitytypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_identitytype_identitytypeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_partygroup_identitytype_identitytypeid_seq OWNED BY la_partygroup_identitytype.identitytypeid;
@@ -2505,7 +2189,6 @@ CREATE TABLE la_partygroup_maritalstatus (
 );
 
 
-ALTER TABLE la_partygroup_maritalstatus OWNER TO postgres;
 
 
 CREATE SEQUENCE la_partygroup_maritalstatus_maritalstatusid_seq
@@ -2516,7 +2199,6 @@ CREATE SEQUENCE la_partygroup_maritalstatus_maritalstatusid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_maritalstatus_maritalstatusid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_partygroup_maritalstatus_maritalstatusid_seq OWNED BY la_partygroup_maritalstatus.maritalstatusid;
@@ -2531,7 +2213,6 @@ CREATE TABLE la_partygroup_occupation (
 );
 
 
-ALTER TABLE la_partygroup_occupation OWNER TO postgres;
 
 
 
@@ -2543,7 +2224,6 @@ CREATE SEQUENCE la_partygroup_occupation_occupationid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_occupation_occupationid_seq OWNER TO postgres;
 
 
 
@@ -2560,7 +2240,6 @@ CREATE TABLE la_partygroup_persontype (
 );
 
 
-ALTER TABLE la_partygroup_persontype OWNER TO postgres;
 
 
 CREATE SEQUENCE la_partygroup_persontype_persontypeid_seq
@@ -2571,7 +2250,6 @@ CREATE SEQUENCE la_partygroup_persontype_persontypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_persontype_persontypeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_partygroup_persontype_persontypeid_seq OWNED BY la_partygroup_persontype.persontypeid;
@@ -2587,7 +2265,6 @@ CREATE TABLE la_partygroup_relationshiptype (
 );
 
 
-ALTER TABLE la_partygroup_relationshiptype OWNER TO postgres;
 
 
 
@@ -2599,7 +2276,6 @@ CREATE SEQUENCE la_partygroup_relationshiptype_relationshiptypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_relationshiptype_relationshiptypeid_seq OWNER TO postgres;
 
 
 
@@ -2616,7 +2292,6 @@ CREATE SEQUENCE la_partygroup_resident_residentid_seq
     CACHE 1;
 
 
-ALTER TABLE la_partygroup_resident_residentid_seq OWNER TO postgres;
 
 
 CREATE TABLE la_partygroup_resident (
@@ -2627,7 +2302,6 @@ CREATE TABLE la_partygroup_resident (
 );
 
 
-ALTER TABLE la_partygroup_resident OWNER TO postgres;
 
 
 CREATE TABLE la_right_acquisitiontype (
@@ -2638,7 +2312,6 @@ CREATE TABLE la_right_acquisitiontype (
 );
 
 
-ALTER TABLE la_right_acquisitiontype OWNER TO postgres;
 
 
 CREATE SEQUENCE la_right_acquisitiontype_acquisitiontypeid_seq
@@ -2649,7 +2322,6 @@ CREATE SEQUENCE la_right_acquisitiontype_acquisitiontypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_right_acquisitiontype_acquisitiontypeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_right_acquisitiontype_acquisitiontypeid_seq OWNED BY la_right_acquisitiontype.acquisitiontypeid;
@@ -2664,7 +2336,6 @@ CREATE TABLE la_right_claimtype (
 );
 
 
-ALTER TABLE la_right_claimtype OWNER TO postgres;
 
 
 
@@ -2676,7 +2347,6 @@ CREATE SEQUENCE la_right_claimtype_claimtypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_right_claimtype_claimtypeid_seq OWNER TO postgres;
 
 
 
@@ -2692,7 +2362,6 @@ CREATE TABLE la_right_landsharetype (
 );
 
 
-ALTER TABLE la_right_landsharetype OWNER TO postgres;
 
 
 CREATE SEQUENCE la_right_landsharetype_landsharetypeid_seq
@@ -2703,7 +2372,6 @@ CREATE SEQUENCE la_right_landsharetype_landsharetypeid_seq
     CACHE 1;
 
 
-ALTER TABLE la_right_landsharetype_landsharetypeid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_right_landsharetype_landsharetypeid_seq OWNED BY la_right_landsharetype.landsharetypeid;
@@ -2718,7 +2386,6 @@ CREATE TABLE la_right_tenureclass (
 );
 
 
-ALTER TABLE la_right_tenureclass OWNER TO postgres;
 
 
 CREATE SEQUENCE la_right_tenureclass_tenureclassid_seq
@@ -2729,7 +2396,6 @@ CREATE SEQUENCE la_right_tenureclass_tenureclassid_seq
     CACHE 1;
 
 
-ALTER TABLE la_right_tenureclass_tenureclassid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_right_tenureclass_tenureclassid_seq OWNED BY la_right_tenureclass.tenureclassid;
@@ -2743,7 +2409,6 @@ CREATE TABLE la_rrr (
 );
 
 
-ALTER TABLE la_rrr OWNER TO postgres;
 
 
 
@@ -2755,7 +2420,6 @@ CREATE SEQUENCE la_rrr_rrrid_seq
     CACHE 1;
 
 
-ALTER TABLE la_rrr_rrrid_seq OWNER TO postgres;
 
 
 
@@ -2802,7 +2466,6 @@ CREATE TABLE la_spatialsource_layer (
 );
 
 
-ALTER TABLE la_spatialsource_layer OWNER TO postgres;
 
 
 
@@ -2814,7 +2477,6 @@ CREATE SEQUENCE la_spatialsource_layer_layerid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialsource_layer_layerid_seq OWNER TO postgres;
 
 
 
@@ -2846,7 +2508,6 @@ CREATE TABLE la_spatialsource_projectname (
 );
 
 
-ALTER TABLE la_spatialsource_projectname OWNER TO postgres;
 
 
 
@@ -2858,7 +2519,6 @@ CREATE SEQUENCE la_spatialsource_projectname_projectnameid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialsource_projectname_projectnameid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_spatialsource_projectname_projectnameid_seq OWNED BY la_spatialsource_projectname.projectnameid;
@@ -2872,7 +2532,6 @@ CREATE SEQUENCE la_spatialunit_aoi_aoiid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunit_aoi_aoiid_seq OWNER TO postgres;
 
 
 CREATE TABLE la_spatialunit_aoi (
@@ -2892,7 +2551,6 @@ CREATE TABLE la_spatialunit_aoi (
 );
 
 
-ALTER TABLE la_spatialunit_aoi OWNER TO postgres;
 
 
 
@@ -2904,7 +2562,6 @@ CREATE SEQUENCE la_spatialunit_aoi_id_seq1
     CACHE 1;
 
 
-ALTER TABLE la_spatialunit_aoi_id_seq1 OWNER TO postgres;
 
 CREATE SEQUENCE la_spatialunit_aoiid_seq
     START WITH 25
@@ -2914,7 +2571,6 @@ CREATE SEQUENCE la_spatialunit_aoiid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunit_aoiid_seq OWNER TO postgres;
 
 
 
@@ -2969,7 +2625,6 @@ CREATE TABLE la_spatialunit_land (
 );
 
 
-ALTER TABLE la_spatialunit_land OWNER TO postgres;
 
 
 CREATE SEQUENCE la_spatialunit_land_landid_seq
@@ -2980,7 +2635,6 @@ CREATE SEQUENCE la_spatialunit_land_landid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunit_land_landid_seq OWNER TO postgres;
 
 
 ALTER SEQUENCE la_spatialunit_land_landid_seq OWNED BY la_spatialunit_land.landid;
@@ -2994,7 +2648,6 @@ CREATE SEQUENCE la_spatialunit_resource_land_landid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunit_resource_land_landid_seq OWNER TO postgres;
 
 
 
@@ -3043,7 +2696,6 @@ CREATE TABLE la_spatialunit_resource_land (
 );
 
 
-ALTER TABLE la_spatialunit_resource_land OWNER TO postgres;
 
 
 
@@ -3092,7 +2744,6 @@ CREATE TABLE la_spatialunit_resource_line (
 );
 
 
-ALTER TABLE la_spatialunit_resource_line OWNER TO postgres;
 
 
 CREATE TABLE la_spatialunit_resource_point (
@@ -3140,7 +2791,6 @@ CREATE TABLE la_spatialunit_resource_point (
 );
 
 
-ALTER TABLE la_spatialunit_resource_point OWNER TO postgres;
 
 
 
@@ -3152,7 +2802,6 @@ CREATE TABLE la_spatialunitgroup (
 );
 
 
-ALTER TABLE la_spatialunitgroup OWNER TO postgres;
 
 
 CREATE TABLE la_spatialunitgroup_hierarchy (
@@ -3166,7 +2815,6 @@ CREATE TABLE la_spatialunitgroup_hierarchy (
 );
 
 
-ALTER TABLE la_spatialunitgroup_hierarchy OWNER TO postgres;
 
 
 
@@ -3178,7 +2826,6 @@ CREATE SEQUENCE la_spatialunitgroup_hierarchy_hierarchyid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunitgroup_hierarchy_hierarchyid_seq OWNER TO postgres;
 
 
 
@@ -3195,7 +2842,6 @@ CREATE SEQUENCE la_spatialunitgroup_spatialunitgroupid_seq
     CACHE 1;
 
 
-ALTER TABLE la_spatialunitgroup_spatialunitgroupid_seq OWNER TO postgres;
 
 
 
@@ -3211,7 +2857,6 @@ CREATE SEQUENCE la_surrenderlease_leaseid_seq
     CACHE 1;
 
 
-ALTER TABLE la_surrenderlease_leaseid_seq OWNER TO postgres;
 
 
 
@@ -3234,7 +2879,6 @@ CREATE TABLE la_surrenderlease (
 );
 
 
-ALTER TABLE la_surrenderlease OWNER TO postgres;
 
 
 
@@ -3255,7 +2899,6 @@ CREATE TABLE la_surrendermortgage (
 );
 
 
-ALTER TABLE la_surrendermortgage OWNER TO lts;
 
 CREATE SEQUENCE la_surrendermortgage_mortgageid_seq
     START WITH 1
@@ -3265,7 +2908,6 @@ CREATE SEQUENCE la_surrendermortgage_mortgageid_seq
     CACHE 1;
 
 
-ALTER TABLE la_surrendermortgage_mortgageid_seq OWNER TO lts;
 
 
 
@@ -3282,7 +2924,6 @@ CREATE VIEW media_attributes AS
   ORDER BY am.listing;
 
 
-ALTER TABLE media_attributes OWNER TO postgres;
 
 
 CREATE VIEW natural_person_attributes AS
@@ -3298,7 +2939,6 @@ CREATE VIEW natural_person_attributes AS
   ORDER BY am.listing;
 
 
-ALTER TABLE natural_person_attributes OWNER TO postgres;
 
 
 
@@ -3315,7 +2955,6 @@ CREATE VIEW nonnatural_person_attributes AS
   ORDER BY am.listing;
 
 
-ALTER TABLE nonnatural_person_attributes OWNER TO postgres;
 
 
 
@@ -3332,7 +2971,6 @@ CREATE VIEW right_attributes AS
   ORDER BY am.listing;
 
 
-ALTER TABLE right_attributes OWNER TO postgres;
 
 
 
@@ -3349,7 +2987,6 @@ CREATE VIEW spatial_unit_attributes AS
   ORDER BY am.listing;
 
 
-ALTER TABLE spatial_unit_attributes OWNER TO postgres;
 
 
 
@@ -3366,7 +3003,6 @@ CREATE TABLE topology_checks_error_log (
 );
 
 
-ALTER TABLE topology_checks_error_log OWNER TO postgres;
 
 
 
@@ -3376,7 +3012,6 @@ CREATE TABLE vertexlabel (
 );
 
 
-ALTER TABLE vertexlabel OWNER TO postgres;
 
 ALTER TABLE ONLY la_baunit_landsoilquality ALTER COLUMN landsoilqualityid SET DEFAULT nextval('la_baunit_landsoilquality_landsoilqualityid_seq'::regclass);
 
@@ -4871,7 +4506,6 @@ SELECT pg_catalog.setval('la_ext_documenttype_documenttypeid_seq', 13, true);
 
 
 
-INSERT INTO la_ext_existingclaim_documentdetails (claimdocumentid, landid, documentrefno, documentdate, documenttype, plotno, isactive, createdby, createddate, modifiedby, modifieddate) VALUES (1, 10, '5225', '2018-05-18', 'Land Instrument 1', 2244, true, 1, '2018-05-18 00:00:00', 1, '2018-05-18 00:00:00');
 
 
 
@@ -6402,7 +6036,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (76, 'Nanou    ', 'Nanou    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (77, 'Ouahabou    ', 'Ouahabou    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (78, 'Ouroubono    ', 'Ouroubono    ', 5, 11, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (79, 'Petit Balé    ', 'Petit Balé    ', 5, 11, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (79, 'Petit BalÃ©    ', 'Petit BalÃ©    ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (80, 'Virou ', 'Virou ', 5, 11, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (81, 'Bilatio', 'Bilatio', 5, 12, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (82, 'Bouzourou', 'Bouzourou', 5, 12, true, NULL);
@@ -6427,25 +6061,25 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (33, 'Nouna', 'Nouna', 4, 5, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (34, 'Sono', 'Sono', 4, 5, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (35, 'Bondoukui', 'Bondoukui', 4, 6, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (36, 'Dédougou', 'Dédougou', 4, 6, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (36, 'DÃ©dougou', 'DÃ©dougou', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (37, 'Douroula', 'Douroula', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (38, 'Kona', 'Kona', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (39, 'Ouarkoye', 'Ouarkoye', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (40, 'Safane', 'Safane', 4, 6, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (41, 'Tchériba', 'Tchériba', 4, 6, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (41, 'TchÃ©riba', 'TchÃ©riba', 4, 6, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (42, 'Gassan', 'Gassan', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (43, 'Gossina', 'Gossina', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (44, 'Kougny', 'Kougny', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (45, 'Toma', 'Toma', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (46, 'Yaba', 'Yaba', 4, 7, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (47, 'Yé', 'Yé', 4, 7, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (47, 'YÃ©', 'YÃ©', 4, 7, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (48, 'Di', 'Di', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (49, 'Gomboro', 'Gomboro', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (50, 'Kassoum', 'Kassoum', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (51, 'Kiémbara', 'Kiémbara', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (52, 'Lanfiéra', 'Lanfiéra', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (53, 'Lankoué', 'Lankoué', 4, 8, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (54, 'Toéni', 'Toéni', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (51, 'KiÃ©mbara', 'KiÃ©mbara', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (52, 'LanfiÃ©ra', 'LanfiÃ©ra', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (53, 'LankouÃ©', 'LankouÃ©', 4, 8, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (54, 'ToÃ©ni', 'ToÃ©ni', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (55, 'Tougan', 'Tougan', 4, 8, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (99, 'Voho', 'Voho', 5, 14, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (100, 'Konkoliko', 'Konkoliko', 5, 15, true, NULL);
@@ -6460,7 +6094,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (109, 'Mamou', 'Mamou', 5, 18, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (110, 'Maoula', 'Maoula', 5, 18, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (111, 'Yaho', 'Yaho', 5, 18, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (112, 'Balawé', 'Balawé', 5, 19, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (112, 'BalawÃ©', 'BalawÃ©', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (113, 'Tangouna', 'Tangouna', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (114, 'Yasso', 'Yasso', 5, 19, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (115, 'Diontala', 'Diontala', 5, 20, true, NULL);
@@ -6479,7 +6113,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (128, 'Ouarakuy', 'Ouarakuy', 5, 22, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (129, 'Pekuy', 'Pekuy', 5, 22, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (130, 'Sanaba', 'Sanaba', 5, 22, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (131, 'Béna', 'Béna', 5, 23, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (131, 'BÃ©na', 'BÃ©na', 5, 23, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (3, 'Province Test', 'Province Test', 3, 2, true, 'BAL');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (4, 'MAST Community', 'MAST Community', 3, 2, true, 'BAN');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (6, 'Mouhoun', 'Mouhoun', 3, 2, true, 'MOU');
@@ -6711,7 +6345,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (334, 'Niempourou', 'Niempourou', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (335, 'Saoura', 'Saoura', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (336, 'Touri', 'Touri', 5, 47, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (337, 'Yé', 'Yé', 5, 47, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (337, 'YÃ©', 'YÃ©', 5, 47, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (338, 'Debe', 'Debe', 5, 48, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (339, 'Di', 'Di', 5, 48, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (340, 'Donon', 'Donon', 5, 48, true, NULL);
@@ -6746,7 +6380,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (369, 'Lanfiera', 'Lanfiera', 5, 52, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (370, 'Toumani', 'Toumani', 5, 52, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (371, 'Unknown', 'Unknown', 5, 52, true, NULL);
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (372, 'Lankoué', 'Lankoué', 5, 53, true, NULL);
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (372, 'LankouÃ©', 'LankouÃ©', 5, 53, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (373, 'Dagale', 'Dagale', 5, 54, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (374, 'Domoni', 'Domoni', 5, 54, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (375, 'Dounkou', 'Dounkou', 5, 54, true, NULL);
@@ -6773,7 +6407,7 @@ INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialun
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (396, 'Tougan', 'Tougan', 5, 55, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (397, 'Toungare', 'Toungare', 5, 55, true, NULL);
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (9, 'Bagassi', 'Bagassi', 4, 3, true, 'BAG');
-INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (19, 'Balavé', 'Balavé', 4, 4, true, 'BAL');
+INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (19, 'BalavÃ©', 'BalavÃ©', 4, 4, true, 'BAL');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (26, 'Bomborokui', 'Bomborokui', 4, 5, true, 'BOM');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (1, 'Mast Country', 'Mast Country', 1, NULL, true, 'BFA');
 INSERT INTO la_spatialunitgroup_hierarchy (hierarchyid, name, name_en, spatialunitgroupid, uperhierarchyid, isactive, code) VALUES (5, 'MAST Community', 'MAST Community', 3, 2, true, 'KOS');
@@ -6802,829 +6436,6 @@ SELECT pg_catalog.setval('la_surrendermortgage_mortgageid_seq', 10, true);
 
 SELECT pg_catalog.setval('la_transactionhistory_seq', 45, true);
 
-
-
-
-
-
-
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2557, '0103000020E6100000010000000C000000E8FB88E3E9C221C04403EB1770D727408276C1BF8C561AC0933398AF604729400A1325A5C9D020C070D3D9A8D29F2B40E8FB88E3E9C221C04403EB1770D7274014F57ADE2AF121C06D045E3D59E52740CE927CFC100F22C05E95763083C327409188422EE52822C030898AA338A02740AD11878D2E2022C0891823D0683C2740AABB113DAEC721C0BFB40FCCC8E12640D91565FC1CA921C04B7E9B30278927402CF9AFDE6EBC21C06B5F613DC5A62740E8FB88E3E9C221C04403EB1770D72740', 'invalid geometry', 'la_spatialunit_land', 109, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2558, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2559, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2560, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2561, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2562, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2563, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2564, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2565, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2566, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2567, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2568, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2569, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2570, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2571, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2572, '0103000020E61000000100000005000000000000BDE64922C0C452B6A3F8B2164000008080119121C02CA537FC432117400000800C1DAE21C0F81E3BA4745D15400000C0C6E98B22C01EB4C29F7F871540000000BDE64922C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 6, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2573, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2574, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2575, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2576, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2577, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2578, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2579, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2580, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2581, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2582, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2583, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2584, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2585, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2586, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2587, '0103000020E6100000010000000500000000008081625C22C0935C95964AF317400000403131A621C0BC50479406571840000000D198C021C097890DF0B7AD1640000040CF458922C08737A2B1EF73164000008081625C22C0935C95964AF31740', 'intersect', 'la_spatialunit_land', 1, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2588, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2589, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2590, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2591, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2592, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2593, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2594, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2595, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2596, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2597, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2598, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2599, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2600, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2601, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2602, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2603, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2604, '0103000020E6100000010000000500000001004080BB1722C04019B7C78AE31740000000FD617121C01191FBA2F5FE18400000405DFA5621C0DC8A6390098517400000405DFA5621C0DC8A63900985174001004080BB1722C04019B7C78AE31740', 'intersect', 'la_spatialunit_land', 12, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2605, '0103000020E61000000100000004000000FBBF9780670A21C09F49CDE4BC0F1A40B0DB2DEA0FC01FC0B382D715D05B1E401C9B575448E021C0C3BB1AA8A5A41D40FBBF9780670A21C09F49CDE4BC0F1A40', 'intersect', 'la_spatialunit_land', 16, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2606, '0103000020E61000000100000004000000FBBF9780670A21C09F49CDE4BC0F1A40B0DB2DEA0FC01FC0B382D715D05B1E401C9B575448E021C0C3BB1AA8A5A41D40FBBF9780670A21C09F49CDE4BC0F1A40', 'intersect', 'la_spatialunit_land', 16, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2607, '0103000020E61000000100000004000000FBBF9780670A21C09F49CDE4BC0F1A40B0DB2DEA0FC01FC0B382D715D05B1E401C9B575448E021C0C3BB1AA8A5A41D40FBBF9780670A21C09F49CDE4BC0F1A40', 'intersect', 'la_spatialunit_land', 16, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2608, '0103000020E61000000100000004000000FBBF9780670A21C09F49CDE4BC0F1A40B0DB2DEA0FC01FC0B382D715D05B1E401C9B575448E021C0C3BB1AA8A5A41D40FBBF9780670A21C09F49CDE4BC0F1A40', 'intersect', 'la_spatialunit_land', 16, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2609, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2610, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2611, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2612, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2613, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2614, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2615, '0103000020E610000001000000070000001C78D6EAD26622C0A0EC9880044F2040C76A6FC756F021C03C7173098F6820401F9C9B0F50D221C0B0B1B62CFC4C204097F79BB5AAAC21C0084FBDD01028204012C53FC7F20822C0629D8D09730C2040E84E2CC7E64122C0FBF48E096B0520401C78D6EAD26622C0A0EC9880044F2040', 'intersect', 'la_spatialunit_land', 10, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2616, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2617, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2618, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2619, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2620, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2621, '0103000020E61000000100000004000000000040995F2D22C0D94D46CD72161740000040F3A80222C0DEAD9152BBD116400000C060C14722C045CED60542891640000040995F2D22C0D94D46CD72161740', 'intersect', 'la_spatialunit_land', 7, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2622, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2623, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2624, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2625, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2626, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2627, '0103000020E610000001000000040000002509A1077B1A20C072B62D883C54214070067FBFC06B1FC00C24A445D42F2140FC54B2EFF45E1EC03510894A28BF21402509A1077B1A20C072B62D883C542140', 'intersect', 'la_spatialunit_land', 18, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2628, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2629, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2630, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2631, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2632, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2633, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2634, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2635, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2636, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 23, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2637, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 25, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2638, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 25, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2639, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 25, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2640, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 25, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2641, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 25, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2642, '0103000020E6100000010000000400000065F6FDC4764624C0E8C5A24C937F2240BEAF1DCED4AF22C01D97CC0CF2C5224005268117A72623C058E04CC85AB9214065F6FDC4764624C0E8C5A24C937F2240', 'intersect', 'la_spatialunit_land', 21, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2643, '0103000020E6100000010000000400000065F6FDC4764624C0E8C5A24C937F2240BEAF1DCED4AF22C01D97CC0CF2C5224005268117A72623C058E04CC85AB9214065F6FDC4764624C0E8C5A24C937F2240', 'intersect', 'la_spatialunit_land', 21, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2644, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2645, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2646, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2647, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2648, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2649, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2650, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2651, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2652, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2653, '0103000020E61000000100000005000000000080EAACB821C005428DFAC08C1540000080EAACB821C005428DFAC08C154000000018732721C076344364272E15400000C042959320C0CDEF8C13C3161740000080EAACB821C005428DFAC08C1540', 'intersect', 'la_spatialunit_land', 3, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2654, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2655, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2656, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2657, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2658, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2659, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2660, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2661, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2662, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2663, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2664, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2665, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2666, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2667, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2668, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2669, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2670, '0103000020E610000001000000040000000000C09B78C020C09841E6CE4FC6194000000066ACCD20C0D995DA47CAFD1740000000AC2E4F22C0FAA154BF80A018400000C09B78C020C09841E6CE4FC61940', 'intersect', 'la_spatialunit_land', 8, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2671, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2672, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2673, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2674, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2675, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2676, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2677, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2678, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2679, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2680, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2681, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2682, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2683, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2684, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2685, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2686, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2687, '0103000020E6100000010000000500000000004027D8EA21C0982D002B6E69164000008094C30721C0D968B0D48ACE1740010040373F1A21C067AFE12F5B001640000040CEF4BD21C0A50C93BF06C5144000004027D8EA21C0982D002B6E691640', 'intersect', 'la_spatialunit_land', 9, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2688, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2689, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2690, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2691, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2692, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2693, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2694, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2695, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2696, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2697, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2698, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2699, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2700, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2701, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2702, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2703, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2704, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2705, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2706, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2707, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2708, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2709, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2710, '0103000020E610000001000000050000000000403890E521C0C452B6A3F8B21640000000292B2221C0B78C493B874C18400000805D50D020C0902008B0FFF116400100C0C8923C21C0F5A6A762AA3815400000403890E521C0C452B6A3F8B21640', 'intersect', 'la_spatialunit_land', 4, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2711, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2712, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2713, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2714, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2715, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2716, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2717, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2718, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2719, '0103000020E61000000100000004000000000080BD8B2224C0CB4A12D6928E21400000C04A459E21C0FCE52C2DC5CF214001000016CA7622C05CCA759695382040000080BD8B2224C0CB4A12D6928E2140', 'intersect', 'la_spatialunit_land', 20, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2720, '0103000020E61000000100000007000000D4A4EBF4490B20C0613575A24DBF1940459DDA956D921EC05C70278DA8FB1940995DB18744D71EC0990AC7B7615F1940506C4A491B371FC0E56BD41754821940506C4A492B451FC0E56BD417AC481940AC5B20B70DBA1FC0D71383E5D3291940D4A4EBF4490B20C0613575A24DBF1940', 'intersect', 'la_spatialunit_land', 14, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2721, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2722, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2723, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2724, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2725, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2726, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2727, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2728, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2729, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2730, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2731, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2732, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2733, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2734, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2735, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2736, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2737, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2738, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2739, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2740, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2741, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2742, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2743, '0103000020E610000001000000050000000000C0036B3722C0DC8A639009851740000000C6EE3921C0A06F9C11C9271840000080499E5921C07898F9CB294F16400000405E4B2222C067913216B66215400000C0036B3722C0DC8A639009851740', 'intersect', 'la_spatialunit_land', 5, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2744, '0103000020E6100000010000000800000003EDCC0C343624C0E4377D24C2BE1B40243EDADCEFC723C09D59351546091C40BE10FC319EB223C037744E0C24A31B40BE10FC315ABA23C037744E0C140E1B40BE10FC319EDF23C037744E0C949D1A40F8B8E3DEE8EA23C0EAFFBF2969941A402C42F331063B24C0F66B800CFCF81A4003EDCC0C343624C0E4377D24C2BE1B40', 'intersect', 'la_spatialunit_land', 15, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2745, '0103000020E6100000010000000800000003EDCC0C343624C0E4377D24C2BE1B40243EDADCEFC723C09D59351546091C40BE10FC319EB223C037744E0C24A31B40BE10FC315ABA23C037744E0C140E1B40BE10FC319EDF23C037744E0C949D1A40F8B8E3DEE8EA23C0EAFFBF2969941A402C42F331063B24C0F66B800CFCF81A4003EDCC0C343624C0E4377D24C2BE1B40', 'intersect', 'la_spatialunit_land', 15, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2746, '0103000020E6100000010000000A000000FD7E18BE114F13C06695257CE7361440CAA9F81ADD1C13C0FA2A75A0B98C1440230F5267B80013C0026CC868B8A814403C90EE2D92F911C09EC67488CD6A14403C90EE2DB28E11C09EC67488EDE014403C90EE2D921811C09EC674880DEF134064B8A45D5D0311C0EDA9D878B263134052E8821BA50A12C04F6331A0CD4C1340817E3A79EC0A13C0B85CBBBC52F91340FD7E18BE114F13C06695257CE7361440', 'intersect', 'la_spatialunit_land', 51, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2747, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 27, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2748, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 27, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2749, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 27, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2750, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 27, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2751, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 27, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2752, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2753, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2754, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2755, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2756, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2757, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2758, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2759, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2760, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2761, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2762, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2763, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2764, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2765, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2766, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2767, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2768, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2769, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 42, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2770, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2771, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2772, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2773, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2774, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2775, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2776, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2777, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2778, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2779, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2780, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2781, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2782, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2783, '0103000020E61000000100000005000000000000FD617121C0BB587A4388651740000040D09D6E20C0973F8DA103811840000080046DA320C0C6477189031C1740FFFF7F53F71421C0F6066F5202921540000000FD617121C0BB587A4388651740', 'intersect', 'la_spatialunit_land', 43, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2784, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2785, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2786, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2787, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2788, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2789, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2790, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2791, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2792, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2793, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2794, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2795, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2796, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2797, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2798, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2799, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2800, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2801, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2802, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2803, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2804, '0103000020E610000001000000050000000000C04A459E21C0B4AA4EAE8AB917400000806E08CB20C05D2105D901961840000000881CC320C0CDEF8C13C3161740000040BD3CC321C05333612F335815400000C04A459E21C0B4AA4EAE8AB91740', 'intersect', 'la_spatialunit_land', 48, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2805, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 30, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2806, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 30, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2807, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 30, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2808, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 30, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2809, '0103000020E6100000010000000400000000000012210721C0DE84A987CC5F22400100807B65071FC050B8AFBEE8932240000040570F0D20C06CF807BA1B4D214000000012210721C0DE84A987CC5F2240', 'intersect', 'la_spatialunit_land', 30, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2810, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2811, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2812, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2813, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2814, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2815, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2816, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 31, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2817, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2818, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2819, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2820, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2821, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2822, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2823, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2824, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2825, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2826, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 32, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2827, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2828, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2829, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2830, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2831, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2832, '0103000020E610000001000000040000000000807ACFE81FC07EAECD7855CA21400000800234491EC0DF6353F257132240FFFFFF6EA9311FC061754B577FA920400000807ACFE81FC07EAECD7855CA2140', 'intersect', 'la_spatialunit_land', 33, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2833, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2834, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2835, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2836, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2837, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2838, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2839, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2840, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2841, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2842, '0103000020E6100000010000000400000000004018FFF120C07D796DBE358F2140000000070BCF1EC0B1DEBD43F2B821400000408B5E3E20C0A38EFC3E1E25204000004018FFF120C07D796DBE358F2140', 'intersect', 'la_spatialunit_land', 34, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2843, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2844, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2845, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2846, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2847, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2848, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2849, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2850, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2851, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2852, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2853, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2854, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2855, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2856, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2857, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2858, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2859, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2860, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2861, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2862, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2863, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2864, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2865, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2866, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2867, '0103000020E610000001000000050000000000009B765422C0E7BF100CCA941740010040373F1A21C09991CE668476184000004015CF2421C06D10D147263A164000008081625C22C025094FB148AC15400000009B765422C0E7BF100CCA941740', 'intersect', 'la_spatialunit_land', 40, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2868, '0103000020E6100000010000000400000000000087C6CE20C052D283C7977B22400000002AC7A41EC03D4092112BB3224000000096F1FD1FC0AE697DB08EA7214000000087C6CE20C052D283C7977B2240', 'intersect', 'la_spatialunit_land', 36, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2869, '0103000020E61000000100000004000000E9623675DC6A22C05CA736DD578E1C403AE513AA82A420C07B359B221B5B1E40756D14FEB11121C017BD11E524B31A40E9623675DC6A22C05CA736DD578E1C40', 'intersect', 'la_spatialunit_land', 38, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2870, '0103000020E61000000100000004000000E9623675DC6A22C05CA736DD578E1C403AE513AA82A420C07B359B221B5B1E40756D14FEB11121C017BD11E524B31A40E9623675DC6A22C05CA736DD578E1C40', 'intersect', 'la_spatialunit_land', 38, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2871, '0103000020E61000000100000004000000E9623675DC6A22C05CA736DD578E1C403AE513AA82A420C07B359B221B5B1E40756D14FEB11121C017BD11E524B31A40E9623675DC6A22C05CA736DD578E1C40', 'intersect', 'la_spatialunit_land', 38, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2872, '0103000020E61000000100000004000000E9623675DC6A22C05CA736DD578E1C403AE513AA82A420C07B359B221B5B1E40756D14FEB11121C017BD11E524B31A40E9623675DC6A22C05CA736DD578E1C40', 'intersect', 'la_spatialunit_land', 38, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2873, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2874, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2875, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2876, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2877, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2878, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2879, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2880, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2881, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2882, '0103000020E6100000010000000400000000008091C98B21C0C646EA95BAC21640000040A4D4BD20C08B3F0BC78EC6154000000004C1B021C0E375559CB695144000008091C98B21C0C646EA95BAC21640', 'intersect', 'la_spatialunit_land', 50, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2883, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2884, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2885, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2886, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2887, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2888, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2889, '0103000020E610000001000000040000000000002D12CB23C08CB977A594F021400000007C05E521C02BBB2FA64B1A22400000C0724B6022C07E2699506DB720400000002D12CB23C08CB977A594F02140', 'intersect', 'la_spatialunit_land', 28, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2890, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2891, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2892, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2893, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2894, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2895, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2896, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2897, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2898, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2899, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2900, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2901, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2902, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2903, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2904, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2905, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2906, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2907, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2908, '0103000020E61000000100000005000000000040E2B37221C073CDCB28AA9C1740000040E2B37221C073CDCB28AA9C17400000C08ACD0321C048F764EAA10917400000000E27AA21C07198BB5D38F31540000040E2B37221C073CDCB28AA9C1740', 'intersect', 'la_spatialunit_land', 123, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2909, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2910, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2911, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2912, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2913, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2914, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2915, '0103000020E61000000100000004000000000040DB543321C055DEB6A2C5661840000080423F1A21C02DB59313E4671940000040C0437D21C0E35405AA71BE1940000040DB543321C055DEB6A2C5661840', 'intersect', 'la_spatialunit_land', 47, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2916, '0103000020E6100000010000000500000075F086131CF321C07AC3E00E92C11D400A0044B0608F20C0D0D1CBA45D071E40E2D5849262DA1EC0F2145CB4892C1C40C1314FD7A85B21C0D269824D424A1A4075F086131CF321C07AC3E00E92C11D40', 'intersect', 'la_spatialunit_land', 29, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2917, '0103000020E6100000010000000500000075F086131CF321C07AC3E00E92C11D400A0044B0608F20C0D0D1CBA45D071E40E2D5849262DA1EC0F2145CB4892C1C40C1314FD7A85B21C0D269824D424A1A4075F086131CF321C07AC3E00E92C11D40', 'intersect', 'la_spatialunit_land', 29, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2918, '0103000020E6100000010000000500000075F086131CF321C07AC3E00E92C11D400A0044B0608F20C0D0D1CBA45D071E40E2D5849262DA1EC0F2145CB4892C1C40C1314FD7A85B21C0D269824D424A1A4075F086131CF321C07AC3E00E92C11D40', 'intersect', 'la_spatialunit_land', 29, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2919, '0103000020E6100000010000000500000075F086131CF321C07AC3E00E92C11D400A0044B0608F20C0D0D1CBA45D071E40E2D5849262DA1EC0F2145CB4892C1C40C1314FD7A85B21C0D269824D424A1A4075F086131CF321C07AC3E00E92C11D40', 'intersect', 'la_spatialunit_land', 29, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2920, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2921, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2922, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2923, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2924, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2925, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2926, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2927, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2928, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2929, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2930, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2931, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2932, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2933, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2934, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2935, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2936, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2937, '0103000020E6100000010000000400000000008017C73422C06EE61F6B8AA417400000405DFA5621C0A3CCD1F176F4184000008038E65E21C005EC51358750174000008017C73422C06EE61F6B8AA41740', 'intersect', 'la_spatialunit_land', 45, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2938, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2939, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2940, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2941, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2942, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2943, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2944, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2945, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2946, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2947, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2948, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2949, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2950, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2951, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2952, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2953, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2954, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2955, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2956, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2957, '0103000020E61000000100000004000000FFFF7F287F2F22C0F71DA3B708701740000040E2A63421C0AAAB23773ADA18400000C0D94A3721C02B9E56AC36A31640FFFF7F287F2F22C0F71DA3B708701740', 'intersect', 'la_spatialunit_land', 120, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2958, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2959, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2960, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2961, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2962, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2963, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2964, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2965, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2966, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2967, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2968, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2969, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2970, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2971, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2972, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2973, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2974, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2975, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2976, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2977, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2978, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2979, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2980, '0103000020E6100000010000000500000000004091731222C0E0D111DDC912184000004067531221C0C7BA0F0511C119400000C0D94A3721C055C20D5240F716400100804AEF2422C092792352A42F164000004091731222C0E0D111DDC9121840', 'intersect', 'la_spatialunit_land', 121, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2981, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2982, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2983, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2984, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2985, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2986, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2987, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2988, '0103000020E61000000100000006000000806EDC20626E22C002D7F424D9841B40CA87E286C6CE20C0CB251B30C4B51B4045379068E17E21C0E313BA647FC9184086FAE926F25B22C0641D2B3A41841A4086FAE926828022C0641D2B3A81E91A40806EDC20626E22C002D7F424D9841B40', 'intersect', 'la_spatialunit_land', 26, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2989, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2990, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2991, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2992, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2993, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2994, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2995, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2996, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2997, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2998, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (2999, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3000, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3001, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3002, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3003, '0103000020E6100000010000000500000000008099799622C02E96AED8CABE1740000040AC84C821C0A06F9C11C927184000004027D8EA21C08F53B94F77A81640FFFF7F88C19B22C0D9AF678C4DC1154000008099799622C02E96AED8CABE1740', 'intersect', 'la_spatialunit_land', 2, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3004, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3005, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3006, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3007, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3008, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3009, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3010, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3011, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3012, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3013, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3014, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3015, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3016, '0103000020E6100000010000000400000000008000431C21C061754B577FA9204000008080871C1FC0DEABA30C770E214000008053C22C20C06CA84D32C2C31E4000008000431C21C061754B577FA92040', 'intersect', 'la_spatialunit_land', 54, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3017, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3018, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3019, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3020, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3021, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3022, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3023, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3024, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3025, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3026, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3027, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3028, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3029, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3030, '0103000020E61000000100000004000000F6FC1F1620F021C018CDA9E8386A20407967610D1F1A20C0C2D396001D0C2140AC8C674C98D520C057FD19F749AA1E40F6FC1F1620F021C018CDA9E8386A2040', 'intersect', 'la_spatialunit_land', 13, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3031, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3032, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3033, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3034, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3035, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3036, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3037, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3038, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3039, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3040, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3041, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3042, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3043, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3044, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3045, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3046, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 17, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3047, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3048, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3049, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3050, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3051, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3052, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3053, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3054, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3055, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3056, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3057, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3058, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3059, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3060, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3061, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3062, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 22, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3063, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3064, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3065, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3066, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3067, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3068, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3069, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3070, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3071, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3072, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3073, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3074, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3075, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3076, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3077, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3078, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 19, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3079, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3080, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3081, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3082, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3083, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3084, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3085, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3086, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3087, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3088, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3089, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3090, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3091, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3092, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3093, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3094, '0103000020E610000001000000040000006B3FDF373A6C22C0629136C092B820408A22FF27DA5620C045097E44E1712140E3D96994C30721C015D03C67A8511F406B3FDF373A6C22C0629136C092B82040', 'intersect', 'la_spatialunit_land', 24, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3095, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3096, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3097, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3098, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3099, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3100, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3101, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3102, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3103, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3104, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3105, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3106, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3107, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3108, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3109, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3110, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3111, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3112, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3113, '0103000020E610000001000000050000000000C00CF37822C02F50F4C2819F184000008002899721C0C66E189D762B19400000C0B67D9021C081E78643711E17400000803A64BF22C081E78643711E17400000C00CF37822C02F50F4C2819F1840', 'intersect', 'la_spatialunit_land', 52, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3114, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3115, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3116, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3117, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3118, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3119, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3120, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3121, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3122, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3123, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3124, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3125, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3126, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3127, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3128, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3129, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3130, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3131, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3132, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3133, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3134, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3135, '0103000020E610000001000000040000000000806A27FA21C0249D6A9F82F01740000000BB150021C0536912088298184000004060BD1821C0E0E93B4D442916400000806A27FA21C0249D6A9F82F01740', 'intersect', 'la_spatialunit_land', 53, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3136, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3137, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3138, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3139, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3140, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3141, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3142, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3143, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3144, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3145, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3146, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3147, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3148, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3149, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3150, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3151, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3152, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3153, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3154, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3155, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3156, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3157, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3158, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3159, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3160, '0103000020E610000001000000040000000000C08800D122C047F0AA4680BB184000004071507421C0302F92D03C5F1A400000C0E8864621C01E7251DA796B17400000C08800D122C047F0AA4680BB1840', 'intersect', 'la_spatialunit_land', 55, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3161, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3162, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3163, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3164, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3165, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3166, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3167, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3168, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3169, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3170, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3171, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3172, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3173, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3174, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3175, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3176, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3177, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3178, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3179, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3180, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3181, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3182, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3183, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3184, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3185, '0103000020E61000000100000004000000000080A0BCA622C04504518A836718400000C0C5CA7021C05BDD5BB658E819400000403D014321C0B3168B0D67D81640000080A0BCA622C04504518A83671840', 'intersect', 'la_spatialunit_land', 56, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3186, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3187, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3188, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3189, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3190, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3191, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3192, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3193, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3194, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3195, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3196, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3197, '0103000020E61000000100000004000000000040A59FA521C0F5D9DADF7FB8174000008064558820C03F2431317CF31840000040076C9620C05E2B53FE57841640000040A59FA521C0F5D9DADF7FB81740', 'intersect', 'la_spatialunit_land', 57, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3198, '0103000020E61000000100000004000000000080D7942E22C04889B509F2B31A40000040EEADC621C0476C4A5D423A1940000080B7C11123C0B307344FD1481840000080D7942E22C04889B509F2B31A40', 'intersect', 'la_spatialunit_land', 58, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3199, '0103000020E61000000100000004000000000080D7942E22C04889B509F2B31A40000040EEADC621C0476C4A5D423A1940000080B7C11123C0B307344FD1481840000080D7942E22C04889B509F2B31A40', 'intersect', 'la_spatialunit_land', 58, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3200, '0103000020E61000000100000004000000000080D7942E22C04889B509F2B31A40000040EEADC621C0476C4A5D423A1940000080B7C11123C0B307344FD1481840000080D7942E22C04889B509F2B31A40', 'intersect', 'la_spatialunit_land', 58, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3201, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3202, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3203, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3204, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3205, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3206, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3207, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3208, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3209, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3210, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3211, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3212, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3213, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3214, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3215, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3216, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3217, '0103000020E610000001000000040000000000406B8B2121C078160BBB832118400000C08A13AF20C0FAA4B826FFAD1740FFFFFFA8EC8521C03A004D4C6D0217400000406B8B2121C078160BBB83211840', 'intersect', 'la_spatialunit_land', 59, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3218, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3219, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3220, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3221, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3222, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3223, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3224, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3225, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3226, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3227, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3228, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3229, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3230, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3231, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3232, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3233, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3234, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3235, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3236, '0103000020E610000001000000040000000000401C8BE821C0D7878E3879641740FFFF3FD562E020C098FC5EAD828A1840000040A113AF20C0ECEC70FB453016400000401C8BE821C0D7878E3879641740', 'intersect', 'la_spatialunit_land', 60, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3237, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3238, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3239, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3240, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3241, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3242, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3243, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3244, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3245, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3246, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3247, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3248, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3249, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3250, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3251, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3252, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3253, '0103000020E610000001000000040000000000C05F728921C03904605894F92040FFFFFF2D539B1FC0DFA6CDFFDB762140FFFFBFF58DAB20C023FBB786E0A01E400000C05F728921C03904605894F92040', 'intersect', 'la_spatialunit_land', 61, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3254, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3255, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3256, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3257, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3258, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3259, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3260, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3261, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3262, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3263, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3264, '0103000020E610000001000000040000000000C01CD67721C0C0FE549A1AED2140FFFFFF6EA9311FC09AA080FDB8242240000000B9CF8420C0B5D4BE52AB8620400000C01CD67721C0C0FE549A1AED2140', 'intersect', 'la_spatialunit_land', 62, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3265, '0103000020E6100000010000000500000000000023B46221C0DC85884273471940000000AA82A420C0FD43E44B357B1A40000000B9CF8420C00D2EFD647FC918400000007ABF6921C0B4B8BF397B79174000000023B46221C0DC85884273471940', 'intersect', 'la_spatialunit_land', 63, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3266, '0103000020E6100000010000000500000000000023B46221C0DC85884273471940000000AA82A420C0FD43E44B357B1A40000000B9CF8420C00D2EFD647FC918400000007ABF6921C0B4B8BF397B79174000000023B46221C0DC85884273471940', 'intersect', 'la_spatialunit_land', 63, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3267, '0103000020E6100000010000000500000000000023B46221C0DC85884273471940000000AA82A420C0FD43E44B357B1A40000000B9CF8420C00D2EFD647FC918400000007ABF6921C0B4B8BF397B79174000000023B46221C0DC85884273471940', 'intersect', 'la_spatialunit_land', 63, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3268, '0103000020E6100000010000000500000000000023B46221C0DC85884273471940000000AA82A420C0FD43E44B357B1A40000000B9CF8420C00D2EFD647FC918400000007ABF6921C0B4B8BF397B79174000000023B46221C0DC85884273471940', 'intersect', 'la_spatialunit_land', 63, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3269, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3270, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3271, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3272, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3273, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3274, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3275, '0103000020E6100000010000000400000000008064558820C01308380A5BC52040000000070BCF1EC0DEABA30C770E21400000804BA2CC1FC01052E80C261E204000008064558820C01308380A5BC52040', 'intersect', 'la_spatialunit_land', 64, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3276, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3277, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3278, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3279, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3280, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3281, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3282, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3283, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3284, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3285, '0103000020E6100000010000000400000001000014678221C0EE26936C61732140000040570F0D20C04D23861F3ED821400000402C6EE720C0787054A5063A204001000014678221C0EE26936C61732140', 'intersect', 'la_spatialunit_land', 65, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3286, '0103000020E61000000100000004000000000040B3890425C03DDD36F5A0492140000040DD7ACD22C0A832914C14A42140000080D40BD822C04DE571A6A28D2040000040B3890425C03DDD36F5A0492140', 'intersect', 'la_spatialunit_land', 66, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3287, '0103000020E61000000100000004000000000040B3890425C03DDD36F5A0492140000040DD7ACD22C0A832914C14A42140000080D40BD822C04DE571A6A28D2040000040B3890425C03DDD36F5A0492140', 'intersect', 'la_spatialunit_land', 66, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3288, '0103000020E61000000100000004000000000040B3890425C03DDD36F5A0492140000040DD7ACD22C0A832914C14A42140000080D40BD822C04DE571A6A28D2040000040B3890425C03DDD36F5A0492140', 'intersect', 'la_spatialunit_land', 66, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3289, '0103000020E61000000100000004000000000040B3890425C03DDD36F5A0492140000040DD7ACD22C0A832914C14A42140000080D40BD822C04DE571A6A28D2040000040B3890425C03DDD36F5A0492140', 'intersect', 'la_spatialunit_land', 66, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3290, '0103000020E6100000010000000500000079CC6173E5E423C0C2AC2725CA5D2940E380F52C5EE026C0BAE4C453EB162840BCFF854EF95627C01132D24C1B8F2840B9C8E87D378127C0F02A8FF6AC11294079CC6173E5E423C0C2AC2725CA5D2940', 'intersect', 'la_spatialunit_land', 117, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3291, '0103000020E610000001000000070000004573CF806BCA1BC00106F656A4481B404F1432A163A01BC06CAEBBF5E9601B40E8F58A1B45611BC0C0EAE99F2F3D1B4006904E1BADDB1AC0CD12CF9FCF151B40CF3B466019BE1AC032A0281A2D161B4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', 'intersect', 'la_spatialunit_land', 41, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3292, '0103000020E610000001000000070000004573CF806BCA1BC00106F656A4481B404F1432A163A01BC06CAEBBF5E9601B40E8F58A1B45611BC0C0EAE99F2F3D1B4006904E1BADDB1AC0CD12CF9FCF151B40CF3B466019BE1AC032A0281A2D161B4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', 'intersect', 'la_spatialunit_land', 41, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3293, '0103000020E610000001000000070000004573CF806BCA1BC00106F656A4481B404F1432A163A01BC06CAEBBF5E9601B40E8F58A1B45611BC0C0EAE99F2F3D1B4006904E1BADDB1AC0CD12CF9FCF151B40CF3B466019BE1AC032A0281A2D161B4045912022261C1BC0342BFC951D421A404573CF806BCA1BC00106F656A4481B40', 'intersect', 'la_spatialunit_land', 41, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3294, '0103000020E610000001000000090000001D01DC2C5EE026C00591A053EB1628406E1147C326B326C05B0583F6265B2640722A638DC42B28C061B77CE2088927405B9C4A69AAAF28C09B42DFC42DBC2740EF32AAA9B88F29C0971DC111CD1528406E1147C306C129C05B0583F6A6F5294096A8C57D378127C025A398F6AC11294075FD8A4EF95627C0C886E24C1B8F28401D01DC2C5EE026C00591A053EB162840', 'intersect', 'la_spatialunit_land', 108, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3295, '0103000020E610000001000000090000001D01DC2C5EE026C00591A053EB1628406E1147C326B326C05B0583F6265B2640722A638DC42B28C061B77CE2088927405B9C4A69AAAF28C09B42DFC42DBC2740EF32AAA9B88F29C0971DC111CD1528406E1147C306C129C05B0583F6A6F5294096A8C57D378127C025A398F6AC11294075FD8A4EF95627C0C886E24C1B8F28401D01DC2C5EE026C00591A053EB162840', 'intersect', 'la_spatialunit_land', 108, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3296, '0103000020E61000000100000009000000802BB8A3285923C051B52792F9391B401C9D610CDF6523C057992D9050AD1A40ADACA4ABF97323C0D4CFD6F44CB11A40ADACA4AB45A023C0D4CFD6F49CCA1A40C9BF8684AAC723C00FDD10C6E2E51A40139725325ABA23C0F07E260C140E1B4058C85C1954B723C08ACBD0FC5A481B40E0CC5C9ED69623C0EB5C8BF591441B40802BB8A3285923C051B52792F9391B40', 'intersect', 'la_spatialunit_land', 138, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3297, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3298, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3299, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3300, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3301, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3302, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3303, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3304, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3305, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3306, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3307, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3308, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3309, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3310, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3311, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3312, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3313, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3314, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3315, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3316, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3317, '0103000020E6100000010000000400000000008019EE6423C09637D06C162C20400000409FCD3320C0284F752AE818214000004060BD1821C0A4072FFCA3FB1B4000008019EE6423C09637D06C162C2040', 'intersect', 'la_spatialunit_land', 82, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3318, '0103000020E6100000010000000800000043071195C8D127C096F5F163E1472140661EF11239CA27C01E65ED84D1492140999448C3A5A827C07F75C9F629162140BE11FEC1975827C0F7E4A3BDA8CC20407E6E89D837B227C05AC6D9B620862040FF135F70E51D28C08E7953B8AABA204043071195C8D127C0162EC8D82908214043071195C8D127C096F5F163E1472140', 'intersect', 'la_spatialunit_land', 83, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3319, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3320, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3321, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3322, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3323, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3324, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3325, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3326, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3327, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3328, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3329, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3330, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3331, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3332, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3333, '0103000020E61000000100000004000000000080131CF321C0AA4213E8596020400000C027976120C0B083821E919B2040000000BB150021C0F82578F03C311E40000080131CF321C0AA4213E859602040', 'intersect', 'la_spatialunit_land', 84, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3334, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3335, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3336, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3337, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3338, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3339, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3340, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3341, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3342, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3343, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3344, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3345, '0103000020E61000000100000004000000000040A3592A21C07E28373DBB8B2140FFFF7F5DCB461FC01961101DDE0F22400000C027976120C03CB6D350B5DA1F40000040A3592A21C07E28373DBB8B2140', 'intersect', 'la_spatialunit_land', 85, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3346, '0103000020E61000000100000006000000995DB18744D71EC0990AC7B7615F194045F91FEC56431FC0F5F608B10A6A1840AC5B20B70DBA1FC0D71383E5D3291940506C4A492B451FC0E56BD417AC481940506C4A491B371FC0E56BD41754821940995DB18744D71EC0990AC7B7615F1940', 'intersect', 'la_spatialunit_land', 95, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3347, '0103000020E61000000100000005000000A59F70766BC128C08F8A4158740A214043071195C8D127C096F5F163E147214043071195C8D127C0162EC8D829082140FF135F70E51D28C08E7953B8AABA2040A59F70766BC128C08F8A4158740A2140', 'intersect', 'la_spatialunit_land', 68, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3348, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3349, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3350, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3351, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3352, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3353, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3354, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3355, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3356, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3357, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3358, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3359, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3360, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3361, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3362, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3363, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3364, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3365, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3366, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3367, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3368, '0103000020E61000000100000004000000000000FBB8C022C044320D7C323B20400000402F8F0F20C053E3B5A2E4062140000080A57B0221C058E6C83E5A021D40000000FBB8C022C044320D7C323B2040', 'intersect', 'la_spatialunit_land', 122, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3369, '0103000020E610000001000000080000001C9D610CDF6523C057992D9050AD1A407E81ACE9727523C0BFC9C219F4001A403631D1DEE8EA23C0DC1E102A69941A40F1B404329EDF23C07FF83B0C949D1A40C9BF8684AAC723C00FDD10C6E2E51A40ADACA4AB45A023C0D4CFD6F49CCA1A40ADACA4ABF97323C0D4CFD6F44CB11A401C9D610CDF6523C057992D9050AD1A40', 'intersect', 'la_spatialunit_land', 102, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3370, '0103000020E610000001000000080000001C9D610CDF6523C057992D9050AD1A407E81ACE9727523C0BFC9C219F4001A403631D1DEE8EA23C0DC1E102A69941A40F1B404329EDF23C07FF83B0C949D1A40C9BF8684AAC723C00FDD10C6E2E51A40ADACA4AB45A023C0D4CFD6F49CCA1A40ADACA4ABF97323C0D4CFD6F44CB11A401C9D610CDF6523C057992D9050AD1A40', 'intersect', 'la_spatialunit_land', 102, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3371, '0103000020E61000000100000007000000722A638DC42B28C061B77CE2088927406185BE684DF729C05DBA517D4AC42640D4AC5C3D61C229C0182B83CDADA42740EF32AAA9B88F29C0971DC111CD152840E9D710EB03A629C0F86B8990F44227405B9C4A69AAAF28C09B42DFC42DBC2740722A638DC42B28C061B77CE208892740', 'intersect', 'la_spatialunit_land', 35, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3372, '0103000020E610000001000000060000003D01CA091FAB12C0AD463071DEFD14406010681B459712C0036464A09D11154023EB78E5DD4913C00D8BB401966017404188CD30786F11C0B04B92CCA74216403C90EECD402312C02DF7F272DD0115403D01CA091FAB12C0AD463071DEFD1440', 'intersect', 'la_spatialunit_land', 119, '2018-06-26 11:26:57.79198', NULL, 'n');
-INSERT INTO topology_checks_error_log (id, geometry, error_message, layer_name, landid, date, remarks, statusfixed) VALUES (3373, '0103000020E6100000010000000C000000230F5267B80013C0026CC868B8A814400876DB091FAB12C0E20B0F71DEFD1440206926CE402312C09B57B772DD011540FE2BE930786F11C0FD29B8CCA7421640412D060FD3EE10C0AF5E24381EF515400DD3AD8D67CA10C042BB5C27A21D154085A1C49DC16D10C0985575E2B470134064B8A45D5D0311C0EDA9D878B26313403C90EE2D921811C09EC674880DEF13403C90EE2DB28E11C09EC67488EDE014403C90EE2D92F911C09EC67488CD6A1440230F5267B80013C0026CC868B8A81440', 'intersect', 'la_spatialunit_land', 139, '2018-06-26 11:26:57.79198', NULL, 'n');
 
 
 INSERT INTO vertexlabel (gid, the_geom) VALUES (1, '0101000020E6100000B8F5E4AB2E4F22C0AF1D733B874C1840');
@@ -9298,18 +8109,26 @@ ALTER TABLE ONLY la_ext_resource_documentdetails
 
 
 ALTER TABLE ONLY la_spatialunitgroup_hierarchy
-    ADD CONSTRAINT la_spatialunitgroup_hierarchy_uperhierarchy FOREIGN KEY (hierarchyid) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+ADD CONSTRAINT la_spatialunitgroup_hierarchy_uperhierarchy FOREIGN KEY (hierarchyid) REFERENCES la_spatialunitgroup_hierarchy(hierarchyid);
+
+delete from la_surrendermortgage;
+delete from la_mortgage;
+delete from la_surrenderlease;
+delete from la_lease;
+
+drop sequence la_rrr_rrrid_seq cascade;
+drop sequence la_lease_leaseid_seq cascade;
+drop sequence la_mortgage_mortgageid_seq cascade;
+drop sequence la_surrenderlease_leaseid_seq cascade;
+
+CREATE SEQUENCE la_rrr_rrrid_seq INCREMENT 1 MINVALUE 1 MAXVALUE 9223372036854775807 START 1;
+
+alter table la_rrr alter column rrrtype drop not null;
+
+alter table la_lease rename to la_rrr_lease;
+alter table la_mortgage rename to la_rrr_mortgage;
+alter table la_surrenderlease rename to la_rrr_surrenderlease;
+alter table la_surrendermortgage rename to la_rrr_surrendermortgage;
 
 
-
-REVOKE ALL ON SCHEMA public FROM PUBLIC;
-REVOKE ALL ON SCHEMA public FROM postgres;
-GRANT ALL ON SCHEMA public TO postgres;
-GRANT ALL ON SCHEMA public TO PUBLIC;
-
-
-
-REVOKE ALL(landsharetypeid) ON TABLE la_spatialunit_land FROM PUBLIC;
-REVOKE ALL(landsharetypeid) ON TABLE la_spatialunit_land FROM postgres;
-GRANT UPDATE(landsharetypeid) ON TABLE la_spatialunit_land TO postgres;
 

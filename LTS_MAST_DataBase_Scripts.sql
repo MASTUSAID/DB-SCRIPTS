@@ -1,21 +1,33 @@
 ﻿
 CREATE EXTENSION postgis;
 
-CREATE FUNCTION check_id_change() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$    BEGIN
+CREATE OR REPLACE FUNCTION public.check_id_change()
+RETURNS trigger AS
+$BODY$    BEGIN
     if (old.landid in(Select LD.landid  from la_spatialunit_land LD 
-inner Join la_ext_workflow lw on lw.workflowid = LD.workflowstatusid 
-inner Join la_ext_applicationstatus la on la.applicationstatusid = LD.applicationstatusid   
-where Lw.workflowid=6  and la.applicationstatusid=5 
-and LD.isactive = true and landid not in(select landid from la_ext_parcelSplitLand) order by LD.landid)) 
+inner join la_ext_landapplicationstatus las on las.landid = LD.landid
+inner Join la_ext_workflow lw on lw.workflowid = las.workflowstatusid 
+inner Join la_ext_applicationstatus la on la.applicationstatusid = las.applicationstatusid   
+where las.workflowid=6  and las.applicationstatusid=5 
+and LD.isactive = true and las.landid not in(select landid from la_ext_parcelSplitLand) order by LD.landid)) 
          THEN
             RAISE EXCEPTION 'Can’t modify the Approved/Registered Parcel.';
             
              END IF;
         RETURN NEW;
     END;
-    $$;
+    $BODY$
+  LANGUAGE plpgsql VOLATILE
+  COST 100;
+ALTER FUNCTION public.check_id_change()
+  OWNER TO postgres;
+  
+  
+CREATE TRIGGER client_update_trigger
+BEFORE UPDATE
+ON public.la_spatialunit_land
+FOR EACH ROW
+EXECUTE PROCEDURE public.check_id_change();
 
 
 
@@ -8131,4 +8143,32 @@ alter table la_surrenderlease rename to la_rrr_surrenderlease;
 alter table la_surrendermortgage rename to la_rrr_surrendermortgage;
 
 
+INSERT INTO la_partygroup_occupation (occupationid, occupation,
+occupation_en, isactive) VALUES (8, 'Other', 'Other', true);
+
+ALTER TABLE la_spatialunit_land  drop column applicationstatusid, drop
+column workflowstatusid, drop column occupancylength ;
+
+CREATE SEQUENCE la_ext_landapplicationstatus_landapplicationstatusid_seq
+  INCREMENT 1
+  MINVALUE 1
+  MAXVALUE 9223372036854775807
+  START 1;
+
+
+CREATE TABLE la_ext_landapplicationstatus
+(
+  landapplicationstatusid integer NOT NULL DEFAULT nextval('la_ext_landapplicationstatus_landapplicationstatusid_seq'::regclass),
+  landid integer,
+  applicationstatusid integer,
+  workflowstatusid integer,
+  occupancylength integer,
+  CONSTRAINT pk_la_ext_landapplicationstatus PRIMARY KEY (landapplicationstatusid),
+  CONSTRAINT fk_pk_la_ext_landapplicationstatus_landid FOREIGN KEY (landid)
+      REFERENCES la_spatialunit_land (landid) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION
+)
+WITH (
+  OIDS=FALSE
+);
 

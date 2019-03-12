@@ -10334,7 +10334,6 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 REVOKE ALL ON TABLE la_baunit_landsoilquality FROM PUBLIC;
 REVOKE ALL ON TABLE la_baunit_landsoilquality FROM postgres;
 GRANT ALL ON TABLE la_baunit_landsoilquality TO postgres;
-GRANT SELECT ON TABLE la_baunit_landsoilquality TO leland;
 
 
 --
@@ -10344,7 +10343,6 @@ GRANT SELECT ON TABLE la_baunit_landsoilquality TO leland;
 REVOKE ALL ON TABLE la_baunit_landtype FROM PUBLIC;
 REVOKE ALL ON TABLE la_baunit_landtype FROM postgres;
 GRANT ALL ON TABLE la_baunit_landtype TO postgres;
-GRANT SELECT ON TABLE la_baunit_landtype TO leland;
 
 
 --
@@ -10354,8 +10352,6 @@ GRANT SELECT ON TABLE la_baunit_landtype TO leland;
 REVOKE ALL ON TABLE la_baunit_landusetype FROM PUBLIC;
 REVOKE ALL ON TABLE la_baunit_landusetype FROM postgres;
 GRANT ALL ON TABLE la_baunit_landusetype TO postgres;
-GRANT SELECT ON TABLE la_baunit_landusetype TO leland;
-
 
 --
 -- Name: la_ext_applicationstatus; Type: ACL; Schema: public; Owner: postgres
@@ -10364,7 +10360,6 @@ GRANT SELECT ON TABLE la_baunit_landusetype TO leland;
 REVOKE ALL ON TABLE la_ext_applicationstatus FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_applicationstatus FROM postgres;
 GRANT ALL ON TABLE la_ext_applicationstatus TO postgres;
-GRANT SELECT ON TABLE la_ext_applicationstatus TO leland;
 
 
 --
@@ -10374,7 +10369,6 @@ GRANT SELECT ON TABLE la_ext_applicationstatus TO leland;
 REVOKE ALL ON TABLE la_ext_attribute FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_attribute FROM postgres;
 GRANT ALL ON TABLE la_ext_attribute TO postgres;
-GRANT SELECT ON TABLE la_ext_attribute TO leland;
 
 
 --
@@ -10384,7 +10378,6 @@ GRANT SELECT ON TABLE la_ext_attribute TO leland;
 REVOKE ALL ON TABLE la_ext_attributecategory FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_attributecategory FROM postgres;
 GRANT ALL ON TABLE la_ext_attributecategory TO postgres;
-GRANT SELECT ON TABLE la_ext_attributecategory TO leland;
 
 
 --
@@ -10394,7 +10387,6 @@ GRANT SELECT ON TABLE la_ext_attributecategory TO leland;
 REVOKE ALL ON TABLE la_ext_attributedatatype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_attributedatatype FROM postgres;
 GRANT ALL ON TABLE la_ext_attributedatatype TO postgres;
-GRANT SELECT ON TABLE la_ext_attributedatatype TO leland;
 
 
 --
@@ -10404,8 +10396,6 @@ GRANT SELECT ON TABLE la_ext_attributedatatype TO leland;
 REVOKE ALL ON TABLE la_ext_attributemaster FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_attributemaster FROM postgres;
 GRANT ALL ON TABLE la_ext_attributemaster TO postgres;
-GRANT SELECT ON TABLE la_ext_attributemaster TO leland;
-
 
 --
 -- Name: la_ext_attributeoptions; Type: ACL; Schema: public; Owner: postgres
@@ -10414,8 +10404,6 @@ GRANT SELECT ON TABLE la_ext_attributemaster TO leland;
 REVOKE ALL ON TABLE la_ext_attributeoptions FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_attributeoptions FROM postgres;
 GRANT ALL ON TABLE la_ext_attributeoptions TO postgres;
-GRANT SELECT ON TABLE la_ext_attributeoptions TO leland;
-
 
 --
 -- Name: la_ext_baselayer; Type: ACL; Schema: public; Owner: postgres
@@ -10424,7 +10412,6 @@ GRANT SELECT ON TABLE la_ext_attributeoptions TO leland;
 REVOKE ALL ON TABLE la_ext_baselayer FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_baselayer FROM postgres;
 GRANT ALL ON TABLE la_ext_baselayer TO postgres;
-GRANT SELECT ON TABLE la_ext_baselayer TO leland;
 
 
 --
@@ -10434,8 +10421,6 @@ GRANT SELECT ON TABLE la_ext_baselayer TO leland;
 REVOKE ALL ON TABLE la_ext_bookmark FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_bookmark FROM postgres;
 GRANT ALL ON TABLE la_ext_bookmark TO postgres;
-GRANT SELECT ON TABLE la_ext_bookmark TO leland;
-
 
 --
 -- Name: la_ext_categorytype; Type: ACL; Schema: public; Owner: postgres
@@ -10444,7 +10429,6 @@ GRANT SELECT ON TABLE la_ext_bookmark TO leland;
 REVOKE ALL ON TABLE la_ext_categorytype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_categorytype FROM postgres;
 GRANT ALL ON TABLE la_ext_categorytype TO postgres;
-GRANT SELECT ON TABLE la_ext_categorytype TO leland;
 
 
 --
@@ -10454,7 +10438,6 @@ GRANT SELECT ON TABLE la_ext_categorytype TO leland;
 REVOKE ALL ON TABLE la_ext_customattributeoptions FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_customattributeoptions FROM postgres;
 GRANT ALL ON TABLE la_ext_customattributeoptions TO postgres;
-GRANT SELECT ON TABLE la_ext_customattributeoptions TO leland;
 
 
 --
@@ -10464,8 +10447,6 @@ GRANT SELECT ON TABLE la_ext_customattributeoptions TO leland;
 REVOKE ALL ON TABLE la_ext_dispute FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_dispute FROM postgres;
 GRANT ALL ON TABLE la_ext_dispute TO postgres;
-GRANT SELECT ON TABLE la_ext_dispute TO leland;
-
 
 --
 -- Name: la_ext_disputelandmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10474,8 +10455,6 @@ GRANT SELECT ON TABLE la_ext_dispute TO leland;
 REVOKE ALL ON TABLE la_ext_disputelandmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_disputelandmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_disputelandmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_disputelandmapping TO leland;
-
 
 --
 -- Name: la_ext_disputestatus; Type: ACL; Schema: public; Owner: postgres
@@ -10484,7 +10463,6 @@ GRANT SELECT ON TABLE la_ext_disputelandmapping TO leland;
 REVOKE ALL ON TABLE la_ext_disputestatus FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_disputestatus FROM postgres;
 GRANT ALL ON TABLE la_ext_disputestatus TO postgres;
-GRANT SELECT ON TABLE la_ext_disputestatus TO leland;
 
 
 --
@@ -10494,8 +10472,6 @@ GRANT SELECT ON TABLE la_ext_disputestatus TO leland;
 REVOKE ALL ON TABLE la_ext_disputetype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_disputetype FROM postgres;
 GRANT ALL ON TABLE la_ext_disputetype TO postgres;
-GRANT SELECT ON TABLE la_ext_disputetype TO leland;
-
 
 --
 -- Name: la_ext_documentdetails; Type: ACL; Schema: public; Owner: postgres
@@ -10504,7 +10480,6 @@ GRANT SELECT ON TABLE la_ext_disputetype TO leland;
 REVOKE ALL ON TABLE la_ext_documentdetails FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_documentdetails FROM postgres;
 GRANT ALL ON TABLE la_ext_documentdetails TO postgres;
-GRANT SELECT ON TABLE la_ext_documentdetails TO leland;
 
 
 --
@@ -10514,7 +10489,6 @@ GRANT SELECT ON TABLE la_ext_documentdetails TO leland;
 REVOKE ALL ON TABLE la_ext_documentformat FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_documentformat FROM postgres;
 GRANT ALL ON TABLE la_ext_documentformat TO postgres;
-GRANT SELECT ON TABLE la_ext_documentformat TO leland;
 
 
 --
@@ -10524,7 +10498,6 @@ GRANT SELECT ON TABLE la_ext_documentformat TO leland;
 REVOKE ALL ON TABLE la_ext_documenttype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_documenttype FROM postgres;
 GRANT ALL ON TABLE la_ext_documenttype TO postgres;
-GRANT SELECT ON TABLE la_ext_documenttype TO leland;
 
 
 --
@@ -10534,7 +10507,6 @@ GRANT SELECT ON TABLE la_ext_documenttype TO leland;
 REVOKE ALL ON TABLE la_ext_existingclaim_documentdetails FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_existingclaim_documentdetails FROM postgres;
 GRANT ALL ON TABLE la_ext_existingclaim_documentdetails TO postgres;
-GRANT SELECT ON TABLE la_ext_existingclaim_documentdetails TO leland;
 
 
 --
@@ -10544,7 +10516,6 @@ GRANT SELECT ON TABLE la_ext_existingclaim_documentdetails TO leland;
 REVOKE ALL ON TABLE la_ext_financialagency FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_financialagency FROM postgres;
 GRANT ALL ON TABLE la_ext_financialagency TO postgres;
-GRANT SELECT ON TABLE la_ext_financialagency TO leland;
 
 
 --
@@ -10554,7 +10525,6 @@ GRANT SELECT ON TABLE la_ext_financialagency TO leland;
 REVOKE ALL ON TABLE la_ext_geometrytype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_geometrytype FROM postgres;
 GRANT ALL ON TABLE la_ext_geometrytype TO postgres;
-GRANT SELECT ON TABLE la_ext_geometrytype TO leland;
 
 
 --
@@ -10564,7 +10534,6 @@ GRANT SELECT ON TABLE la_ext_geometrytype TO leland;
 REVOKE ALL ON TABLE la_ext_grouptype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_grouptype FROM postgres;
 GRANT ALL ON TABLE la_ext_grouptype TO postgres;
-GRANT SELECT ON TABLE la_ext_grouptype TO leland;
 
 
 --
@@ -10574,8 +10543,6 @@ GRANT SELECT ON TABLE la_ext_grouptype TO leland;
 REVOKE ALL ON TABLE la_ext_landworkflowhistory FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_landworkflowhistory FROM postgres;
 GRANT ALL ON TABLE la_ext_landworkflowhistory TO postgres;
-GRANT SELECT ON TABLE la_ext_landworkflowhistory TO leland;
-
 
 --
 -- Name: la_ext_layer_layergroup; Type: ACL; Schema: public; Owner: postgres
@@ -10584,8 +10551,6 @@ GRANT SELECT ON TABLE la_ext_landworkflowhistory TO leland;
 REVOKE ALL ON TABLE la_ext_layer_layergroup FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_layer_layergroup FROM postgres;
 GRANT ALL ON TABLE la_ext_layer_layergroup TO postgres;
-GRANT SELECT ON TABLE la_ext_layer_layergroup TO leland;
-
 
 --
 -- Name: la_ext_layerfield; Type: ACL; Schema: public; Owner: postgres
@@ -10594,8 +10559,6 @@ GRANT SELECT ON TABLE la_ext_layer_layergroup TO leland;
 REVOKE ALL ON TABLE la_ext_layerfield FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_layerfield FROM postgres;
 GRANT ALL ON TABLE la_ext_layerfield TO postgres;
-GRANT SELECT ON TABLE la_ext_layerfield TO leland;
-
 
 --
 -- Name: la_ext_layergroup; Type: ACL; Schema: public; Owner: postgres
@@ -10604,8 +10567,6 @@ GRANT SELECT ON TABLE la_ext_layerfield TO leland;
 REVOKE ALL ON TABLE la_ext_layergroup FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_layergroup FROM postgres;
 GRANT ALL ON TABLE la_ext_layergroup TO postgres;
-GRANT SELECT ON TABLE la_ext_layergroup TO leland;
-
 
 --
 -- Name: la_ext_layertype; Type: ACL; Schema: public; Owner: postgres
@@ -10614,9 +10575,6 @@ GRANT SELECT ON TABLE la_ext_layergroup TO leland;
 REVOKE ALL ON TABLE la_ext_layertype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_layertype FROM postgres;
 GRANT ALL ON TABLE la_ext_layertype TO postgres;
-GRANT SELECT ON TABLE la_ext_layertype TO leland;
-
-
 --
 -- Name: la_ext_module; Type: ACL; Schema: public; Owner: postgres
 --
@@ -10624,8 +10582,6 @@ GRANT SELECT ON TABLE la_ext_layertype TO leland;
 REVOKE ALL ON TABLE la_ext_module FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_module FROM postgres;
 GRANT ALL ON TABLE la_ext_module TO postgres;
-GRANT SELECT ON TABLE la_ext_module TO leland;
-
 
 --
 -- Name: la_ext_month; Type: ACL; Schema: public; Owner: postgres
@@ -10634,8 +10590,6 @@ GRANT SELECT ON TABLE la_ext_module TO leland;
 REVOKE ALL ON TABLE la_ext_month FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_month FROM postgres;
 GRANT ALL ON TABLE la_ext_month TO postgres;
-GRANT SELECT ON TABLE la_ext_month TO leland;
-
 
 --
 -- Name: la_ext_parcelsplitland; Type: ACL; Schema: public; Owner: postgres
@@ -10644,8 +10598,6 @@ GRANT SELECT ON TABLE la_ext_month TO leland;
 REVOKE ALL ON TABLE la_ext_parcelsplitland FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_parcelsplitland FROM postgres;
 GRANT ALL ON TABLE la_ext_parcelsplitland TO postgres;
-GRANT SELECT ON TABLE la_ext_parcelsplitland TO leland;
-
 
 --
 -- Name: la_ext_personlandmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10654,8 +10606,6 @@ GRANT SELECT ON TABLE la_ext_parcelsplitland TO leland;
 REVOKE ALL ON TABLE la_ext_personlandmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_personlandmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_personlandmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_personlandmapping TO leland;
-
 
 --
 -- Name: la_ext_process; Type: ACL; Schema: public; Owner: postgres
@@ -10664,8 +10614,6 @@ GRANT SELECT ON TABLE la_ext_personlandmapping TO leland;
 REVOKE ALL ON TABLE la_ext_process FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_process FROM postgres;
 GRANT ALL ON TABLE la_ext_process TO postgres;
-GRANT SELECT ON TABLE la_ext_process TO leland;
-
 
 --
 -- Name: la_ext_projectadjudicator; Type: ACL; Schema: public; Owner: postgres
@@ -10674,8 +10622,6 @@ GRANT SELECT ON TABLE la_ext_process TO leland;
 REVOKE ALL ON TABLE la_ext_projectadjudicator FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projectadjudicator FROM postgres;
 GRANT ALL ON TABLE la_ext_projectadjudicator TO postgres;
-GRANT SELECT ON TABLE la_ext_projectadjudicator TO leland;
-
 
 --
 -- Name: la_ext_projectarea; Type: ACL; Schema: public; Owner: postgres
@@ -10684,8 +10630,6 @@ GRANT SELECT ON TABLE la_ext_projectadjudicator TO leland;
 REVOKE ALL ON TABLE la_ext_projectarea FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projectarea FROM postgres;
 GRANT ALL ON TABLE la_ext_projectarea TO postgres;
-GRANT SELECT ON TABLE la_ext_projectarea TO leland;
-
 
 --
 -- Name: la_ext_projectbaselayermapping; Type: ACL; Schema: public; Owner: postgres
@@ -10694,8 +10638,6 @@ GRANT SELECT ON TABLE la_ext_projectarea TO leland;
 REVOKE ALL ON TABLE la_ext_projectbaselayermapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projectbaselayermapping FROM postgres;
 GRANT ALL ON TABLE la_ext_projectbaselayermapping TO postgres;
-GRANT SELECT ON TABLE la_ext_projectbaselayermapping TO leland;
-
 
 --
 -- Name: la_ext_projectfile; Type: ACL; Schema: public; Owner: postgres
@@ -10704,8 +10646,6 @@ GRANT SELECT ON TABLE la_ext_projectbaselayermapping TO leland;
 REVOKE ALL ON TABLE la_ext_projectfile FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projectfile FROM postgres;
 GRANT ALL ON TABLE la_ext_projectfile TO postgres;
-GRANT SELECT ON TABLE la_ext_projectfile TO leland;
-
 
 --
 -- Name: la_ext_projecthamlet; Type: ACL; Schema: public; Owner: postgres
@@ -10714,8 +10654,6 @@ GRANT SELECT ON TABLE la_ext_projectfile TO leland;
 REVOKE ALL ON TABLE la_ext_projecthamlet FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projecthamlet FROM postgres;
 GRANT ALL ON TABLE la_ext_projecthamlet TO postgres;
-GRANT SELECT ON TABLE la_ext_projecthamlet TO leland;
-
 
 --
 -- Name: la_ext_projection; Type: ACL; Schema: public; Owner: postgres
@@ -10724,8 +10662,6 @@ GRANT SELECT ON TABLE la_ext_projecthamlet TO leland;
 REVOKE ALL ON TABLE la_ext_projection FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projection FROM postgres;
 GRANT ALL ON TABLE la_ext_projection TO postgres;
-GRANT SELECT ON TABLE la_ext_projection TO leland;
-
 
 --
 -- Name: la_ext_projectlayergroupmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10734,8 +10670,6 @@ GRANT SELECT ON TABLE la_ext_projection TO leland;
 REVOKE ALL ON TABLE la_ext_projectlayergroupmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_projectlayergroupmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_projectlayergroupmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_projectlayergroupmapping TO leland;
-
 
 --
 -- Name: la_ext_registrationsharetype; Type: ACL; Schema: public; Owner: postgres
@@ -10744,8 +10678,6 @@ GRANT SELECT ON TABLE la_ext_projectlayergroupmapping TO leland;
 REVOKE ALL ON TABLE la_ext_registrationsharetype FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_registrationsharetype FROM postgres;
 GRANT ALL ON TABLE la_ext_registrationsharetype TO postgres;
-GRANT SELECT ON TABLE la_ext_registrationsharetype TO leland;
-
 
 --
 -- Name: la_ext_resource_custom_attribute; Type: ACL; Schema: public; Owner: postgres
@@ -10754,8 +10686,6 @@ GRANT SELECT ON TABLE la_ext_registrationsharetype TO leland;
 REVOKE ALL ON TABLE la_ext_resource_custom_attribute FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resource_custom_attribute FROM postgres;
 GRANT ALL ON TABLE la_ext_resource_custom_attribute TO postgres;
-GRANT SELECT ON TABLE la_ext_resource_custom_attribute TO leland;
-
 
 --
 -- Name: la_ext_resource_custom_attributevalue; Type: ACL; Schema: public; Owner: postgres
@@ -10764,8 +10694,6 @@ GRANT SELECT ON TABLE la_ext_resource_custom_attribute TO leland;
 REVOKE ALL ON TABLE la_ext_resource_custom_attributevalue FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resource_custom_attributevalue FROM postgres;
 GRANT ALL ON TABLE la_ext_resource_custom_attributevalue TO postgres;
-GRANT SELECT ON TABLE la_ext_resource_custom_attributevalue TO leland;
-
 
 --
 -- Name: la_ext_resource_documentdetails; Type: ACL; Schema: public; Owner: postgres
@@ -10774,8 +10702,6 @@ GRANT SELECT ON TABLE la_ext_resource_custom_attributevalue TO leland;
 REVOKE ALL ON TABLE la_ext_resource_documentdetails FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resource_documentdetails FROM postgres;
 GRANT ALL ON TABLE la_ext_resource_documentdetails TO postgres;
-GRANT SELECT ON TABLE la_ext_resource_documentdetails TO leland;
-
 
 --
 -- Name: la_ext_resourceattributevalue; Type: ACL; Schema: public; Owner: postgres
@@ -10784,8 +10710,6 @@ GRANT SELECT ON TABLE la_ext_resource_documentdetails TO leland;
 REVOKE ALL ON TABLE la_ext_resourceattributevalue FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourceattributevalue FROM postgres;
 GRANT ALL ON TABLE la_ext_resourceattributevalue TO postgres;
-GRANT SELECT ON TABLE la_ext_resourceattributevalue TO leland;
-
 
 --
 -- Name: la_ext_resourceclassification; Type: ACL; Schema: public; Owner: postgres
@@ -10794,8 +10718,6 @@ GRANT SELECT ON TABLE la_ext_resourceattributevalue TO leland;
 REVOKE ALL ON TABLE la_ext_resourceclassification FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourceclassification FROM postgres;
 GRANT ALL ON TABLE la_ext_resourceclassification TO postgres;
-GRANT SELECT ON TABLE la_ext_resourceclassification TO leland;
-
 
 --
 -- Name: la_ext_resourcelandclassificationmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10804,8 +10726,6 @@ GRANT SELECT ON TABLE la_ext_resourceclassification TO leland;
 REVOKE ALL ON TABLE la_ext_resourcelandclassificationmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourcelandclassificationmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_resourcelandclassificationmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_resourcelandclassificationmapping TO leland;
-
 
 --
 -- Name: la_ext_resourcepoiattributemaster; Type: ACL; Schema: public; Owner: postgres
@@ -10814,8 +10734,6 @@ GRANT SELECT ON TABLE la_ext_resourcelandclassificationmapping TO leland;
 REVOKE ALL ON TABLE la_ext_resourcepoiattributemaster FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourcepoiattributemaster FROM postgres;
 GRANT ALL ON TABLE la_ext_resourcepoiattributemaster TO postgres;
-GRANT SELECT ON TABLE la_ext_resourcepoiattributemaster TO leland;
-
 
 --
 -- Name: la_ext_resourcepoiattributevalue; Type: ACL; Schema: public; Owner: postgres
@@ -10824,8 +10742,6 @@ GRANT SELECT ON TABLE la_ext_resourcepoiattributemaster TO leland;
 REVOKE ALL ON TABLE la_ext_resourcepoiattributevalue FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourcepoiattributevalue FROM postgres;
 GRANT ALL ON TABLE la_ext_resourcepoiattributevalue TO postgres;
-GRANT SELECT ON TABLE la_ext_resourcepoiattributevalue TO leland;
-
 
 --
 -- Name: la_ext_resourcesubclassification; Type: ACL; Schema: public; Owner: postgres
@@ -10834,8 +10750,6 @@ GRANT SELECT ON TABLE la_ext_resourcepoiattributevalue TO leland;
 REVOKE ALL ON TABLE la_ext_resourcesubclassification FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_resourcesubclassification FROM postgres;
 GRANT ALL ON TABLE la_ext_resourcesubclassification TO postgres;
-GRANT SELECT ON TABLE la_ext_resourcesubclassification TO leland;
-
 
 --
 -- Name: la_ext_role; Type: ACL; Schema: public; Owner: postgres
@@ -10844,8 +10758,6 @@ GRANT SELECT ON TABLE la_ext_resourcesubclassification TO leland;
 REVOKE ALL ON TABLE la_ext_role FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_role FROM postgres;
 GRANT ALL ON TABLE la_ext_role TO postgres;
-GRANT SELECT ON TABLE la_ext_role TO leland;
-
 
 --
 -- Name: la_ext_rolemodulemapping; Type: ACL; Schema: public; Owner: postgres
@@ -10854,8 +10766,6 @@ GRANT SELECT ON TABLE la_ext_role TO leland;
 REVOKE ALL ON TABLE la_ext_rolemodulemapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_rolemodulemapping FROM postgres;
 GRANT ALL ON TABLE la_ext_rolemodulemapping TO postgres;
-GRANT SELECT ON TABLE la_ext_rolemodulemapping TO leland;
-
 
 --
 -- Name: la_ext_slopevalue; Type: ACL; Schema: public; Owner: postgres
@@ -10864,8 +10774,6 @@ GRANT SELECT ON TABLE la_ext_rolemodulemapping TO leland;
 REVOKE ALL ON TABLE la_ext_slopevalue FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_slopevalue FROM postgres;
 GRANT ALL ON TABLE la_ext_slopevalue TO postgres;
-GRANT SELECT ON TABLE la_ext_slopevalue TO leland;
-
 
 --
 -- Name: la_ext_spatialunit_personwithinterest; Type: ACL; Schema: public; Owner: postgres
@@ -10874,8 +10782,6 @@ GRANT SELECT ON TABLE la_ext_slopevalue TO leland;
 REVOKE ALL ON TABLE la_ext_spatialunit_personwithinterest FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_spatialunit_personwithinterest FROM postgres;
 GRANT ALL ON TABLE la_ext_spatialunit_personwithinterest TO postgres;
-GRANT SELECT ON TABLE la_ext_spatialunit_personwithinterest TO leland;
-
 
 --
 -- Name: la_ext_surveyprojectattributes; Type: ACL; Schema: public; Owner: postgres
@@ -10884,8 +10790,6 @@ GRANT SELECT ON TABLE la_ext_spatialunit_personwithinterest TO leland;
 REVOKE ALL ON TABLE la_ext_surveyprojectattributes FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_surveyprojectattributes FROM postgres;
 GRANT ALL ON TABLE la_ext_surveyprojectattributes TO postgres;
-GRANT SELECT ON TABLE la_ext_surveyprojectattributes TO leland;
-
 
 --
 -- Name: la_ext_transactiondetails; Type: ACL; Schema: public; Owner: postgres
@@ -10894,8 +10798,6 @@ GRANT SELECT ON TABLE la_ext_surveyprojectattributes TO leland;
 REVOKE ALL ON TABLE la_ext_transactiondetails FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_transactiondetails FROM postgres;
 GRANT ALL ON TABLE la_ext_transactiondetails TO postgres;
-GRANT SELECT ON TABLE la_ext_transactiondetails TO leland;
-
 
 --
 -- Name: la_ext_transactionhistory; Type: ACL; Schema: public; Owner: postgres
@@ -10904,8 +10806,6 @@ GRANT SELECT ON TABLE la_ext_transactiondetails TO leland;
 REVOKE ALL ON TABLE la_ext_transactionhistory FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_transactionhistory FROM postgres;
 GRANT ALL ON TABLE la_ext_transactionhistory TO postgres;
-GRANT SELECT ON TABLE la_ext_transactionhistory TO leland;
-
 
 --
 -- Name: la_ext_unit; Type: ACL; Schema: public; Owner: postgres
@@ -10914,8 +10814,6 @@ GRANT SELECT ON TABLE la_ext_transactionhistory TO leland;
 REVOKE ALL ON TABLE la_ext_unit FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_unit FROM postgres;
 GRANT ALL ON TABLE la_ext_unit TO postgres;
-GRANT SELECT ON TABLE la_ext_unit TO leland;
-
 
 --
 -- Name: la_ext_user; Type: ACL; Schema: public; Owner: postgres
@@ -10924,8 +10822,6 @@ GRANT SELECT ON TABLE la_ext_unit TO leland;
 REVOKE ALL ON TABLE la_ext_user FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_user FROM postgres;
 GRANT ALL ON TABLE la_ext_user TO postgres;
-GRANT SELECT ON TABLE la_ext_user TO leland;
-
 
 --
 -- Name: la_ext_userprojectmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10934,8 +10830,6 @@ GRANT SELECT ON TABLE la_ext_user TO leland;
 REVOKE ALL ON TABLE la_ext_userprojectmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_userprojectmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_userprojectmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_userprojectmapping TO leland;
-
 
 --
 -- Name: la_ext_userrolemapping; Type: ACL; Schema: public; Owner: postgres
@@ -10944,8 +10838,6 @@ GRANT SELECT ON TABLE la_ext_userprojectmapping TO leland;
 REVOKE ALL ON TABLE la_ext_userrolemapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_userrolemapping FROM postgres;
 GRANT ALL ON TABLE la_ext_userrolemapping TO postgres;
-GRANT SELECT ON TABLE la_ext_userrolemapping TO leland;
-
 
 --
 -- Name: la_ext_workflow; Type: ACL; Schema: public; Owner: postgres
@@ -10954,8 +10846,6 @@ GRANT SELECT ON TABLE la_ext_userrolemapping TO leland;
 REVOKE ALL ON TABLE la_ext_workflow FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_workflow FROM postgres;
 GRANT ALL ON TABLE la_ext_workflow TO postgres;
-GRANT SELECT ON TABLE la_ext_workflow TO leland;
-
 
 --
 -- Name: la_ext_workflowactionmapping; Type: ACL; Schema: public; Owner: postgres
@@ -10964,8 +10854,6 @@ GRANT SELECT ON TABLE la_ext_workflow TO leland;
 REVOKE ALL ON TABLE la_ext_workflowactionmapping FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_workflowactionmapping FROM postgres;
 GRANT ALL ON TABLE la_ext_workflowactionmapping TO postgres;
-GRANT SELECT ON TABLE la_ext_workflowactionmapping TO leland;
-
 
 --
 -- Name: la_ext_workflowdef; Type: ACL; Schema: public; Owner: postgres
@@ -10974,8 +10862,6 @@ GRANT SELECT ON TABLE la_ext_workflowactionmapping TO leland;
 REVOKE ALL ON TABLE la_ext_workflowdef FROM PUBLIC;
 REVOKE ALL ON TABLE la_ext_workflowdef FROM postgres;
 GRANT ALL ON TABLE la_ext_workflowdef TO postgres;
-GRANT SELECT ON TABLE la_ext_workflowdef TO leland;
-
 
 --
 -- Name: la_layer; Type: ACL; Schema: public; Owner: postgres
@@ -10984,8 +10870,6 @@ GRANT SELECT ON TABLE la_ext_workflowdef TO leland;
 REVOKE ALL ON TABLE la_layer FROM PUBLIC;
 REVOKE ALL ON TABLE la_layer FROM postgres;
 GRANT ALL ON TABLE la_layer TO postgres;
-GRANT SELECT ON TABLE la_layer TO leland;
-
 
 --
 -- Name: la_party; Type: ACL; Schema: public; Owner: postgres
@@ -10994,8 +10878,6 @@ GRANT SELECT ON TABLE la_layer TO leland;
 REVOKE ALL ON TABLE la_party FROM PUBLIC;
 REVOKE ALL ON TABLE la_party FROM postgres;
 GRANT ALL ON TABLE la_party TO postgres;
-GRANT SELECT ON TABLE la_party TO leland;
-
 
 --
 -- Name: la_party_deceasedperson; Type: ACL; Schema: public; Owner: postgres
@@ -11004,8 +10886,6 @@ GRANT SELECT ON TABLE la_party TO leland;
 REVOKE ALL ON TABLE la_party_deceasedperson FROM PUBLIC;
 REVOKE ALL ON TABLE la_party_deceasedperson FROM postgres;
 GRANT ALL ON TABLE la_party_deceasedperson TO postgres;
-GRANT SELECT ON TABLE la_party_deceasedperson TO leland;
-
 
 --
 -- Name: la_party_organization; Type: ACL; Schema: public; Owner: postgres
@@ -11014,8 +10894,6 @@ GRANT SELECT ON TABLE la_party_deceasedperson TO leland;
 REVOKE ALL ON TABLE la_party_organization FROM PUBLIC;
 REVOKE ALL ON TABLE la_party_organization FROM postgres;
 GRANT ALL ON TABLE la_party_organization TO postgres;
-GRANT SELECT ON TABLE la_party_organization TO leland;
-
 
 --
 -- Name: la_party_person; Type: ACL; Schema: public; Owner: postgres
@@ -11024,8 +10902,6 @@ GRANT SELECT ON TABLE la_party_organization TO leland;
 REVOKE ALL ON TABLE la_party_person FROM PUBLIC;
 REVOKE ALL ON TABLE la_party_person FROM postgres;
 GRANT ALL ON TABLE la_party_person TO postgres;
-GRANT SELECT ON TABLE la_party_person TO leland;
-
 
 --
 -- Name: la_partygroup_educationlevel; Type: ACL; Schema: public; Owner: postgres
@@ -11034,8 +10910,6 @@ GRANT SELECT ON TABLE la_party_person TO leland;
 REVOKE ALL ON TABLE la_partygroup_educationlevel FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_educationlevel FROM postgres;
 GRANT ALL ON TABLE la_partygroup_educationlevel TO postgres;
-GRANT SELECT ON TABLE la_partygroup_educationlevel TO leland;
-
 
 --
 -- Name: la_partygroup_gender; Type: ACL; Schema: public; Owner: postgres
@@ -11044,8 +10918,6 @@ GRANT SELECT ON TABLE la_partygroup_educationlevel TO leland;
 REVOKE ALL ON TABLE la_partygroup_gender FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_gender FROM postgres;
 GRANT ALL ON TABLE la_partygroup_gender TO postgres;
-GRANT SELECT ON TABLE la_partygroup_gender TO leland;
-
 
 --
 -- Name: la_partygroup_identitytype; Type: ACL; Schema: public; Owner: postgres
@@ -11054,8 +10926,6 @@ GRANT SELECT ON TABLE la_partygroup_gender TO leland;
 REVOKE ALL ON TABLE la_partygroup_identitytype FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_identitytype FROM postgres;
 GRANT ALL ON TABLE la_partygroup_identitytype TO postgres;
-GRANT SELECT ON TABLE la_partygroup_identitytype TO leland;
-
 
 --
 -- Name: la_partygroup_maritalstatus; Type: ACL; Schema: public; Owner: postgres
@@ -11064,8 +10934,6 @@ GRANT SELECT ON TABLE la_partygroup_identitytype TO leland;
 REVOKE ALL ON TABLE la_partygroup_maritalstatus FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_maritalstatus FROM postgres;
 GRANT ALL ON TABLE la_partygroup_maritalstatus TO postgres;
-GRANT SELECT ON TABLE la_partygroup_maritalstatus TO leland;
-
 
 --
 -- Name: la_partygroup_occupation; Type: ACL; Schema: public; Owner: postgres
@@ -11074,8 +10942,6 @@ GRANT SELECT ON TABLE la_partygroup_maritalstatus TO leland;
 REVOKE ALL ON TABLE la_partygroup_occupation FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_occupation FROM postgres;
 GRANT ALL ON TABLE la_partygroup_occupation TO postgres;
-GRANT SELECT ON TABLE la_partygroup_occupation TO leland;
-
 
 --
 -- Name: la_partygroup_persontype; Type: ACL; Schema: public; Owner: postgres
@@ -11084,8 +10950,6 @@ GRANT SELECT ON TABLE la_partygroup_occupation TO leland;
 REVOKE ALL ON TABLE la_partygroup_persontype FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_persontype FROM postgres;
 GRANT ALL ON TABLE la_partygroup_persontype TO postgres;
-GRANT SELECT ON TABLE la_partygroup_persontype TO leland;
-
 
 --
 -- Name: la_partygroup_relationshiptype; Type: ACL; Schema: public; Owner: postgres
@@ -11094,8 +10958,6 @@ GRANT SELECT ON TABLE la_partygroup_persontype TO leland;
 REVOKE ALL ON TABLE la_partygroup_relationshiptype FROM PUBLIC;
 REVOKE ALL ON TABLE la_partygroup_relationshiptype FROM postgres;
 GRANT ALL ON TABLE la_partygroup_relationshiptype TO postgres;
-GRANT SELECT ON TABLE la_partygroup_relationshiptype TO leland;
-
 
 --
 -- Name: la_right_acquisitiontype; Type: ACL; Schema: public; Owner: postgres
@@ -11104,8 +10966,6 @@ GRANT SELECT ON TABLE la_partygroup_relationshiptype TO leland;
 REVOKE ALL ON TABLE la_right_acquisitiontype FROM PUBLIC;
 REVOKE ALL ON TABLE la_right_acquisitiontype FROM postgres;
 GRANT ALL ON TABLE la_right_acquisitiontype TO postgres;
-GRANT SELECT ON TABLE la_right_acquisitiontype TO leland;
-
 
 --
 -- Name: la_right_claimtype; Type: ACL; Schema: public; Owner: postgres
@@ -11114,8 +10974,6 @@ GRANT SELECT ON TABLE la_right_acquisitiontype TO leland;
 REVOKE ALL ON TABLE la_right_claimtype FROM PUBLIC;
 REVOKE ALL ON TABLE la_right_claimtype FROM postgres;
 GRANT ALL ON TABLE la_right_claimtype TO postgres;
-GRANT SELECT ON TABLE la_right_claimtype TO leland;
-
 
 --
 -- Name: la_right_landsharetype; Type: ACL; Schema: public; Owner: postgres
@@ -11124,8 +10982,6 @@ GRANT SELECT ON TABLE la_right_claimtype TO leland;
 REVOKE ALL ON TABLE la_right_landsharetype FROM PUBLIC;
 REVOKE ALL ON TABLE la_right_landsharetype FROM postgres;
 GRANT ALL ON TABLE la_right_landsharetype TO postgres;
-GRANT SELECT ON TABLE la_right_landsharetype TO leland;
-
 
 --
 -- Name: la_right_tenureclass; Type: ACL; Schema: public; Owner: postgres
@@ -11134,8 +10990,6 @@ GRANT SELECT ON TABLE la_right_landsharetype TO leland;
 REVOKE ALL ON TABLE la_right_tenureclass FROM PUBLIC;
 REVOKE ALL ON TABLE la_right_tenureclass FROM postgres;
 GRANT ALL ON TABLE la_right_tenureclass TO postgres;
-GRANT SELECT ON TABLE la_right_tenureclass TO leland;
-
 
 --
 -- Name: la_rrr; Type: ACL; Schema: public; Owner: postgres
@@ -11144,8 +10998,6 @@ GRANT SELECT ON TABLE la_right_tenureclass TO leland;
 REVOKE ALL ON TABLE la_rrr FROM PUBLIC;
 REVOKE ALL ON TABLE la_rrr FROM postgres;
 GRANT ALL ON TABLE la_rrr TO postgres;
-GRANT SELECT ON TABLE la_rrr TO leland;
-
 
 --
 -- Name: la_rrr_lease; Type: ACL; Schema: public; Owner: postgres
@@ -11154,8 +11006,6 @@ GRANT SELECT ON TABLE la_rrr TO leland;
 REVOKE ALL ON TABLE la_rrr_lease FROM PUBLIC;
 REVOKE ALL ON TABLE la_rrr_lease FROM postgres;
 GRANT ALL ON TABLE la_rrr_lease TO postgres;
-GRANT SELECT ON TABLE la_rrr_lease TO leland;
-
 
 --
 -- Name: la_rrr_mortgage; Type: ACL; Schema: public; Owner: postgres
@@ -11164,8 +11014,6 @@ GRANT SELECT ON TABLE la_rrr_lease TO leland;
 REVOKE ALL ON TABLE la_rrr_mortgage FROM PUBLIC;
 REVOKE ALL ON TABLE la_rrr_mortgage FROM postgres;
 GRANT ALL ON TABLE la_rrr_mortgage TO postgres;
-GRANT SELECT ON TABLE la_rrr_mortgage TO leland;
-
 
 --
 -- Name: la_rrr_surrenderlease; Type: ACL; Schema: public; Owner: postgres
@@ -11174,8 +11022,6 @@ GRANT SELECT ON TABLE la_rrr_mortgage TO leland;
 REVOKE ALL ON TABLE la_rrr_surrenderlease FROM PUBLIC;
 REVOKE ALL ON TABLE la_rrr_surrenderlease FROM postgres;
 GRANT ALL ON TABLE la_rrr_surrenderlease TO postgres;
-GRANT SELECT ON TABLE la_rrr_surrenderlease TO leland;
-
 
 --
 -- Name: la_rrr_surrendermortgage; Type: ACL; Schema: public; Owner: postgres
@@ -11184,8 +11030,6 @@ GRANT SELECT ON TABLE la_rrr_surrenderlease TO leland;
 REVOKE ALL ON TABLE la_rrr_surrendermortgage FROM PUBLIC;
 REVOKE ALL ON TABLE la_rrr_surrendermortgage FROM postgres;
 GRANT ALL ON TABLE la_rrr_surrendermortgage TO postgres;
-GRANT SELECT ON TABLE la_rrr_surrendermortgage TO leland;
-
 
 --
 -- Name: la_spatialsource_layer; Type: ACL; Schema: public; Owner: postgres
@@ -11194,8 +11038,6 @@ GRANT SELECT ON TABLE la_rrr_surrendermortgage TO leland;
 REVOKE ALL ON TABLE la_spatialsource_layer FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialsource_layer FROM postgres;
 GRANT ALL ON TABLE la_spatialsource_layer TO postgres;
-GRANT SELECT ON TABLE la_spatialsource_layer TO leland;
-
 
 --
 -- Name: la_spatialsource_projectname; Type: ACL; Schema: public; Owner: postgres
@@ -11204,8 +11046,6 @@ GRANT SELECT ON TABLE la_spatialsource_layer TO leland;
 REVOKE ALL ON TABLE la_spatialsource_projectname FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialsource_projectname FROM postgres;
 GRANT ALL ON TABLE la_spatialsource_projectname TO postgres;
-GRANT SELECT ON TABLE la_spatialsource_projectname TO leland;
-
 
 --
 -- Name: la_spatialunit_aoi; Type: ACL; Schema: public; Owner: postgres
@@ -11214,8 +11054,6 @@ GRANT SELECT ON TABLE la_spatialsource_projectname TO leland;
 REVOKE ALL ON TABLE la_spatialunit_aoi FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunit_aoi FROM postgres;
 GRANT ALL ON TABLE la_spatialunit_aoi TO postgres;
-GRANT SELECT ON TABLE la_spatialunit_aoi TO leland;
-
 
 --
 -- Name: la_spatialunit_land; Type: ACL; Schema: public; Owner: postgres
@@ -11224,8 +11062,6 @@ GRANT SELECT ON TABLE la_spatialunit_aoi TO leland;
 REVOKE ALL ON TABLE la_spatialunit_land FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunit_land FROM postgres;
 GRANT ALL ON TABLE la_spatialunit_land TO postgres;
-GRANT SELECT,UPDATE ON TABLE la_spatialunit_land TO leland;
-
 
 --
 -- Name: la_spatialunit_resource_land; Type: ACL; Schema: public; Owner: postgres
@@ -11234,8 +11070,6 @@ GRANT SELECT,UPDATE ON TABLE la_spatialunit_land TO leland;
 REVOKE ALL ON TABLE la_spatialunit_resource_land FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunit_resource_land FROM postgres;
 GRANT ALL ON TABLE la_spatialunit_resource_land TO postgres;
-GRANT SELECT ON TABLE la_spatialunit_resource_land TO leland;
-
 
 --
 -- Name: la_spatialunit_resource_line; Type: ACL; Schema: public; Owner: postgres
@@ -11244,8 +11078,6 @@ GRANT SELECT ON TABLE la_spatialunit_resource_land TO leland;
 REVOKE ALL ON TABLE la_spatialunit_resource_line FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunit_resource_line FROM postgres;
 GRANT ALL ON TABLE la_spatialunit_resource_line TO postgres;
-GRANT SELECT ON TABLE la_spatialunit_resource_line TO leland;
-
 
 --
 -- Name: la_spatialunit_resource_point; Type: ACL; Schema: public; Owner: postgres
@@ -11254,8 +11086,6 @@ GRANT SELECT ON TABLE la_spatialunit_resource_line TO leland;
 REVOKE ALL ON TABLE la_spatialunit_resource_point FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunit_resource_point FROM postgres;
 GRANT ALL ON TABLE la_spatialunit_resource_point TO postgres;
-GRANT SELECT ON TABLE la_spatialunit_resource_point TO leland;
-
 
 --
 -- Name: la_spatialunitgroup; Type: ACL; Schema: public; Owner: postgres
@@ -11264,8 +11094,6 @@ GRANT SELECT ON TABLE la_spatialunit_resource_point TO leland;
 REVOKE ALL ON TABLE la_spatialunitgroup FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunitgroup FROM postgres;
 GRANT ALL ON TABLE la_spatialunitgroup TO postgres;
-GRANT SELECT ON TABLE la_spatialunitgroup TO leland;
-
 
 --
 -- Name: la_spatialunitgroup_hierarchy; Type: ACL; Schema: public; Owner: postgres
@@ -11274,8 +11102,6 @@ GRANT SELECT ON TABLE la_spatialunitgroup TO leland;
 REVOKE ALL ON TABLE la_spatialunitgroup_hierarchy FROM PUBLIC;
 REVOKE ALL ON TABLE la_spatialunitgroup_hierarchy FROM postgres;
 GRANT ALL ON TABLE la_spatialunitgroup_hierarchy TO postgres;
-GRANT SELECT ON TABLE la_spatialunitgroup_hierarchy TO leland;
-
 
 --
 -- Name: media_attributes; Type: ACL; Schema: public; Owner: postgres
@@ -11284,8 +11110,6 @@ GRANT SELECT ON TABLE la_spatialunitgroup_hierarchy TO leland;
 REVOKE ALL ON TABLE media_attributes FROM PUBLIC;
 REVOKE ALL ON TABLE media_attributes FROM postgres;
 GRANT ALL ON TABLE media_attributes TO postgres;
-GRANT SELECT ON TABLE media_attributes TO leland;
-
 
 --
 -- Name: natural_person_attributes; Type: ACL; Schema: public; Owner: postgres
@@ -11294,8 +11118,6 @@ GRANT SELECT ON TABLE media_attributes TO leland;
 REVOKE ALL ON TABLE natural_person_attributes FROM PUBLIC;
 REVOKE ALL ON TABLE natural_person_attributes FROM postgres;
 GRANT ALL ON TABLE natural_person_attributes TO postgres;
-GRANT SELECT ON TABLE natural_person_attributes TO leland;
-
 
 --
 -- Name: nonnatural_person_attributes; Type: ACL; Schema: public; Owner: postgres
@@ -11304,8 +11126,6 @@ GRANT SELECT ON TABLE natural_person_attributes TO leland;
 REVOKE ALL ON TABLE nonnatural_person_attributes FROM PUBLIC;
 REVOKE ALL ON TABLE nonnatural_person_attributes FROM postgres;
 GRANT ALL ON TABLE nonnatural_person_attributes TO postgres;
-GRANT SELECT ON TABLE nonnatural_person_attributes TO leland;
-
 
 --
 -- Name: right_attributes; Type: ACL; Schema: public; Owner: postgres
@@ -11314,8 +11134,6 @@ GRANT SELECT ON TABLE nonnatural_person_attributes TO leland;
 REVOKE ALL ON TABLE right_attributes FROM PUBLIC;
 REVOKE ALL ON TABLE right_attributes FROM postgres;
 GRANT ALL ON TABLE right_attributes TO postgres;
-GRANT SELECT ON TABLE right_attributes TO leland;
-
 
 --
 -- Name: spatial_unit_attributes; Type: ACL; Schema: public; Owner: postgres
@@ -11324,8 +11142,6 @@ GRANT SELECT ON TABLE right_attributes TO leland;
 REVOKE ALL ON TABLE spatial_unit_attributes FROM PUBLIC;
 REVOKE ALL ON TABLE spatial_unit_attributes FROM postgres;
 GRANT ALL ON TABLE spatial_unit_attributes TO postgres;
-GRANT SELECT ON TABLE spatial_unit_attributes TO leland;
-
 
 --
 -- Name: topology_checks_error_log; Type: ACL; Schema: public; Owner: postgres
@@ -11334,8 +11150,6 @@ GRANT SELECT ON TABLE spatial_unit_attributes TO leland;
 REVOKE ALL ON TABLE topology_checks_error_log FROM PUBLIC;
 REVOKE ALL ON TABLE topology_checks_error_log FROM postgres;
 GRANT ALL ON TABLE topology_checks_error_log TO postgres;
-GRANT SELECT ON TABLE topology_checks_error_log TO leland;
-
 
 --
 -- Name: vertexlabel; Type: ACL; Schema: public; Owner: postgres
@@ -11344,5 +11158,3 @@ GRANT SELECT ON TABLE topology_checks_error_log TO leland;
 REVOKE ALL ON TABLE vertexlabel FROM PUBLIC;
 REVOKE ALL ON TABLE vertexlabel FROM postgres;
 GRANT ALL ON TABLE vertexlabel TO postgres;
-GRANT SELECT ON TABLE vertexlabel TO leland;
-

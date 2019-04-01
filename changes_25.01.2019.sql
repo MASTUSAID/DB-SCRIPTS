@@ -7,6 +7,24 @@
 ALTER TABLE public.la_ext_boundary_point_seq
   OWNER TO postgres;
 
+CREATE TABLE public.la_ext_confidence_level
+(
+  id integer NOT NULL,
+  name character varying(100) NOT NULL,
+  name_en character varying(100) NOT NULL,
+  isactive boolean NOT NULL DEFAULT true,
+  CONSTRAINT pk_la_ext_confidence_level PRIMARY KEY (id)
+)
+WITH (
+  OIDS=FALSE
+);
+ALTER TABLE public.la_ext_confidence_level
+  OWNER TO postgres;
+
+INSERT INTO public.la_ext_confidence_level(id, name, name_en, isactive) VALUES (1, 'Low', 'Low', 't');
+INSERT INTO public.la_ext_confidence_level(id, name, name_en, isactive) VALUES (2, 'Medium', 'Medium', 't');
+INSERT INTO public.la_ext_confidence_level(id, name, name_en, isactive) VALUES (3, 'High', 'High', 't');
+
 CREATE TABLE public.la_ext_boundary_point
 (
   id integer NOT NULL DEFAULT nextval('la_ext_boundary_point_seq'::regclass),
@@ -16,12 +34,18 @@ CREATE TABLE public.la_ext_boundary_point
   feature_description character varying(500),
   isactive boolean NOT NULL DEFAULT('t'),
   approved boolean NOT NULL DEFAULT('f'),
+  verified boolean NOT NULL DEFAULT ('f'),
+  confidence_level integer,
+  confidence_desc character varying(500),
   geometry geometry NOT NULL,
   created_by integer NOT NULL,
   create_date timestamp without time zone NOT NULL,
   modified_by integer,
   modify_date timestamp without time zone,
   CONSTRAINT pk_la_ext_boundary_point PRIMARY KEY (id),
+  CONSTRAINT fk_confidence_level FOREIGN KEY (confidence_level)
+      REFERENCES public.la_ext_confidence_level (id) MATCH SIMPLE
+      ON UPDATE NO ACTION ON DELETE NO ACTION,
   CONSTRAINT fk_la_ext_boundary_point_project_id FOREIGN KEY (project_id)
       REFERENCES public.la_spatialsource_projectname (projectnameid) MATCH SIMPLE
       ON UPDATE NO ACTION ON DELETE NO ACTION,
